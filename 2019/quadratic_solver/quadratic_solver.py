@@ -1,5 +1,6 @@
 """A program to solve quadratic equations"""
 import math
+import matplotlib.pyplot as plt
 
 def solve(a,b,c):
 	"""
@@ -44,5 +45,3 @@ def print_step_by_step(x1,x2):
 	print('(x %s %d)(x %s %d) = 0' % (sign(x1), x1, sign(x2), x2))
 	print('x = %d or x = %d' % (-x1,-x2))
 
-
-print_step_by_step(1,-2)
