@@ -73,19 +73,20 @@ while True:
          # If an invalid key is pressed
     if key not in [ curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_UP, curses.KEY_DOWN, 27]:
         key = prevKey
+    new_head = [snake[0][0], snake[0][1]]
 
 ### DO NOT CHANGE CODE ABOVE
 
 ### Students are responsible for implementing the commented out  code
-    new_head = [snake[0][0], snake[0][1]]
-    if key == curses.KEY_DOWN:
-        new_head[0] += 1
-    if key == curses.KEY_UP:
-        new_head[0] -= 1
-    if key == curses.KEY_LEFT:
-        new_head[1] -= 1
-    if key == curses.KEY_RIGHT:
-        new_head[1] += 1
+
+    # if key == curses.KEY_DOWN:
+    #     new_head[0] += 1
+    # if key == curses.KEY_UP:
+    #     new_head[0] -= 1
+    # if key == curses.KEY_LEFT:
+    #     new_head[1] -= 1
+    # if key == curses.KEY_RIGHT:
+    #     new_head[1] += 1
 
     ### DO NOT CHANGE CODE BELOW
     snake.insert(0, new_head)
