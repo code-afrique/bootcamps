@@ -1,4 +1,10 @@
 ## DONOT CHANGE ANYTHING IN THIS FILE
+'''
+This method implements the popular snake game we all loved to play as kids:
+You have a snake and a food source. The snake moves towards the food to eat it and
+grows anytime it eats the food. In this implementation, the  snake can cross
+boundaries and enter through the other ends.
+'''
 import random
 import curses
 import time

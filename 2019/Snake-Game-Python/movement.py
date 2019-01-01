@@ -1,10 +1,7 @@
 '''
-This method implements the popular snake game we all use to play as kids:
-You have a snake and a food. The snake moves towards the food to eat it and
-grows anytime it eats the food.
-You are responsible for implementing code that conntrols the
+You are responsible for implementing the move method that controls the
 navigation of the snake. That is, if the up key is pressed, the snake should
-move, if the down key is pressed, it should move down etc.
+move up, if the down key is pressed, it should move down etc.
 You're given an given the variable "key", which is the key that the user pressed
 on the keyboard, and new_head which is the current position of the snake.
 
@@ -13,6 +10,8 @@ Increase new_head[0] by one if you want to down and decrease by one if you
 want to go up.
 Increase  new_head[1] by one if you want to right and decrease by one if you
 want to go left.
+
+You have been given the constants KEY_DOWN, KEY_UP, KEY_LEFT, and KEY_RIGHT 
 '''
 
 import curses
@@ -21,6 +20,7 @@ KEY_UP = curses.KEY_UP
 KEY_LEFT = curses.KEY_LEFT
 KEY_RIGHT = curses.KEY_RIGHT
 
+### DONOT CHANGE ANYTHING ABOVE
 ### Students are responsible for implementing this method
 def move(key, new_head):
     if key == KEY_DOWN:
