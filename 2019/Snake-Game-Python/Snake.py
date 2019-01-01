@@ -118,6 +118,5 @@ while True:
         w.addch(food[0], food[1], curses.ACS_PI)
     else:
         tail = snake.pop()
-        print(snake)
         w.addch(tail[0], tail[1], ' ')
     w.addch(snake[0][0], snake[0][1], curses.ACS_CKBOARD)
