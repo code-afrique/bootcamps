@@ -1,22 +1,8 @@
-'''
-This method implements the popular snake game we all use to play as kids:
-You have a snake and a food. The snake moves towards the food to eat it and
-grows anytime it eats the food.
-You are responsible for implementing code that conntrols the
-navigation of the snake. That is, if the up key is pressed, the snake should
-move, if the down key is pressed, it should move down etc.
-You're given an given the variable "key", which is the key that the user pressed
-on the keyboard, and new_head which is the current position of the snake.
-
-Structure of new_head:
-Increase new_head[0] by one if you want to down and decrease by one if you
-want to go up.
-Increase  new_head[1] by one if you want to right and decrease by one if you
-want to go left.
-'''
+## DONOT CHANGE ANYTHING IN THIS FILE
 import random
 import curses
 import time
+from movement import move
 
 s = curses.initscr()
 curses.start_color()
@@ -28,8 +14,8 @@ w.timeout(100)
 maxScore = 0
 scores = []
 score = 0
-snk_x = sw/4
-snk_y = sh/2
+snk_x = sw//4
+snk_y = sh//2
 snake = [
     [snk_y, snk_x],
     [snk_y, snk_x-1],
@@ -37,7 +23,7 @@ snake = [
     [snk_y, snk_x-3]
 ]
 
-food = [sh/2, sw/2]
+food = [sh//2, sw//2]
 w.addch(food[0], food[1], curses.ACS_PI)
 
 key = curses.KEY_RIGHT
@@ -59,7 +45,7 @@ while True:
 
     prevKey = key
     #Increases the speed of Snake as its length increases
-    w.timeout(100 - (len(snake)/5 + len(snake)/10)%120)
+    w.timeout(100 - (len(snake)//5 + len(snake)//10)%120)
 
     next_key = w.getch()
     key = key if next_key == -1 else next_key
@@ -74,21 +60,7 @@ while True:
     if key not in [ curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_UP, curses.KEY_DOWN, 27]:
         key = prevKey
     new_head = [snake[0][0], snake[0][1]]
-
-### DO NOT CHANGE CODE ABOVE
-
-### Students are responsible for implementing the commented out  code
-
-    # if key == curses.KEY_DOWN:
-    #     new_head[0] += 1
-    # if key == curses.KEY_UP:
-    #     new_head[0] -= 1
-    # if key == curses.KEY_LEFT:
-    #     new_head[1] -= 1
-    # if key == curses.KEY_RIGHT:
-    #     new_head[1] += 1
-
-    ### DO NOT CHANGE CODE BELOW
+    move(key, new_head)
     snake.insert(0, new_head)
 
      # If snake crosses the boundaries, make it enter from the other side
