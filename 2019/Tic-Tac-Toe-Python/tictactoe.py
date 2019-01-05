@@ -7,6 +7,7 @@
 
 from game2d import *
 from player import *
+import helpers
 
 
 # Constants
@@ -87,7 +88,7 @@ class TicTacToe(GameApp):
                             text="Press 'P' to play Tic Tac Toe!",
                             font_size=32, font_name = "ArialBold.ttf")
         
-        self.createGridLines()
+        self._gridlines = helpers.createGridLines()
         self._winState = 0
         self._complete = False
         self._timer = 2*TIMER
@@ -165,8 +166,8 @@ class TicTacToe(GameApp):
                 line.draw(self.view)
                 
             # Draw grid
-            for i in range(3):
-                for j in range(3):
+            for i in range(GRID_SIZE):
+                for j in range(GRID_SIZE):
                     if self._objgrid[i][j] is not None:
                         self._objgrid[i][j].draw(self.view)
                         
@@ -177,25 +178,6 @@ class TicTacToe(GameApp):
                 
         if self._text is not None:
             self._text.draw(self.view)
-    
-        
-    def createGridLines(self):
-        """ Creates the tic tac toe grid lines """
-        # Lower horizontal line
-        self._gridlines = []
-        self._gridlines.append(GPath(points = [0, GAME_HEIGHT/3, GAME_WIDTH, GAME_HEIGHT/3],
-                            linewidth = 2, linecolor = 'black'))
-        
-        # Upper horizontal line
-        self._gridlines.append(GPath(points = [0, 2*GAME_HEIGHT/3, GAME_WIDTH, 2*GAME_HEIGHT/3],
-                            linewidth = 2, linecolor = 'black'))
-        
-        # Leftmost vertical line
-        self._gridlines.append(GPath(points = [GAME_WIDTH/3, 0, GAME_WIDTH/3, GAME_HEIGHT],
-                            linewidth = 2, linecolor = 'black'))
-        
-        self._gridlines.append(GPath(points = [2*GAME_WIDTH/3, 0, 2*GAME_WIDTH/3, GAME_HEIGHT],
-                            linewidth = 2, linecolor = 'black'))
         
         
     def pauseHelper(self):
@@ -218,7 +200,7 @@ class TicTacToe(GameApp):
     def checkWinConditions(self):
         """ Helper function to check the win conditions """
         # Check rows
-        for i in range(3):
+        for i in range(GRID_SIZE):
             if (self._grid[i][0] == self._grid[i][1] and self._grid[i][0] == self._grid[i][2]
                 and self._grid[i][0] != 0):
                 
@@ -227,7 +209,7 @@ class TicTacToe(GameApp):
                 return
             
         # Check columns
-        for i in range(3):
+        for i in range(GRID_SIZE):
             if (self._grid[0][i] == self._grid[1][i] and self._grid[0][i] == self._grid[2][i]
                 and self._grid[0][i] != 0):
                 
@@ -282,8 +264,8 @@ class TicTacToe(GameApp):
     def checkGridFull(self):
         """ Helper function to check if the grid is full """
         full = True
-        for i in range(3):
-            for j in range(3):
+        for i in range(GRID_SIZE):
+            for j in range(GRID_SIZE):
                 if self._grid[i][j] == 0:
                     full = False
                     
