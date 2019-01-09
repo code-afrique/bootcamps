@@ -15,6 +15,25 @@
             var value = "";
             var operation;
 
+            function compute(){
+                v1 = parseFloat(value);
+                v2 = parseFloat(document.myform.answer.value);
+                switch (operation) {
+                case ADDITION:
+                    value = v1 + v2;
+                    break;
+                case SUBTRACTION:
+                    value = v1 - v2;
+                    break;
+                case DIVISION:
+                    value = v1 / v2;
+                    break;
+                }
+				ifFinal = true;
+				document.myform.answer.value = value;
+                return false;
+            }
+
             function setOp(op){
                 operation = op;
                 value = document.myform.answer.value;
@@ -36,23 +55,6 @@
                 return false;
             }
 
-            function compute(){
-                v1 = parseFloat(value);
-                v2 = parseFloat(document.myform.answer.value);
-                switch (operation) {
-                case ADDITION:
-                    document.myform.answer.value = v1 + v2;
-                    break;
-                case SUBTRACTION:
-                    document.myform.answer.value = v1 - v2;
-                    break;
-                case DIVISION:
-                    document.myform.answer.value = v1 / v2;
-                    break;
-                }
-				ifFinal = true;
-                return false;
-            }
         </script>
 
         <center>
