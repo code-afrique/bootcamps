@@ -1,0 +1,107 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Calculator</title>
+</head>
+
+<body>
+
+<script>
+
+ADDITION = 1;
+SUBTRACTION = 2;
+MULTIPLICATION = 3;
+DIVISION = 4;
+
+var value = "";
+var operation;
+
+function setOp(op){
+	operation = op;
+	value = document.myform.answer.value;
+	document.myform.answer.value = "";
+	return false;
+}
+
+function enter(digit){
+	document.myform.answer.value = document.myform.answer.value + "" + digit;
+	return false;
+}
+
+function clearAll(){
+	document.myform.answer.value = "";
+	return false;
+}
+
+function compute(){
+	v1 = parseFloat(value);
+	v2 = parseFloat(document.myform.answer.value);
+	switch (operation) {
+	case ADDITION:
+		document.myform.answer.value = v1 + v2;
+		break;
+	case SUBTRACTION:
+		document.myform.answer.value = v1 - v2;
+		break;
+	case MULTIPLICATION:
+		document.myform.answer.value = v1 * v2;
+		break;
+	case DIVISION:
+		document.myform.answer.value = v1 / v2;
+		break;
+	}
+	return false;
+}
+
+</script>
+
+<h1 align="center"><font color="#FF00FF">Calculator</font></h1>
+
+<form name="myform" onSubmit="return clearAll()">
+  <table>
+    <tr>
+      <td>
+      
+   <table border="1" bordercolor="#FF0000">
+  	 <tr>
+  	   <td colspan="4"> <input type="text" name="answer" size="20"></td>
+  	 </tr>
+    <tr>
+      <td><input type="button" value=" 1 " name="B1" onClick="return enter(1)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" 2 " name="B2" onClick="return enter(2)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" 3 " name="B3" onClick="return enter(3)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" + " name="Bplus" onClick="return setOp(ADDITION)" style="background-color: #00FF00; color: #000000"></td>
+    </tr>
+    <tr>
+      <td><input type="button" value=" 4 " name="B4" onClick="return enter(4)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" 5 " name="B5" onClick="return enter(5)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" 6 " name="B6" onClick="return enter(6)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" - " name="Bminus" onClick="return setOp(SUBTRACTION)" style="background-color: #00FF00; color: #000000"></td>
+    </tr>
+    <tr>
+      <td><input type="button" value=" 7 " name="B7" onClick="return enter(7)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" 8 " name="B8" onClick="return enter(8)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" 9 " name="B9" onClick="return enter(9)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" x " name="Btimes" onClick="return setOP(MULTIPLICATION)" style="background-color: #00FF00; color: #000000"></td>
+    </tr>
+    <tr>
+      <td><input type="button" value="C " name="clear" onClick="return clearAll()" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" 0 " name="B0" onClick="return enter(0)" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" = " name="B0" onClick="return compute()" style="background-color: #00FF00; color: #000000"></td>
+      <td><input type="button" value=" / " name="Bdivide" onClick="return setOp(DIVISION)" style="background-color: #00FF00; color: #000000"></td>
+    </tr>
+  </table>
+  
+      </td>
+      <td>
+      </td>
+    </tr>
+  </table>
+
+</form>
+
+</body>
+
+</html>
