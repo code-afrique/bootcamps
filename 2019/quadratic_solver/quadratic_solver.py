@@ -1,23 +1,81 @@
 """A program to solve quadratic equations"""
 from modules import math, print_step_by_step, graph
 
+
+def check_roots(a,b,c):
+	"""
+	This function checks the  roots of a quadratic equation of the form 
+	ax^2 + bx + c = 0
+
+	Task:
+	1. First find the discriminant of the equation by using:
+	 	 discriminant = b*b - 4*a*c
+	2. If the discriminant is > 0 return the phrase 'real roots' 
+			Else if the discriminant is = 0 return phrase 'equal roots'
+	    Else if the discriminant is < 0 returnthe phrase 'complex roots'
+	3. Return the discriminant
+
+	Hint: Use if-statements
+	"""
+	
+	#step 1
+	discriminant = 0 #replace 0 with your own code
+
+	#step 2
+	discriminant = b**2 - 4*a*c
+  
+	if discriminant > 0:
+		return "real roots"
+
+	elif discriminant == 0:
+		return "equal roots"
+
+	else:
+		return "complex roots"
+	#step 3
+	#return discriminant
+
+
+
 def solve(a,b,c):
 	"""
-	Prints the two solutions of the quadratic equation ax^2 + bx + c = 0
+	This method solves a quadratic equation using the quadratic formula.
+	A quadratic equation is one of the form: ax^2 + bx + c = 0
+
 	Requirements:
 	a: integer
 	b: integer
 	c: integer
 
-	Instructions: 
-	step 1: Use the quadratic formula to compute the two solutions x1 and x2
-			eg. x1 = (-b + math.sqrt(b**2 - 4*a*c)/2a
-	step 2: Now that you have x1 and x2 use the print_step_by_step function
-			to print out the solution using factorization method.
-			eg. 
-			x1 = -1
-			x2 = 5
-			print_step_by_step(x1,x2)
+	Hint: Use the quadratic formula.  You may also learn from how we found the 
+				discriminant above
+
+	Tasks: 
+	1: Find the discriminant
+	
+	2. Compute the two roots, x1 and x2 by using the quadratic formula.  For eg.
+			x1 = (-b + math.sqrt(discriminant)/(2*a)
+
+	3. Print the step by step solution.
+		Hint: Use the function called print_step_by_step
+
+	4. Draw the graph of the equation
+		Hint: use the function called graph
+
+	5. return the value (x1,x2) as your answer
 	"""
-	pass
+
+	#step 1
+	discriminant = 0 #replace 0 with your own code
+
+	#step 2
+	x1 = 0 #replace 0 with your own code
+	x2 = 0 #replace 0 with your own code
+
+	#step 3
+
+	#step 4
+
+	#step 5
+	return (x1,x2)
 
