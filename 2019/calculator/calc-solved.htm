@@ -9,6 +9,7 @@
         <script>
             ADDITION = 1;
             SUBTRACTION = 2;
+            MULTIPLICATION = 3;
             DIVISION = 4;
 
 			var isFinal = true;
@@ -46,6 +47,9 @@
                 case SUBTRACTION:
                     document.myform.answer.value = v1 - v2;
                     break;
+                case MULTIPLICATION:
+                    document.myform.answer.value = v1 * v2;
+                    break;
                 case DIVISION:
                     document.myform.answer.value = v1 / v2;
                     break;
@@ -79,6 +83,7 @@
                         <td><input type="button" value=" 7 " onClick="return enter(7)" style="background-color: #00FF00; color: #000000"></td>
                         <td><input type="button" value=" 8 " onClick="return enter(8)" style="background-color: #00FF00; color: #000000"></td>
                         <td><input type="button" value=" 9 " onClick="return enter(9)" style="background-color: #00FF00; color: #000000"></td>
+                        <td><input type="button" value=" x " onClick="return setOp(MULTIPLICATION)" style="background-color: #00FF00; color: #000000"></td>
                     </tr>
                     <tr>
                         <td><input type="button" value="C " onClick="return clearAll()" style="background-color: #00FF00; color: #000000"></td>
