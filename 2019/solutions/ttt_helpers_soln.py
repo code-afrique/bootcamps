@@ -19,10 +19,15 @@ def newLine(x1, y1, x2, y2):
                             linewidth = 2, linecolor = 'black')
 
 
-# Implement the function below
+# Students will be responsible for implementing the function below
 
 def createGridLines():
     """ Helper function to create the tic tac toe grid lines """
     
     # YOUR CODE GOES HERE
-    
+    result = []
+    result.append(newLine(0, GAME_HEIGHT/3, GAME_WIDTH, GAME_HEIGHT/3))
+    result.append(newLine(0, 2*GAME_HEIGHT/3, GAME_WIDTH, 2*GAME_HEIGHT/3))
+    result.append(newLine(GAME_WIDTH/3, 0, GAME_WIDTH/3, GAME_HEIGHT))
+    result.append(newLine(2*GAME_WIDTH/3, 0, 2*GAME_WIDTH/3, GAME_HEIGHT))
+    return result
