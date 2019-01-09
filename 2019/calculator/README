@@ -1,3 +1,12 @@
 This is an implementation of a calculator implemented in HTML (Hyper-Text Markup Language) and JavaScript.
 
 The calculator is incomplete, because the button and code for multiplication is missing.  It is your job to fix this.
+
+Other projects:
+	- add a button for a decimat dot
+	- add a "+/-" button that changes the sign of the value
+	- add other operations: square root, abs, ...
+	- add a "memory"
+		- M+: add to memory
+		- MR: recall from memory
+		- MC: clear memory
