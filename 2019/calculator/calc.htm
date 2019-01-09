@@ -12,18 +12,23 @@
             MULTIPLICATION = 3;
             DIVISION = 4;
 
+			var isFinal = true;
             var value = "";
             var operation;
 
             function setOp(op){
                 operation = op;
                 value = document.myform.answer.value;
-                document.myform.answer.value = "";
+				isFinal = true;
                 return false;
             }
 
             function enter(digit){
+				if (isFinal) {
+					document.myform.answer.value = "";
+				}
                 document.myform.answer.value = document.myform.answer.value + "" + digit;
+				isFinal = false;
                 return false;
             }
 
@@ -49,6 +54,7 @@
                     document.myform.answer.value = v1 / v2;
                     break;
                 }
+				ifFinal = true;
                 return false;
             }
         </script>
