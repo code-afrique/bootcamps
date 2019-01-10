@@ -42,4 +42,5 @@
 	This function finds the second highest number in  a list of integers.
 
 8. Write a function list_of_even_numbers(start, end).
-	This function returns a list of even numbers starting from
+	This function returns a list of even numbers from start up to but not including end. 
+
