@@ -4,18 +4,32 @@ from modules import math, check_solution, graph
 
 def check_roots(a,b,c):
 	"""
-	This function checks the  roots of a quadratic equation of the form 
-	ax^2 + bx + c = 0
+	This method solves a quadratic equation using the quadratic formula.
+	A quadratic equation is one of the form: ax^2 + bx + c = 0
 
-	Task:
-	1. First find the discriminant of the equation by using:
-	 	 discriminant = b*b - 4*a*c
-	2. If the discriminant is > 0 print out the phrase 'real roots'
-	3. If the discriminant is = 0 print out the phrase 'equal roots'
-	4. If the discriminant is < 0 print out the phrase 'complex roots'
+	Requirements:
+	a: integer
+	b: integer
+	c: integer
 
-	Hint: Use if-statements
+	Hint: Use the quadratic formula.  You may also learn from how we found the 
+				discriminant above
+
+	Tasks: 
+	1: Find the discriminant
+	
+	2. Compute the two roots, x1 and x2 by using the quadratic formula.  For eg.
+			x1 = (-b + math.sqrt(discriminant)/(2*a)
+
+	3. Print the step by step solution.
+		Hint: Use the function called print_step_by_step
+
+	4. Draw the graph of the equation
+		Hint: use the function called graph
+
+	5. return the value (x1,x2) as your answer
 	"""
+	
 
 	discriminant = 0 #replace 0 with your own code
 
@@ -56,8 +70,5 @@ def solve(a,b,c):
 	discriminant = b**2 - 4.0*a*c
 	x1 = (-b - math.sqrt(discriminant)) / (2.0*a)
 	x2 = (-b + math.sqrt(discriminant)) / (2.0*a)
-
-	#Do not touch anything below this line:
-	check_solution(a,b,c,x1,x2)
-	
+	return (x1, x2)
 
