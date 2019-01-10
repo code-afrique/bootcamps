@@ -44,7 +44,9 @@
 	Example: find_second_highest_number([3, 2, 5, 4, 1]) should return 4.
 
 6. Write a function list_of_even_numbers(start, end).
-	This function returns a list of even numbers starting from
+	This function returns a list of even numbers starting from start (inclusive if even) and ending at end
+	(exclusive).
+	Example: list_of_even_numbers(3, 9) should return [4, 6, 8].
 
 7. write function doubleList(lst).
 	This function doubles every number in a list of numbers.
