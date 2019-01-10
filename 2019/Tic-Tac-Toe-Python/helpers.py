@@ -25,4 +25,12 @@ def createGridLines():
     """ Helper function to create the tic tac toe grid lines """
     
     # YOUR CODE GOES HERE
+    result = []
+
+    #example code for you
+    result.append(newLine(0, GAME_HEIGHT/3, GAME_WIDTH, GAME_HEIGHT/3)) 
+    #the above code draws the first box
+
+    #Hint: draw the remaining 8 squares.
+
     
