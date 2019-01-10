@@ -38,20 +38,22 @@
     Output: false
     Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return false because it is not at the origin at the end of its moves.
 
-7. Write a function find_second_highest_number(lst).
-	This function finds the second highest number in  a list of integers.
+5. Write a function find_second_highest_number(lst).
+	This function finds the second highest number in  a list of integers.  If the list has fewer
+	than 2 numbers, the function should return false.
+	Example: find_second_highest_number([3, 2, 5, 4, 1]) should return 4.
 
-8. Write a function list_of_even_numbers(start, end).
+6. Write a function list_of_even_numbers(start, end).
 	This function returns a list of even numbers starting from
 
-9. write function doubleList(lst).
+7. write function doubleList(lst).
 	This function doubles every number in a list of numbers.
 	Example: doubleList([2, 1, 3]) should return [4, 2, 6].
 
-10. write function isPalindrome(lst).
+8. write function isPalindrome(lst).
 	This function returns whether the given list is a palindrome.
 	Example isPalindrome([1, 2, 3, 2, 1]) should return true.
 
-11. write function nOccurrences(str1, str2).
+9. write function nOccurrences(str1, str2).
 	This function returns how many times str2 occurs in str1.
 	Example nOccurences('xxxx', 'xx') should return 3.
