@@ -56,6 +56,8 @@
 	This function returns whether the given list is a palindrome.
 	Example isPalindrome([1, 2, 3, 2, 1]) should return true.
 
-9. write function nOccurrences(str1, str2).
+9.
+
+10. write function nOccurrences(str1, str2).
 	This function returns how many times str2 occurs in str1.
 	Example nOccurences('xxxx', 'xx') should return 3.
