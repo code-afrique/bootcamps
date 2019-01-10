@@ -15,3 +15,8 @@
 2. write function find_minimum(lst).
 	This function finds the minimum number in a list of numbers.
 	Example: find_minimum([2, 1, 3]) should return 1
+
+3. write function reverse(str).
+	This function reverses the characters in a string.
+	Example: reverse('hello') should return 'olleh'
+
