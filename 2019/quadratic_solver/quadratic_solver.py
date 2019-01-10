@@ -68,8 +68,5 @@ def solve(a,b,c):
 	#step 4 //TODO
 
 	#step 5
-	discriminant = b**2 - 4.0*a*c
-	x1 = (-b - math.sqrt(discriminant)) / (2.0*a)
-	x2 = (-b + math.sqrt(discriminant)) / (2.0*a)
 	return (x1,x2)
 
