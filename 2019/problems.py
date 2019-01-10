@@ -13,7 +13,8 @@
 	Example: quadratic_fun(1, 2, 1) should return 'equal roots"
 
 2. write function find_minimum(lst).
-	This function finds the minimum number in a list of numbers.
+	This function finds the minimum number in a list of numbers.  The function
+	should return false if the list is empty.
 	Example: find_minimum([2, 1, 3]) should return 1
 
 3. write function reverse(str).
