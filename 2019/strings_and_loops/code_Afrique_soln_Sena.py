@@ -40,19 +40,3 @@ def reverseString(word):
 
 	return reversedWord
 
-
-def main():
-
-	allWords = words2
-
-	print(countString(allWords, "individual"))
-
-	print(reverseString("individual"))
-
-
-
-
-
-if __name__ == '__main__':
-	main()
-
