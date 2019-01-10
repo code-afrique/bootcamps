@@ -20,3 +20,8 @@
 	This function reverses the characters in a string.
 	Example: reverse('hello') should return 'olleh'
 
+7. Write a function find_second_highest_number(lst).
+	This function finds the second highest number in  a list of integers.
+
+8. Write a function list_of_even_numbers(start, end).
+	This function returns a list of even numbers starting from
