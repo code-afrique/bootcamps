@@ -1,0 +1,43 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in,landscape]{geometry}
+\usepackage{graphicx}
+\usepackage[usenames, dvipsnames]{color}
+
+%\definecolor{mycolor}{rgb}{0.43, 0.21, 0.1}
+%\definecolor{mycolor}{rgb}{0.88, 0.07, 0.37}
+\definecolor{mycolor}{rgb}{0.66, 0.11, 0.03}
+
+\begin{document}
+\pagestyle{empty}
+\Huge
+
+\newcommand{\cert}[2]{
+\begin{center}
+\fbox{\fbox{\fbox{
+\begin{tabular}{c}
+\includegraphics[width=.9\textwidth]{title.png} \\[0.1in]
+\textcolor{mycolor}{AWARDED TO} \\[0.1in]
+\resizebox{!}{0.4in}{\itshape #1} \\[0.1in]
+\textcolor{mycolor}{of} \\[0.1in]
+#2 \\[0.1in]
+\textcolor{mycolor}{\Huge For Participating in \textbf{Code Afrique}} \\
+\textcolor{mycolor}{\Huge January, 2019} \\
+\begin{tabular}{lc}
+\includegraphics[width=1.5in]{calogo.png} &
+	\begin{tabular}[t]{ccc}
+		\includegraphics[width=2in]{rvr_sig.png} && \includegraphics[width=3in]{hakim_signature.jpg}
+		\\ \hline
+		\textcolor{mycolor}{\Large Robbert van Renesse} &&
+		\textcolor{mycolor}{\Large Hakim Weatherspoon} \\
+		\textcolor{mycolor}{\Large Professor, Cornell University} &&
+		\textcolor{mycolor}{\Large Professor, Cornell University} \\
+	\end{tabular}
+\end{tabular}
+\end{tabular}
+}}}
+\end{center}
+}
+
+\input{part.tex}
+
+\end{document}
