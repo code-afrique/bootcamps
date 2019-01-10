@@ -2,24 +2,27 @@ import introcs
 from quadratic_solver import check_roots, solve
 
 def test_discriminant():
-  tests_values = [
-    ((1,3,2), 'real roots'),
-    ((1,2,1), 'equal roots'),
-    ((5,1,0), 'complex roots')
-  ]
+  print("Testing check_roots function.")
 
-  for test in tests_values:
-    args, expected_result = test
-    introcs.assert_equals(expected_result,check_roots(test[0][1], test[0][1], test[0][2]))
+  introcs.assert_equals('real roots',check_roots(1,3,2))
+  introcs.assert_equals('equal roots',check_roots(1,2,1))
+  introcs.assert_equals('complex roots',check_roots(5,1,1))
 
-  print("check_roots function passed successfully")
+  print("check_roots function looks ok\n")
 
 
-def test_solver():
-  pass 
+def test_solve():
+  print("Testing solve function.")
+  eval_1 = solve(1,3,2)
+  introcs.assert_equals((-2, -1), (min(eval_1), max(eval_1)))
+
+  eval_2 = solve(5,6,1)
+  introcs.assert_equals((-1, -0.2), (min(eval_2), max(eval_2)))
+  print("solve function looks ok\n")
 
 
 if __name__ == '__main__':
   test_discriminant()
-  test_solver()
+  test_solve()
+  print("Yay! - All tests passed successfully")
 

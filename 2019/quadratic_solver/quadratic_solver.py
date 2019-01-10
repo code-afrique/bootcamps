@@ -18,21 +18,12 @@ def check_roots(a,b,c):
 	Hint: Use if-statements
 	"""
 	
-	#step 1
+	#step 1 //TODO
 	discriminant = 0 #replace 0 with your own code
 
-	#step 2
-	discriminant = b**2 - 4*a*c
-  
-	if discriminant > 0:
-		return "real roots"
+	#step 2: //TODO
 
-	elif discriminant == 0:
-		return "equal roots"
-
-	else:
-		return "complex roots"
-	#step 3
+	#step 3 //TODO
 	#return discriminant
 
 
@@ -65,17 +56,20 @@ def solve(a,b,c):
 	5. return the value (x1,x2) as your answer
 	"""
 
-	#step 1
+	#step 1 //TODO
 	discriminant = 0 #replace 0 with your own code
 
-	#step 2
+	#step 2 //TODO
 	x1 = 0 #replace 0 with your own code
 	x2 = 0 #replace 0 with your own code
 
-	#step 3
+	#step 3 //TODO
 
-	#step 4
+	#step 4 //TODO
 
 	#step 5
+	discriminant = b**2 - 4.0*a*c
+	x1 = (-b - math.sqrt(discriminant)) / (2.0*a)
+	x2 = (-b + math.sqrt(discriminant)) / (2.0*a)
 	return (x1,x2)
 
