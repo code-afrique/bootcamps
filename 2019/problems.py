@@ -20,11 +20,13 @@
 	This function reverses the characters in a string.
 	Example: reverse('hello') should return 'olleh'
 	
-4. There is a robot starting at position (0, 0), the origin, on a 2D plane.
+4.  write function robot_return_to_origin(str).
+    There is a robot starting at position (0, 0), the origin, on a 2D plane.
     Given a sequence of its moves, judge if this robot ends up at (0, 0) after it completes its moves.
     The move sequence is represented by a string, and the character moves[i] represents its ith move.
     Valid moves are R (right), L (left), U (up), and D (down). 
     If the robot returns to the origin after it finishes all of its moves, return true. Otherwise, return false.
+    
     
     Example 1:
     Input: "UD"
@@ -36,11 +38,20 @@
     Output: false
     Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return false because it is not at the origin at the end of its moves.
 
-
-
 7. Write a function find_second_highest_number(lst).
 	This function finds the second highest number in  a list of integers.
 
 8. Write a function list_of_even_numbers(start, end).
-	This function returns a list of even numbers from start up to but not including end. 
+	This function returns a list of even numbers starting from
 
+9. write function doubleList(lst).
+	This function doubles every number in a list of numbers.
+	Example: doubleList([2, 1, 3]) should return [4, 2, 6].
+
+10. write function isPalindrome(lst).
+	This function returns whether the given list is a palindrome.
+	Example isPalindrome([1, 2, 3, 2, 1]) should return true.
+
+11. write function nOccurrences(str1, str2).
+	This function returns how many times str2 occurs in str1.
+	Example nOccurences('xxxx', 'xx') should return 3.
