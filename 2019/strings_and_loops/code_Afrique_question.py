@@ -30,16 +30,3 @@ def reverseString(word):
 
 	pass
 
-
-
-def main():
-
-	allWords = words
-
-	print(countString(allWords, "foreign"))
-
-	print(reverseString("individual"))
-
-
-if __name__ == '__main__':
-	main()
