@@ -56,7 +56,11 @@
 	This function returns whether the given list is a palindrome.
 	Example isPalindrome([1, 2, 3, 2, 1]) should return true.
 
-9.
+9. write function alternates(lst).
+	This function returns true iff the function has alternatingly smaller and larger numbers.
+	Example 1: alternates([1, 5, 3, 4, 2, 6]) should return true.
+	Example 2: alternates([5, 3, 4, 2, 6]) should return true.
+	Example 3: alternates([5, 3, 4, 5, 2]) should return false.
 
 10. write function nOccurrences(str1, str2).
 	This function returns how many times str2 occurs in str1.
