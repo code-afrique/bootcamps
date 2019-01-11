@@ -1,3 +1,31 @@
+
+#Question 1
+def check_roots(a,b,c):
+	"""
+	This function checks the  roots of a quadratic equation of the form 
+	ax^2 + bx + c = 0
+
+	Tasks:
+	1. First find the discriminant of the equation by using:
+	 	 discriminant = b*b - 4*a*c
+	2. If the discriminant is > 0 return the string 1
+			Else if the discriminant is = 0 return string 0
+	    Else if the discriminant is < 0 returnthe string -1
+
+	Hint: Use if-statements
+	Example: quadratic_fun(1, 2, 1) should return 0
+	"""
+	
+	#step 1 //TODO
+	discriminant = 0 #replace 0 with your own code
+
+	#step 2: //TODO
+
+	#step 3 //TODO
+	#return discriminant
+
+
+
 """
 1. write function quadratic_fun(a, b, c).
 	This function checks the roots of a quadratic equation of the form
@@ -6,9 +34,9 @@
 	Tasks:
 	1. First find the discriminant of the equation by using:
 	 	 discriminant = b*b - 4*a*c
-	2. If the discriminant is > 0 return the string 'real roots'
-			Else if the discriminant is = 0 return string 'equal roots'
-	    Else if the discriminant is < 0 returnthe string 'complex roots'
+	2. If the discriminant is > 0 return the string 1
+			Else if the discriminant is = 0 return string 0
+	    Else if the discriminant is < 0 returnthe string -1
 
 	Hint: Use if-statements
 	Example: quadratic_fun(1, 2, 1) should return 'equal roots"
@@ -67,4 +95,5 @@
 10. write function nOccurences(str1, str2).
 	This function returns how many times str2 occurs in str1.
 	Example nOccurences('xxxx', 'xx') should return 3.
+
 """

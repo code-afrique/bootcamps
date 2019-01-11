@@ -1,3 +1,29 @@
+"""Solutions to Hackathon Questions """
+def check_roots(a,b,c):
+	"""
+	This method solves a quadratic equation using the quadratic formula.
+	A quadratic equation is one of the form: ax^2 + bx + c = 0
+
+	Requirements:
+	a: integer
+	b: integer
+	c: integer
+	"""
+	
+
+	discriminant = 0 #replace 0 with your own code
+
+	#solution
+	discriminant = b**2 - 4*a*c
+  
+	if discriminant > 0:
+		return 1
+
+	elif discriminant == 0:
+		return 0
+
+	else:
+		return -1
 
 #Solution for question 2:
 def find_minimum(lst):
