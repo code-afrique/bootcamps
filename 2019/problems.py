@@ -1,3 +1,4 @@
+"""
 1. write function quadratic_fun(a, b, c).
 	This function checks the roots of a quadratic equation of the form 
 	ax^2 + bx + c = 0
@@ -61,3 +62,4 @@
 10. write function nOccurrences(str1, str2).
 	This function returns how many times str2 occurs in str1.
 	Example nOccurences('xxxx', 'xx') should return 3.
+"""
