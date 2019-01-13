@@ -65,8 +65,8 @@
 	Example 2: alternates([5, 3, 4, 2, 6]) should return true.
 	Example 3: alternates([5, 3, 4, 5, 2]) should return false.
 
-10. write function nOccurences(str1, str2).
+10. write function nOccurrences(str1, str2).
 	This function returns how many times str2 occurs in str1.
-	Example nOccurences('xxxx', 'xx') should return 3.
+	Example nOccurrences('xxxx', 'xx') should return 3.
 
 """
