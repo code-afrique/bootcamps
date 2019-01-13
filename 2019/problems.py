@@ -1,6 +1,6 @@
 """
 
-1. write function checkRoots(a, b, c).
+1. Write function checkRoots(a, b, c).
 	This function checks the roots of a quadratic equation of the form
 	ax^2 + bx + c = 0
 
@@ -14,32 +14,32 @@
 	Hint: Use if-statements
 	Example: checkRoots(1, 2, 1) should return 'equal roots"
 
-2. write function findMinimum(lst).
+2. Write function findMinimum(lst).
 	This function finds the minimum number in a list of numbers.  The function
 	should return False if the list is empty.
 	Example: findMinimum([2, 1, 3]) should return 1
 
-3. write function reverse(str).
+3. Write function reverse(str).
 	This function reverses the characters in a string.
 	Example: reverse('hello') should return 'olleh'
 
-4.  write function robotReturnToOrigin(str).
-    There is a robot starting at position (0, 0), the origin, on a 2D plane.
-    Given a sequence of its moves, judge if this robot ends up at (0, 0) after it completes its moves.
-    The move sequence is represented by a string, and the character moves[i] represents its ith move.
-    Valid moves are R (right), L (left), U (up), and D (down).
-    If the robot returns to the origin after it finishes all of its moves, return True. Otherwise, return False.
+4.  Write function robotReturnToOrigin(str).
+     There is a robot starting at position (0, 0), the origin, on a 2D plane.
+     Given a sequence of its moves, judge if this robot ends up at (0, 0) after it completes its moves.
+     The move sequence is represented by a string, and the character moves[i] represents its ith move.
+     Valid moves are R (right), L (left), U (up), and D (down).
+     If the robot returns to the origin after it finishes all of its moves, return True. Otherwise, return False.
 
 
-    Example 1:
-    Input: "UD"
+     Example 1:
+     Input: "UD"
     Output: True
     Explanation: The robot moves up once, and then down once. All moves have the same magnitude, so it ended up at the origin where it started. Therefore, we return True.
 
-    Example 2:
-    Input: "LL"
-    Output: False
-    Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return False because it is not at the origin at the end of its moves.
+     Example 2:
+     Input: "LL"
+     Output: False
+     Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return False because it is not at the origin at the end of its moves.
 
 5. Write a function findSecondHighestNumber(lst).
 	This function finds the second highest number in  a list of integers.  If the list has fewer
@@ -51,22 +51,22 @@
 	(exclusive).
 	Example: listOfEvenNumbers(3, 9) should return [4, 6, 8].
 
-7. write function doubleList(lst).
+7. Write function doubleList(lst).
 	This function doubles every number in a list of numbers.
 	Example: doubleList([2, 1, 3]) should return [4, 2, 6].
 
-8. write function isPalindrome(lst).
+8. Write function isPalindrome(lst).
 	This function returns whether the given list is a palindrome.
 	Example isPalindrome([1, 2, 3, 2, 1]) should return True.
 
-9. write function alternates(lst).
+9. Write function alternates(lst).
 	This function returns True iff the function has alternatingly smaller and larger numbers.
 	Example 1: alternates([1, 5, 3, 4, 2, 6]) should return True.
 	Example 2: alternates([5, 3, 4, 2, 6]) should return True.
 	Example 3: alternates([5, 3, 4, 5, 2]) should return False.
 
-10. write function nOccurrences(str1, str2).
-	This function returns how many times str2 occurs in str1.
-	Example nOccurrences('xxxx', 'xx') should return 3.
+10. Write function nOccurrences(str1, str2).
+	 This function returns how many times str2 occurs in str1.
+	 Example nOccurrences('xxxx', 'xx') should return 3.
 
 """
