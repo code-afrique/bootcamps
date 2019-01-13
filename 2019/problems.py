@@ -16,7 +16,7 @@
 
 2. write function findMinimum(lst).
 	This function finds the minimum number in a list of numbers.  The function
-	should return false if the list is empty.
+	should return False if the list is empty.
 	Example: findMinimum([2, 1, 3]) should return 1
 
 3. write function reverse(str).
@@ -28,22 +28,22 @@
     Given a sequence of its moves, judge if this robot ends up at (0, 0) after it completes its moves.
     The move sequence is represented by a string, and the character moves[i] represents its ith move.
     Valid moves are R (right), L (left), U (up), and D (down).
-    If the robot returns to the origin after it finishes all of its moves, return true. Otherwise, return false.
+    If the robot returns to the origin after it finishes all of its moves, return True. Otherwise, return False.
 
 
     Example 1:
     Input: "UD"
-    Output: true
-    Explanation: The robot moves up once, and then down once. All moves have the same magnitude, so it ended up at the origin where it started. Therefore, we return true.
+    Output: True
+    Explanation: The robot moves up once, and then down once. All moves have the same magnitude, so it ended up at the origin where it started. Therefore, we return True.
 
     Example 2:
     Input: "LL"
-    Output: false
-    Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return false because it is not at the origin at the end of its moves.
+    Output: False
+    Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return False because it is not at the origin at the end of its moves.
 
 5. Write a function findSecondHighestNumber(lst).
 	This function finds the second highest number in  a list of integers.  If the list has fewer
-	than 2 numbers, the function should return false.
+	than 2 numbers, the function should return False.
 	Example: findSecondHighestNumber([3, 2, 5, 4, 1]) should return 4.
 
 6. Write a function listOfEvenNumbers(start, end).
@@ -57,13 +57,13 @@
 
 8. write function isPalindrome(lst).
 	This function returns whether the given list is a palindrome.
-	Example isPalindrome([1, 2, 3, 2, 1]) should return true.
+	Example isPalindrome([1, 2, 3, 2, 1]) should return True.
 
 9. write function alternates(lst).
-	This function returns true iff the function has alternatingly smaller and larger numbers.
-	Example 1: alternates([1, 5, 3, 4, 2, 6]) should return true.
-	Example 2: alternates([5, 3, 4, 2, 6]) should return true.
-	Example 3: alternates([5, 3, 4, 5, 2]) should return false.
+	This function returns True iff the function has alternatingly smaller and larger numbers.
+	Example 1: alternates([1, 5, 3, 4, 2, 6]) should return True.
+	Example 2: alternates([5, 3, 4, 2, 6]) should return True.
+	Example 3: alternates([5, 3, 4, 5, 2]) should return False.
 
 10. write function nOccurrences(str1, str2).
 	This function returns how many times str2 occurs in str1.
