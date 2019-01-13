@@ -1,56 +1,29 @@
-
-#Question 1
-def check_roots(a,b,c):
-	"""
-	This function checks the  roots of a quadratic equation of the form 
-	ax^2 + bx + c = 0
-
-	Tasks:
-	1. First find the discriminant of the equation by using:
-	 	 discriminant = b*b - 4*a*c
-	2. If the discriminant is > 0 return the string 1
-			Else if the discriminant is = 0 return string 0
-	    Else if the discriminant is < 0 returnthe string -1
-
-	Hint: Use if-statements
-	Example: quadratic_fun(1, 2, 1) should return 0
-	"""
-	
-	#step 1 //TODO
-	discriminant = 0 #replace 0 with your own code
-
-	#step 2: //TODO
-
-	#step 3 //TODO
-	#return discriminant
-
-
-
 """
-1. write function quadratic_fun(a, b, c).
+
+1. write function checkRoots(a, b, c).
 	This function checks the roots of a quadratic equation of the form
 	ax^2 + bx + c = 0
 
 	Tasks:
 	1. First find the discriminant of the equation by using:
 	 	 discriminant = b*b - 4*a*c
-	2. If the discriminant is > 0 return the string 1
-			Else if the discriminant is = 0 return string 0
-	    Else if the discriminant is < 0 returnthe string -1
+	2. If the discriminant is > 0 return the string "different roots"
+			Else if the discriminant is = 0 return string "equal roots"
+	    Else if the discriminant is < 0 returnthe string "complex roots"
 
 	Hint: Use if-statements
-	Example: quadratic_fun(1, 2, 1) should return 'equal roots"
+	Example: checkRoots(1, 2, 1) should return 'equal roots"
 
-2. write function find_minimum(lst).
+2. write function findMinimum(lst).
 	This function finds the minimum number in a list of numbers.  The function
 	should return false if the list is empty.
-	Example: find_minimum([2, 1, 3]) should return 1
+	Example: findMinimum([2, 1, 3]) should return 1
 
 3. write function reverse(str).
 	This function reverses the characters in a string.
 	Example: reverse('hello') should return 'olleh'
 
-4.  write function robot_return_to_origin(str).
+4.  write function robotReturnToOrigin(str).
     There is a robot starting at position (0, 0), the origin, on a 2D plane.
     Given a sequence of its moves, judge if this robot ends up at (0, 0) after it completes its moves.
     The move sequence is represented by a string, and the character moves[i] represents its ith move.
@@ -68,15 +41,15 @@ def check_roots(a,b,c):
     Output: false
     Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return false because it is not at the origin at the end of its moves.
 
-5. Write a function find_second_highest_number(lst).
+5. Write a function findSecondHighestNumber(lst).
 	This function finds the second highest number in  a list of integers.  If the list has fewer
 	than 2 numbers, the function should return false.
-	Example: find_second_highest_number([3, 2, 5, 4, 1]) should return 4.
+	Example: findSecondHighestNumber([3, 2, 5, 4, 1]) should return 4.
 
-6. Write a function list_of_even_numbers(start, end).
+6. Write a function listOfEvenNumbers(start, end).
 	This function returns a list of even numbers starting from start (inclusive if even) and ending at end
 	(exclusive).
-	Example: list_of_even_numbers(3, 9) should return [4, 6, 8].
+	Example: listOfEvenNumbers(3, 9) should return [4, 6, 8].
 
 7. write function doubleList(lst).
 	This function doubles every number in a list of numbers.
