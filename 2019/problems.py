@@ -7,15 +7,15 @@ are the easy and which are the hard problems.
 
 Example:
     Write a function countEven(lst) that returns the number of even entries in a lst.
-	Example: countEven([1,4,2,3,5]) should return 2.
+    Example: countEven([1,4,2,3,5]) should return 2.
 
 Solution:
-	def countEven(lst):
-		total = 0
-		for x in lst:
-			if x % 2 == 0:
-				total += 1
-		return total
+    def countEven(lst):
+        total = 0
+        for x in lst:
+            if x % 2 == 0:
+                total += 1
+        return total
 
 ========================================================================
 
