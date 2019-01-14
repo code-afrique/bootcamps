@@ -21,6 +21,8 @@
 
 3. Write function reverse(str).
 	This function reverses the characters in a string.
+	Hint: maintain a variable, initially the empty string.  Then loop through the characters
+	in 'str', and prepend each in front of the variable.  Finally return the variable.
 	Example: reverse('hello') should return 'olleh'
 
 4.  Write function robotReturnToOrigin(str).
@@ -29,7 +31,6 @@
      The move sequence is represented by a string, and the character moves[i] represents its ith move.
      Valid moves are R (right), L (left), U (up), and D (down).
      If the robot returns to the origin after it finishes all of its moves, return True. Otherwise, return False.
-
 
      Example 1:
      Input: "UD"
