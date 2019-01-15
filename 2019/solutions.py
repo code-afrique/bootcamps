@@ -98,28 +98,16 @@ def isPalindrome(lst):
     return (lst[0]==lst[-1]) and isPalindrome(lst[1:-1])
 
 #Solution for question 9:
-def alternates(lst):
+def sign(i):
 
-    dir = lst[0] > lst[1]
-
-    for i in range(len(lst)-1):
-        if dir:
-            if not (lst[i] > lst[i+1]):
-                return False
-        else:
-            if not (lst[i] < lst[i+1]):
-                return False
-
-        dir = not dir
-
-    return True
+    if i > 0:
+        return 1
+    elif i < 0:
+        return -1
+    else:
+        return 0
 
 #Solution for question 10:
-def nOccurrences(str1, str2):
+def isUpper(str):
 
-    result = 0
-    for i in range(len(str1)):
-        if str1[i:i+len(str2)] == str2:
-            result += 1
-
-    return result
+    return str.upper() == str

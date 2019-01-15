@@ -79,14 +79,14 @@ Solution:
     This function returns whether the given list is a palindrome.
     Example isPalindrome([1, 2, 3, 2, 1]) should return True.
 
-9. Write function alternates(lst).
-    This function returns True iff the function has alternatingly smaller and larger numbers.
-    Example 1: alternates([1, 5, 3, 4, 2, 6]) should return True.
-    Example 2: alternates([5, 3, 4, 2, 6]) should return True.
-    Example 3: alternates([5, 3, 4, 5, 2]) should return False.
+9. Write function sign(i).
+    This function returns -1 if i < 0, 0 if i == 0, and 1 if i > 0
+    Example 1: sign(5) should return 1
+    Example 2: sign(0) should return 0
+    Example 3: sign(-2) should return -1
 
-10. Write function nOccurrences(str1, str2).
-     This function returns how many times str2 occurs in str1.
-     Example nOccurrences('xxxx', 'xx') should return 3.
+10. Write function isUpper(str).
+     This function returns whether str is all upper case or not.
+     Example: isUpper("ABC") should return True
 
 """
