@@ -1,0 +1,2 @@
+awk -f convert.awk $1 > part.tex
+pdflatex cert

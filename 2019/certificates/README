@@ -1,0 +1,14 @@
+To use this, create a file called "part.tex" with the names and
+schools of students in the following format:
+
+\cert{Agbovi Eugene}{Aggrey Memorial SHS}
+\cert{Theophilus Nyarko}{Aggrey Memorial SHS}
+\cert{Nenyo - Jenkins Jehoiada}{Aggrey Memorial SHS}
+\cert{Richard Mensah}{Aggrey Memorial SHS}
+
+Then run
+
+pdflatex cert
+
+which will create a file "cert.pdf" with all the certificates.  It
+also creates a few empty certificates for filling out by hand.
