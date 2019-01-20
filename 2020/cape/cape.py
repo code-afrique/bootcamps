@@ -83,6 +83,14 @@ class ReturnNode(Node):
     def toBlock(self, frame, level, block):
         return ReturnBlock(frame, self, level)
 
+class ImportNode(Node):
+    def __init__(self, what):
+        super().__init__()   
+        self.what = what
+
+    def toBlock(self, frame, level, block):
+        return ImportBlock(frame, self, level)
+
 class AssignNode(Node):
     def __init__(self, left, right, op):
         super().__init__()   
@@ -277,8 +285,9 @@ class PassForm(Form):
         tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=5, sticky=tk.W)
         tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=6, sticky=tk.W)
         tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid(row=7, sticky=tk.W)
-        tk.Message(self, width=300, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(row=8, columnspan=2)
-        tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid(row=9)
+        tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid(row=8, sticky=tk.W)
+        tk.Message(self, width=300, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(row=9, columnspan=2)
+        tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid(row=10)
 
     def stmtDef(self):
         self.block.stmtDef()
@@ -298,6 +307,9 @@ class PassForm(Form):
     def stmtReturn(self):
         self.block.stmtReturn()
 
+    def stmtImport(self):
+        self.block.stmtImport()
+
     def stmtPaste(self):
         self.block.stmtPaste()
 
@@ -306,52 +318,71 @@ class ExpressionForm(Form):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.parent = parent
         self.block = block
+        self.lvalue = lvalue
 
-        tk.Message(self, width=300, font='Helvetica 16 bold', text="Select one of the following expression types").grid(row=0, columnspan=2)
-        tk.Button(self, text="name", command=self.exprVar).grid(row=1, sticky=tk.W)
-        tk.Button(self, text="x.y", command=self.exprRef).grid(row=1, column=1, sticky=tk.W)
-        tk.Button(self, text="x[y]", command=self.exprIndex).grid(row=1, column=2, sticky=tk.W)
+        frame = tk.Frame(self)
+        frame.bind("<Key>", self.key)
+        frame.focus_set()
+        frame.grid()
+
+        row = 0
+        tk.Message(frame, width=300, font='Helvetica 16 bold', text="Select an expression type").grid(row=row, columnspan=2)
+        row += 1
+        tk.Message(frame, width=300, font='Helvetica 14', text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, columnspan=2)
+        row += 1
+        tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
+        tk.Button(frame, text="x.y", command=self.exprRef).grid(row=row, column=1, sticky=tk.W)
+        tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
         if not lvalue:
-            tk.Button(self, text="x[y:z]", command=self.exprSliceYY).grid(row=2, column=0, sticky=tk.W)
-            tk.Button(self, text="x[y:]", command=self.exprSliceYN).grid(row=2, column=1, sticky=tk.W)
-            tk.Button(self, text="x[:z]", command=self.exprSliceNY).grid(row=3, column=0, sticky=tk.W)
-            tk.Button(self, text="x[:]", command=self.exprSliceNN).grid(row=3, column=1, sticky=tk.W)
+            tk.Button(frame, text="x[y:z]", command=self.exprSliceYY).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(frame, text="x[y:]", command=self.exprSliceYN).grid(row=row, column=1, sticky=tk.W)
+            row += 1
+            tk.Button(frame, text="x[:z]", command=self.exprSliceNY).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(frame, text="x[:]", command=self.exprSliceNN).grid(row=row, column=1, sticky=tk.W)
+            row += 1
 
-            tk.Button(self, text="number", command=self.exprNumber).grid(row=4, sticky=tk.W)
-            tk.Button(self, text="string", command=self.exprString).grid(row=4, column=1, sticky=tk.W)
-            tk.Button(self, text="False", command=self.exprFalse).grid(row=5, column=0, sticky=tk.W)
-            tk.Button(self, text="True", command=self.exprTrue).grid(row=5, column=1, sticky=tk.W)
-            tk.Button(self, text="[ ]", command=self.exprList).grid(row=6, sticky=tk.W)
-            tk.Button(self, text="f()", command=self.exprFunc).grid(row=6, column=1, sticky=tk.W)
+            tk.Button(frame, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
+            tk.Button(frame, text="string", command=self.exprString).grid(row=row, column=1, sticky=tk.W)
+            row += 1
+            tk.Button(frame, text="False", command=self.exprFalse).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(frame, text="True", command=self.exprTrue).grid(row=row, column=1, sticky=tk.W)
+            row += 1
+            tk.Button(frame, text="[ ]", command=self.exprList).grid(row=row, sticky=tk.W)
+            tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=1, sticky=tk.W)
+            row += 1
 
-            tk.Label(self, text="").grid(row=7)
+            tk.Label(frame, text="").grid(row=row)
+            row += 1
 
-            tk.Button(self, text="x = y", command=self.exprAssign).grid(row=8, sticky=tk.W)
+            tk.Button(frame, text="x = y", command=self.exprAssign).grid(row=row, sticky=tk.W)
             self.assignop = tk.StringVar(self)
             self.assignop.set("=")
-            assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
-            assignops.grid(row=8, column=1, sticky=tk.W)
+            assignops = tk.OptionMenu(frame, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
+            assignops.grid(row=row, column=1, sticky=tk.W)
+            row += 1
 
-            tk.Button(self, text="x <op> y", command=self.ExprBinaryop).grid(row=9, sticky=tk.W)
+            tk.Button(frame, text="x <op> y", command=self.exprBinaryop).grid(row=row, sticky=tk.W)
             self.binaryop = tk.StringVar(self)
             self.binaryop.set("+")
-            ops = tk.OptionMenu(self, self.binaryop,
+            ops = tk.OptionMenu(frame, self.binaryop,
                 "+", "-", "*", "/", "//", "%", "**",
                 "==", "!=", "<", "<=", ">", ">=",
                 "and", "or", "in", "not in")
-            ops.grid(row=9, column=1, sticky=tk.W)
+            ops.grid(row=row, column=1, sticky=tk.W)
+            row += 1
 
-            tk.Button(self, text="<op> x", command=self.ExprUnaryop).grid(row=10, sticky=tk.W)
+            tk.Button(frame, text="<op> x", command=self.exprUnaryop).grid(row=row, sticky=tk.W)
             self.unaryop = tk.StringVar(self)
             self.unaryop.set("-")
-            ops = tk.OptionMenu(self, self.unaryop, "-", "not")
-            ops.grid(row=10, column=1, sticky=tk.W)
+            ops = tk.OptionMenu(frame, self.unaryop, "-", "not")
+            ops.grid(row=row, column=1, sticky=tk.W)
+            row += 1
 
-        tk.Message(self, width=300, font='Helvetica 16', text="You can also paste in an expression you have copied or deleted:").grid(row=100, columnspan=2)
+        tk.Message(frame, width=300, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted:").grid(row=100, columnspan=2)
         tk.Button(self, text="paste", command=self.exprPaste).grid(row=101, columnspan=2)
 
     def exprNumber(self):
-        self.block.exprNumber()
+        self.block.exprNumber("")
 
     def exprFalse(self):
         self.block.exprBoolean("False")
@@ -362,8 +393,8 @@ class ExpressionForm(Form):
     def exprString(self):
         self.block.exprString()
 
-    def exprVar(self):
-        self.block.exprVar()
+    def exprName(self):
+        self.block.exprName("")
 
     def exprRef(self):
         self.block.exprRef()
@@ -389,17 +420,44 @@ class ExpressionForm(Form):
     def exprAssign(self):
         self.block.exprAssign(self.assignop.get())
 
-    def ExprUnaryop(self):
-        self.block.ExprUnaryop(self.unaryop.get())
+    def exprUnaryop(self):
+        self.block.exprUnaryop(self.unaryop.get())
 
-    def ExprBinaryop(self):
-        self.block.ExprBinaryop(self.binaryop.get())
+    def exprBinaryop(self):
+        self.block.exprBinaryop(self.binaryop.get())
 
     def exprFunc(self):
         self.block.exprFunc()
 
     def exprPaste(self):
         self.block.exprPaste()
+
+    def key(self, ev):
+        if ev.type != "2" or len(ev.char) != 1:    # KeyPress
+            return
+        if ev.char.isidentifier():
+            self.block.exprName(ev.char)
+        elif ev.char == '.':
+            self.block.exprRef()
+        elif ev.char == '[':
+            self.block.exprIndex()
+        elif not self.lvalue:
+            if ev.char.isdigit():
+                self.block.exprNumber(ev.char)
+            elif ev.char == '"' or ev.char == "'":
+                self.block.exprString()
+            elif ev.char == '(':
+                self.block.exprFunc()
+            elif ev.char == ':':
+                self.block.exprSlice()
+            elif ev.char == '=':
+                self.block.exprAssign("=")
+            elif ev.char in "+-*/%<>":
+                self.block.exprBinaryop(ev.char)
+            else:
+                print("key event {}".format(ev.char))
+        else:
+            print("limited expressions left of assignment operator".format(ev.char))
 
 class DefForm(Form):
     def __init__(self, parent, block):
@@ -488,7 +546,15 @@ class ReturnForm(Form):
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'return' statement").grid()
-        tk.Message(self, width=300, font='Helvetica 14', text="A 'return' statement' is used to terminate a function and return a value.").grid(row=1)
+        tk.Message(self, width=300, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
+
+class ImportForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=300, font='Helvetica 16 bold', text="'import' statement").grid()
+        tk.Message(self, width=300, font='Helvetica 14', text="An 'import' statement' includes a module.").grid(row=1)
 
 class ListForm(Form):
     def __init__(self, parent, block):
@@ -1171,9 +1237,9 @@ class ExpressionBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def exprNumber(self):
+    def exprNumber(self, v):
         self.what.grid_forget()
-        self.what = NumberBlock(self, "")
+        self.what = NumberBlock(self, v)
         self.what.grid()
         self.init = True
         self.setBlock(self.what)
@@ -1195,9 +1261,9 @@ class ExpressionBlock(Block):
         self.setBlock(self.what)
         self.needsSaving()
 
-    def exprVar(self):
+    def exprName(self, v):
         self.what.grid_forget()
-        self.what = NameBlock(self, "")
+        self.what = NameBlock(self, v)
         self.what.grid()
         self.init = True
         self.setBlock(self.what)
@@ -1254,7 +1320,7 @@ class ExpressionBlock(Block):
         self.setBlock(self.what)
         self.needsSaving()
 
-    def ExprUnaryop(self, op):
+    def exprUnaryop(self, op):
         self.what.grid_forget()
         self.what = UnaryopBlock(self, None, op)
         self.what.grid()
@@ -1262,7 +1328,7 @@ class ExpressionBlock(Block):
         self.setBlock(self.what.right)
         self.needsSaving()
 
-    def ExprBinaryop(self, op):
+    def exprBinaryop(self, op):
         self.what.grid_forget()
         self.what = BinaryopBlock(self, None, op)
         self.what.grid()
@@ -1379,6 +1445,13 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.expr)
         self.needsSaving()
 
+    def stmtImport(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = ImportBlock(self.rowblk, None, self.level)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.module)
+        self.needsSaving()
+
     def stmtPaste(self):
         global stmtBuffer
         if stmtBuffer != None:
@@ -1481,6 +1554,33 @@ class ReturnBlock(Block):
 
     def toNode(self):
         return ReturnNode(self.expr.toNode())
+
+class ImportBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)   
+        self.parent = parent
+        self.level = level
+        tk.Button(self, text="import ", command=self.cb).grid(row=0, column=0)
+        if node == None:
+            self.module = NameBlock(self, "")
+        else:
+            self.module = NameBlock(self, node.what)
+        self.module.grid(row=0, column=1)
+
+    def genForm(self):
+        self.setForm(ImportForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        print("import ", end="", file=fd)
+        self.module.print(fd)
+        print("", file=fd)
+
+    def toNode(self):
+        return ImportNode(self.module.toNode())
 
 class RowBlock(Block):
     def __init__(self, parent, node, level, row):
@@ -1980,7 +2080,7 @@ class TopLevel(tk.Frame):
 if __name__ == '__main__':
     root = tk.Tk()
     root.title("CAPE")
-    root.geometry("1250x500")
+    root.geometry("1250x550")
     curForm = None
     curBlock = None
     stmtBuffer = None
