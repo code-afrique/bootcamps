@@ -488,6 +488,7 @@ class DefForm(Form):
         e = tk.Entry(self)
         e.insert(tk.END, name)
         e.grid(row=nargs+3, column=1)
+        e.focus()
         self.args.append(e)
 
     def cb(self):
@@ -572,6 +573,7 @@ class ListForm(Form):
 
     def addEntry(self):
         self.block.addEntry(None)
+        self.block.setBlock(self.block.entries[-1])
 
 class IndexForm(Form):
     def __init__(self, parent, block):
@@ -671,6 +673,7 @@ class FuncForm(Form):
 
     def addArg(self):
         self.block.addArg(None)
+        self.block.setBlock(self.block.args[-1])
 
 class AssignForm(Form):
     def __init__(self, parent, block):
@@ -1341,7 +1344,7 @@ class ExpressionBlock(Block):
         self.what = FuncBlock(self, None)
         self.what.grid()
         self.init = True
-        self.setBlock(self.what)
+        self.setBlock(self.what.func)
         self.needsSaving()
 
     def exprPaste(self):
