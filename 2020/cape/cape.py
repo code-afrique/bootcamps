@@ -490,14 +490,6 @@ class ReturnForm(Form):
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'return' statement").grid()
         tk.Message(self, width=300, font='Helvetica 14', text="A 'return' statement' is used to terminate a function and return a value.").grid(row=1)
 
-class AssignForm(Form):
-    def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
-        self.parent = parent
-        self.block = block
-        tk.Message(self, width=300, font='Helvetica 16 bold', text="'assignment' statement").grid()
-        tk.Message(self, width=300, font='Helvetica 14', text="An 'assignment' statement' is used to update the variable on the left of assignment operation symbol.").grid(row=1)
-
 class ListForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
@@ -620,7 +612,7 @@ class AssignForm(Form):
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'assignment' statement").grid()
-        tk.Message(self, width=300, font='Helvetica 14', text="An 'assignment' statement' is used to update the variable on the left of assignment operation symbol.").grid(row=1)
+        tk.Message(self, width=300, font='Helvetica 14', text="An 'assignment' statement' is used to update the variable on the left of assignment operation symbol using the value that is on the right.").grid(row=1)
 
 class WhileForm(Form):
     def __init__(self, parent, block):
@@ -1571,10 +1563,11 @@ class SeqBlock(Block):
             del self.rows[row]
         if len(self.rows) == 0:
             self.insert(0)
-        if row >= len(self.rows):
-            row = len(self.rows) - 1
+        else:
+            if row >= len(self.rows):
+                row = len(self.rows) - 1
+            self.setBlock(self.rows[row])
         self.gridUpdate()
-        self.setBlock(self.rows[row])
 
     def moveUp(self, row):
         if row == 0:
