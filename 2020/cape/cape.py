@@ -433,13 +433,17 @@ class ExpressionForm(Form):
         self.block.exprPaste()
 
     def key(self, ev):
-        if ev.type != "2" or len(ev.char) != 1:    # KeyPress
+        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
             return
-        if ev.char.isidentifier():
+        if ev.char == 'F':
+            self.block.exprBoolean("False")
+        elif ev.char == 'T':
+            self.block.exprBoolean("True")
+        elif ev.char.isidentifier():
             self.block.exprName(ev.char)
         elif ev.char == '.':
             self.block.exprRef()
-        elif ev.char == '[':
+        elif ev.char == ']':
             self.block.exprIndex()
         elif not self.lvalue:
             if ev.char.isdigit():
@@ -448,6 +452,8 @@ class ExpressionForm(Form):
                 self.block.exprString()
             elif ev.char == '(':
                 self.block.exprFunc()
+            elif ev.char == '[':
+                self.block.exprList()
             elif ev.char == ':':
                 self.block.exprSlice()
             elif ev.char == '=':
@@ -1277,7 +1283,7 @@ class ExpressionBlock(Block):
         self.what = IndexBlock(self, None)
         self.what.grid()
         self.init = True
-        self.setBlock(self.what)
+        self.setBlock(self.what.array)
         self.needsSaving()
 
     def exprSlice(self, left, right):
@@ -1288,15 +1294,7 @@ class ExpressionBlock(Block):
         self.what = SliceBlock(self, SliceNode(array, start, finish))
         self.what.grid()
         self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
-
-    def exprRef(self):
-        self.what.grid_forget()
-        self.what = Ref(self)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
+        self.setBlock(self.what.array)
         self.needsSaving()
 
     def exprRef(self):
@@ -1304,7 +1302,7 @@ class ExpressionBlock(Block):
         self.what = RefBlock(self, None)
         self.what.grid()
         self.init = True
-        self.setBlock(self.what)
+        self.setBlock(self.what.array)
         self.needsSaving()
 
     def exprList(self):
@@ -1320,7 +1318,7 @@ class ExpressionBlock(Block):
         self.what = AssignBlock(self, None, 0, op)
         self.what.grid()
         self.init = True
-        self.setBlock(self.what)
+        self.setBlock(self.what.left)
         self.needsSaving()
 
     def exprUnaryop(self, op):
@@ -1336,7 +1334,7 @@ class ExpressionBlock(Block):
         self.what = BinaryopBlock(self, None, op)
         self.what.grid()
         self.init = True
-        self.setBlock(self.what)
+        self.setBlock(self.what.left)
         self.needsSaving()
 
     def exprFunc(self):
