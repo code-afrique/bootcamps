@@ -768,7 +768,7 @@ class BooleanForm(Form):
 class NilForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)   
-        self.isExpression = True
+        self.isExpression = False
         self.isStatement = False
         self.parent = parent
         self.block = block
@@ -1515,7 +1515,7 @@ class ExpressionBlock(Block):
 class NilBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
-        self.isExpression = True
+        self.isExpression = False
         self.isStatement = False
         self.parent = parent
         tk.Button(self, text="", width=0, command=self.cb).grid()
