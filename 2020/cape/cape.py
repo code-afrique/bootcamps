@@ -565,6 +565,18 @@ class DefForm(Form):
         ma.grid(row=100, column=0)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=100, column=1, sticky=tk.E)
+        min = tk.Button(self, text="Minimize", command=self.minimize)
+        min.grid(row=101, column=0)
+        max = tk.Button(self, text="Maximize", command=self.maximize)
+        max.grid(row=101, column=1)
+
+    def minimize(self):
+        print("mini")
+        self.block.body.grid_forget()
+
+    def maximize(self):
+        print("maxi")
+        self.block.body.grid(row=1, column=0, sticky=tk.W)
 
     def newArg(self):
         self.addArg("")
@@ -1876,9 +1888,11 @@ class DefBlock(Block):
 
         if node == None:
             self.args = [ ]
+            self.minimized = False
         else:
             self.mname.set(node.name)
             self.args = node.args
+            self.minimized = False # should be node.minimized
 
         self.setHeader()
 
@@ -1886,7 +1900,8 @@ class DefBlock(Block):
             self.body = SeqBlock(self, None, level + 1)
         else:
             self.body = SeqBlock(self, node.body, level + 1)
-        self.body.grid(row=1, column=0, sticky=tk.W)
+        if not self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
 
     def setHeader(self):
         self.hdr = tk.Frame(self)
