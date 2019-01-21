@@ -3,6 +3,7 @@ import tempfile
 import subprocess
 import pickle
 import sys
+import keyword
 import tkinter as tk
 import tkinter as ttk
 from tkinter import messagebox
@@ -579,6 +580,9 @@ class DefForm(Form):
 
     def cb(self):
         name = self.entry.get()
+        if name in keyword.kwlist:
+            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+            return
         if not name.isidentifier():
             messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
             return
@@ -586,6 +590,8 @@ class DefForm(Form):
         args = [ ]
         for arg in self.args:
             a = arg.get()
+            if a in keyword.kwlist:
+                messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             if not a.isidentifier():
                 messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
                 return
@@ -855,10 +861,12 @@ class NameForm(Form):
 
     def cb(self):
         v = self.entry.get()
-        if v.isidentifier():
-            self.block.setName(v)
-        else:
+        if v in keyword.kwlist:
+            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(v))
+        elif not v.isidentifier():
             messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
+        else:
+            self.block.setName(v)
 
     def keyEnter(self, ev):
         self.cb()
