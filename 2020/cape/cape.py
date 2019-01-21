@@ -435,9 +435,9 @@ class ExpressionForm(Form):
     def key(self, ev):
         if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
             return
-        if ev.char == 'F':
+        if ev.char == '?':
             self.block.exprBoolean("False")
-        elif ev.char == 'T':
+        elif ev.char == '!':
             self.block.exprBoolean("True")
         elif ev.char.isidentifier():
             self.block.exprName(ev.char)
@@ -455,11 +455,17 @@ class ExpressionForm(Form):
             elif ev.char == '[':
                 self.block.exprList()
             elif ev.char == ':':
-                self.block.exprSlice()
+                self.block.exprSlice(True, True)
             elif ev.char == '=':
                 self.block.exprAssign("=")
             elif ev.char in "+-*/%<>":
                 self.block.exprBinaryop(ev.char)
+            elif ev.char == "&":
+                self.block.exprBinaryop("and")
+            elif ev.char == "|":
+                self.block.exprBinaryop("or")
+            elif ev.char == "~":
+                self.block.exprUnaryop("not")
             else:
                 print("key event {}".format(ev.char))
         else:
@@ -1397,6 +1403,9 @@ class PassBlock(Block):
         btn = tk.Button(self, text="pass", width=0, command=self.cb)
         btn.grid(row=0, column=0)
 
+        self.bind("<Key>", self.key)
+        self.focus_set()
+
     def genForm(self):
         f = PassForm(confarea, self)
         self.setForm(f)
@@ -1422,21 +1431,21 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = IfBlock(self.rowblk, None, self.level)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what)
+        self.setBlock(self.rowblk.what.conds[0])
         self.needsSaving()
 
     def stmtWhile(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = WhileBlock(self.rowblk, None, self.level)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what)
+        self.setBlock(self.rowblk.what.cond)
         self.needsSaving()
 
     def stmtFor(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ForBlock(self.rowblk, None, self.level)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what)
+        self.setBlock(self.rowblk.what.var)
         self.needsSaving()
 
     def stmtReturn(self):
@@ -1461,6 +1470,24 @@ class PassBlock(Block):
             self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
             self.setBlock(self.rowblk.what)
         self.needsSaving()
+
+    def key(self, ev):
+        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
+            return
+        if ev.char == '\026':
+            self.stmtPaste()
+        elif ev.char == 'i':
+            self.stmtIf()
+        elif ev.char == 'f':
+            self.stmtFor()
+        elif ev.char == 'w':
+            self.stmtWhile()
+        elif ev.char == 'r':
+            self.stmtReturn()
+        elif ev.char == 'd':
+            self.stmtDef()
+        elif ev.char == '?':
+            self.stmtCall()
 
     def print(self, fd):
         self.printIndent(fd)
