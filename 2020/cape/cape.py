@@ -222,6 +222,12 @@ class SeqNode(Node):
         return SeqBlock(frame, self.rows, level)
 
 class Form(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = False
+        self.catchKeys()
+
     def copy(self):
         global exprBuffer
         exprBuffer = self.block.toNode()
@@ -232,9 +238,35 @@ class Form(tk.Frame):
         self.block.parent.delete()
         print("expression deleted")
 
+    def copyStmt(self):
+        self.block.parent.copyStmt()
+
+    def delStmt(self):
+        self.block.parent.delStmt()
+
+    def catchKeys(self):
+        self.bind("<Key>", self.key)
+        self.focus_set()
+
+    def key(self, ev):
+        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
+            return
+        if ev.char == '\003':
+            if self.isStatement:
+                self.copyStmt()
+            elif self.isExpression:
+                self.copy()
+        elif ev.char == '\177':
+            if self.isStatement:
+                self.delStmt()
+            elif self.isExpression:
+                self.delete()
+
 class RowForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="Select one of the actions below").grid(row=0, columnspan=2)
@@ -250,6 +282,19 @@ class RowForm(Form):
                         command=self.copyStmt).grid(row=5)
         tk.Button(self, text="delete",
                         command=self.delStmt).grid(row=5, column=1)
+
+        self.bind("<Key>", self.key)
+        self.focus_set()
+
+    def key(self, ev):
+        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
+            return
+        if ev.char == '\r':
+            self.addStmt()
+        elif ev.char == '\003':
+            self.copyStmt()
+        elif ev.char == '\177':
+            self.delStmt()
 
     def addStmt(self):
         self.block.addStmt()
@@ -272,9 +317,14 @@ class RowForm(Form):
 
 class PassForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = False
         self.parent = parent
         self.block = block
+
+        self.bind("<Key>", self.key)
+        self.focus_set()
 
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'pass' statement").grid(row=0, columnspan=2)
         tk.Message(self, width=300, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=1, columnspan=2)
@@ -313,9 +363,29 @@ class PassForm(Form):
     def stmtPaste(self):
         self.block.stmtPaste()
 
+    def key(self, ev):
+        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
+            return
+        if ev.char == '\026':
+            self.stmtPaste()
+        elif ev.char == 'i':
+            self.stmtIf()
+        elif ev.char == 'f':
+            self.stmtFor()
+        elif ev.char == 'w':
+            self.stmtWhile()
+        elif ev.char == 'r':
+            self.stmtReturn()
+        elif ev.char == 'd':
+            self.stmtDef()
+        elif ev.char == '?':
+            self.stmtCall()
+
 class ExpressionForm(Form):
     def __init__(self, parent, block, lvalue):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = False
         self.parent = parent
         self.block = block
         self.lvalue = lvalue
@@ -435,7 +505,9 @@ class ExpressionForm(Form):
     def key(self, ev):
         if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
             return
-        if ev.char == '?':
+        if ev.char == '\026':
+            self.block.exprPaste()
+        elif ev.char == '?':
             self.block.exprBoolean("False")
         elif ev.char == '!':
             self.block.exprBoolean("True")
@@ -473,7 +545,9 @@ class ExpressionForm(Form):
 
 class DefForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="Set method information").grid(row=0, columnspan=2)
@@ -523,7 +597,9 @@ class DefForm(Form):
 
 class IfForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'if' statement").grid(columnspan=2)
@@ -547,15 +623,29 @@ class IfForm(Form):
 
 class ForForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'for' statement").grid()
         tk.Message(self, width=300, font='Helvetica 14', text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
 
+class WhileForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=300, font='Helvetica 16 bold', text="'while' statement").grid()
+        tk.Message(self, width=300, font='Helvetica 14', text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.").grid(row=1)
+
 class ReturnForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'return' statement").grid()
@@ -563,7 +653,9 @@ class ReturnForm(Form):
 
 class ImportForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'import' statement").grid()
@@ -571,7 +663,9 @@ class ImportForm(Form):
 
 class ListForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'list' expression").grid(columnspan=2)
@@ -589,7 +683,9 @@ class ListForm(Form):
 
 class IndexForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'index' expression").grid(columnspan=2)
@@ -601,7 +697,9 @@ class IndexForm(Form):
 
 class RefForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'reference' expression").grid(columnspan=2)
@@ -613,7 +711,9 @@ class RefForm(Form):
 
 class SliceForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'slice' expression").grid(columnspan=2)
@@ -625,7 +725,9 @@ class SliceForm(Form):
 
 class BinaryopForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="binary operation").grid(columnspan=2)
@@ -637,7 +739,9 @@ class BinaryopForm(Form):
 
 class UnaryopForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="unary operation").grid(columnspan=2)
@@ -649,7 +753,9 @@ class UnaryopForm(Form):
 
 class BooleanForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="Boolean value").grid(columnspan=2)
@@ -661,7 +767,9 @@ class BooleanForm(Form):
 
 class NilForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="empty index").grid(columnspan=2)
@@ -671,7 +779,9 @@ class NilForm(Form):
 
 class FuncForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="function calll").grid(columnspan=2)
@@ -689,23 +799,19 @@ class FuncForm(Form):
 
 class AssignForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
-        tk.Message(self, width=300, font='Helvetica 16 bold', text="'assignment' statement").grid()
-        tk.Message(self, width=300, font='Helvetica 14', text="An 'assignment' statement' is used to update the variable on the left of assignment operation symbol using the value that is on the right.").grid(row=1)
-
-class WhileForm(Form):
-    def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
-        self.parent = parent
-        self.block = block
-        tk.Message(self, width=300, font='Helvetica 16 bold', text="'while' statement").grid()
-        tk.Message(self, width=300, font='Helvetica 14', text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.").grid(row=1)
+        tk.Message(self, width=300, font='Helvetica 16 bold', text="'assignment'").grid()
+        tk.Message(self, width=300, font='Helvetica 14', text="An 'assignment' operation is used to update the variable on the left of assignment operation symbol using the value that is on the right.").grid(row=1)
 
 class StringForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="Set the contents of the string (no need for escaping)").grid(row=0, columnspan=2)
@@ -729,7 +835,9 @@ class StringForm(Form):
 
 class NameForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="Set the name").grid(row=0, columnspan=2)
@@ -757,7 +865,9 @@ class NameForm(Form):
 
 class NumberForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="Set the number (integer or float)").grid(row=0, columnspan=2)
@@ -786,6 +896,8 @@ class NumberForm(Form):
 class Block(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        self.isExpression = False
+        self.isStatement = False
 
     def printIndent(self, fd):
         for i in range(self.level):
@@ -804,6 +916,7 @@ class Block(tk.Frame):
         if f:
             f.grid(row=0, column=0, sticky=tk.E)
             f.update()
+            f.catchKeys()
 
     def genForm(self):
         print("genForm")
@@ -828,6 +941,8 @@ class Block(tk.Frame):
 class NameBlock(Block):
     def __init__(self, parent, vname):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.vname = tk.StringVar()
         self.btn = tk.Button(self, textvariable=self.vname, width=0, command=self.cb)
@@ -863,6 +978,8 @@ class NameBlock(Block):
 class NumberBlock(Block):
     def __init__(self, parent, value):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.value = tk.StringVar()
         self.value.set(value)
@@ -900,6 +1017,8 @@ class NumberBlock(Block):
 class BooleanBlock(Block):
     def __init__(self, parent, value):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.value = tk.StringVar()
         self.value.set(value)
@@ -921,6 +1040,8 @@ class BooleanBlock(Block):
 class StringBlock(Block):
     def __init__(self, parent, value):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.string = tk.StringVar()
         tk.Label(self, text='"').grid(row=0, column=0)
@@ -958,6 +1079,8 @@ class StringBlock(Block):
 class IndexBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         if node == None:
             self.array = ExpressionBlock(self, None, False)
@@ -990,6 +1113,8 @@ class IndexBlock(Block):
 class SliceBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         if node == None:
             self.array = ExpressionBlock(self, None, False)
@@ -1030,6 +1155,8 @@ class SliceBlock(Block):
 class RefBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         if node == None:
             self.array = ExpressionBlock(self, None, False)
@@ -1060,6 +1187,8 @@ class RefBlock(Block):
 class UnaryopBlock(Block):
     def __init__(self, parent, node, op):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.op = op
 
@@ -1090,6 +1219,8 @@ class UnaryopBlock(Block):
 class BinaryopBlock(Block):
     def __init__(self, parent, node, op):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         self.op = op
 
@@ -1125,6 +1256,8 @@ class BinaryopBlock(Block):
 class FuncBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
 
         if node == None:
@@ -1180,6 +1313,8 @@ class FuncBlock(Block):
 class ListBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
 
         tk.Button(self, text="[", width=0, command=self.cb).grid(row=0, column=0)
@@ -1227,6 +1362,8 @@ class ListBlock(Block):
 class ExpressionBlock(Block):
     def __init__(self, parent, node, lvalue):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = False
         self.parent = parent
         self.lvalue = lvalue
         if node == None or node.what == None:
@@ -1378,6 +1515,8 @@ class ExpressionBlock(Block):
 class NilBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
         self.parent = parent
         tk.Button(self, text="", width=0, command=self.cb).grid()
 
@@ -1394,17 +1533,52 @@ class NilBlock(Block):
     def toNode(self):
         return NilNode()
 
+class AssignBlock(Block):
+    def __init__(self, parent, node, level, op):
+        super().__init__(parent)   
+        self.isExpression = True
+        self.isStatement = False
+        self.parent = parent
+        self.level = level
+        self.op = op
+        if node == None:
+            self.left = ExpressionBlock(self, None, True)
+            middle = tk.Button(self, text=op, command=self.cb)
+            self.right = ExpressionBlock(self, None, False)
+        else:
+            self.left = ExpressionBlock(self, node.left, True)
+            middle = tk.Button(self, text=op, command=self.cb)
+            self.right = ExpressionBlock(self, node.right, False)
+        self.left.grid(row=0, column=0)
+        middle.grid(row=0, column=1)
+        self.right.grid(row=0, column=2)
+
+    def genForm(self):
+        self.setForm(AssignForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        # self.printIndent(fd)
+        self.left.print(fd)
+        print(" {} ".format(self.op), end="", file=fd)
+        self.right.print(fd)
+        # print("", file=fd)
+
+    def toNode(self):
+        return AssignNode(self.left.toNode(), self.right.toNode(), self.op)
+
 class PassBlock(Block):
     def __init__(self, parent, node, level, rowblk):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
         self.rowblk = rowblk
         btn = tk.Button(self, text="pass", width=0, command=self.cb)
         btn.grid(row=0, column=0)
-
-        self.bind("<Key>", self.key)
-        self.focus_set()
 
     def genForm(self):
         f = PassForm(confarea, self)
@@ -1471,64 +1645,12 @@ class PassBlock(Block):
             self.setBlock(self.rowblk.what)
         self.needsSaving()
 
-    def key(self, ev):
-        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
-            return
-        if ev.char == '\026':
-            self.stmtPaste()
-        elif ev.char == 'i':
-            self.stmtIf()
-        elif ev.char == 'f':
-            self.stmtFor()
-        elif ev.char == 'w':
-            self.stmtWhile()
-        elif ev.char == 'r':
-            self.stmtReturn()
-        elif ev.char == 'd':
-            self.stmtDef()
-        elif ev.char == '?':
-            self.stmtCall()
-
     def print(self, fd):
         self.printIndent(fd)
         print("pass", file=fd)
 
     def toNode(self):
         return PassNode()
-
-class AssignBlock(Block):
-    def __init__(self, parent, node, level, op):
-        super().__init__(parent)   
-        self.parent = parent
-        self.level = level
-        self.op = op
-        if node == None:
-            self.left = ExpressionBlock(self, None, True)
-            middle = tk.Button(self, text=op, command=self.cb)
-            self.right = ExpressionBlock(self, None, False)
-        else:
-            self.left = ExpressionBlock(self, node.left, True)
-            middle = tk.Button(self, text=op, command=self.cb)
-            self.right = ExpressionBlock(self, node.right, False)
-        self.left.grid(row=0, column=0)
-        middle.grid(row=0, column=1)
-        self.right.grid(row=0, column=2)
-
-    def genForm(self):
-        self.setForm(AssignForm(confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def print(self, fd):
-        self.printIndent(fd)
-        self.left.print(fd)
-        print(" {} ".format(self.op), end="", file=fd)
-        self.right.print(fd)
-        # print("", file=fd)
-
-    def toNode(self):
-        return AssignNode(self.left.toNode(), self.right.toNode(), self.op)
 
 class CallBlock(Block):
     """
@@ -1540,6 +1662,8 @@ class CallBlock(Block):
 
     def __init__(self, parent, node, level):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
         if node == None:
@@ -1559,6 +1683,8 @@ class CallBlock(Block):
 class ReturnBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
         tk.Button(self, text="return ", command=self.cb).grid(row=0, column=0)
@@ -1586,6 +1712,8 @@ class ReturnBlock(Block):
 class ImportBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
         tk.Button(self, text="import ", command=self.cb).grid(row=0, column=0)
@@ -1613,6 +1741,8 @@ class ImportBlock(Block):
 class RowBlock(Block):
     def __init__(self, parent, node, level, row):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = False
         self.parent = parent
         self.level = level
         self.row = row
@@ -1668,6 +1798,8 @@ class RowBlock(Block):
 class SeqBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)
+        self.isExpression = False
+        self.isStatement = False
         self.parent = parent
         self.level = level
         self.rows = []
@@ -1728,6 +1860,8 @@ class SeqBlock(Block):
 class DefBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
         self.mname = tk.StringVar()
@@ -1812,6 +1946,8 @@ class IfBlock(Block):
     """
     def __init__(self, parent, node, level):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
 
@@ -1903,6 +2039,8 @@ class IfBlock(Block):
 class WhileBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
 
@@ -1939,6 +2077,8 @@ class WhileBlock(Block):
 class ForBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
 
