@@ -276,13 +276,13 @@ class RowForm(Form):
         self.block = block
         tk.Message(self, width=300, font='Helvetica 16 bold', text="Select one of the actions below").grid(row=0, columnspan=2)
         tk.Button(self, text="Add a new statement below",
-                        command=self.addStmt).grid(row=1, sticky=tk.W, columnspan=2)
+                        command=self.addStmt).grid(row=1, columnspan=2)
         tk.Button(self, text="Insert a new statement above",
-                        command=self.insrtStmt).grid(row=2, sticky=tk.W, columnspan=2)
+                        command=self.insrtStmt).grid(row=2, columnspan=2)
         tk.Button(self, text="Move this statement up",
-                        command=self.upStmt).grid(row=3, sticky=tk.W, columnspan=2)
+                        command=self.upStmt).grid(row=3, columnspan=2)
         tk.Button(self, text="Move this statement down",
-                        command=self.downStmt).grid(row=4, sticky=tk.W, columnspan=2)
+                        command=self.downStmt).grid(row=4, columnspan=2)
         tk.Button(self, text="copy",
                         command=self.copyStmt).grid(row=5)
         tk.Button(self, text="delete",
