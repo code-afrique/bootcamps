@@ -333,14 +333,14 @@ class PassForm(Form):
 
         tk.Message(self, width=300, font='Helvetica 16 bold', text="'pass' statement").grid(row=0, columnspan=2)
         tk.Message(self, width=300, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=1, columnspan=2)
-        tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=2, columnspan=2, sticky=tk.W)
+        tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=2)
 
-        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtCall).grid(row=3, sticky=tk.W)
-        tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=4, sticky=tk.W)
-        tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=5, sticky=tk.W)
-        tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=6, sticky=tk.W)
-        tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid(row=7, sticky=tk.W)
-        tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid(row=8, sticky=tk.W)
+        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtCall).grid(row=3)
+        tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=4)
+        tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=5)
+        tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=6)
+        tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid(row=7)
+        tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid(row=8)
         tk.Message(self, width=300, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(row=9, columnspan=2)
         tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid(row=10)
 
