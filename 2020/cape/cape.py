@@ -39,39 +39,43 @@ class RowNode(Node):
         self.what = what
 
 class DefNode(Node):
-    def __init__(self, name, args, body):
+    def __init__(self, name, args, body, minimized):
         super().__init__()   
         self.name = name
         self.args = args
         self.body = body
+        self.minimized = minimized
 
     def toBlock(self, frame, level, block):
         return DefBlock(frame, self, level)
 
 class IfNode(Node):
-    def __init__(self, conds, bodies):
+    def __init__(self, conds, bodies, minimizeds):
         super().__init__()   
         self.conds = conds
         self.bodies = bodies
+        self.minimizeds = minimizeds
 
     def toBlock(self, frame, level, block):
         return IfBlock(frame, self, level)
 
 class WhileNode(Node):
-    def __init__(self, cond, body):
+    def __init__(self, cond, body, minimized):
         super().__init__()   
         self.cond = cond
         self.body = body
+        self.minimized = minimized
 
     def toBlock(self, frame, level, block):
         return WhileBlock(frame, self, level)
 
 class ForNode(Node):
-    def __init__(self, var, expr, body):
+    def __init__(self, var, expr, body, minimized):
         super().__init__()   
         self.var = var
         self.expr = expr
         self.body = body
+        self.minimized = minimized
 
     def toBlock(self, frame, level, block):
         return ForBlock(frame, self, level)
@@ -565,18 +569,6 @@ class DefForm(Form):
         ma.grid(row=100, column=0)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=100, column=1, sticky=tk.E)
-        min = tk.Button(self, text="Minimize", command=self.minimize)
-        min.grid(row=101, column=0)
-        max = tk.Button(self, text="Maximize", command=self.maximize)
-        max.grid(row=101, column=1)
-
-    def minimize(self):
-        print("mini")
-        self.block.body.grid_forget()
-
-    def maximize(self):
-        print("maxi")
-        self.block.body.grid(row=1, column=0, sticky=tk.W)
 
     def newArg(self):
         self.addArg("")
@@ -965,7 +957,7 @@ class NameBlock(Block):
         self.isStatement = False
         self.parent = parent
         self.vname = tk.StringVar()
-        self.btn = tk.Button(self, textvariable=self.vname, width=0, command=self.cb)
+        self.btn = tk.Button(self, textvariable=self.vname, fg="blue", width=0, command=self.cb)
         self.vname.set(vname)
         self.btn.grid(row=0, column=0)
 
@@ -1003,7 +995,7 @@ class NumberBlock(Block):
         self.parent = parent
         self.value = tk.StringVar()
         self.value.set(value)
-        self.btn = tk.Button(self, textvariable=self.value, width=0, command=self.cb)
+        self.btn = tk.Button(self, textvariable=self.value, fg="blue", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
 
     def genForm(self):
@@ -1042,7 +1034,7 @@ class BooleanBlock(Block):
         self.parent = parent
         self.value = tk.StringVar()
         self.value.set(value)
-        self.btn = tk.Button(self, textvariable=self.value, width=0, command=self.cb)
+        self.btn = tk.Button(self, textvariable=self.value, fg="red", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
 
     def genForm(self):
@@ -1065,7 +1057,7 @@ class StringBlock(Block):
         self.parent = parent
         self.string = tk.StringVar()
         tk.Label(self, text='"').grid(row=0, column=0)
-        self.btn = tk.Button(self, textvariable=self.string, width=0, command=self.cb)
+        self.btn = tk.Button(self, textvariable=self.string, fg="green", width=0, command=self.cb)
         self.lq = tk.Label(self, text='"')
         self.string.set(value)
         self.btn.grid(row=0, column=1)
@@ -1212,7 +1204,7 @@ class UnaryopBlock(Block):
         self.parent = parent
         self.op = op
 
-        left = tk.Button(self, text=op, width=0, command=self.cb)
+        left = tk.Button(self, text=op, fg="purple", width=0, command=self.cb)
         left.grid(row=0, column=0)
 
         if node == None:
@@ -1246,11 +1238,11 @@ class BinaryopBlock(Block):
 
         if node == None:
             self.left = ExpressionBlock(self, None, False)
-            self.middle = tk.Button(self, text=op, width=0, command=self.cb)
+            self.middle = tk.Button(self, text=op, fg="purple", width=0, command=self.cb)
             self.right = ExpressionBlock(self, None, False)
         else:
             self.left = ExpressionBlock(self, node.left, False)
-            self.middle = tk.Button(self, text=node.op, width=0, command=self.cb)
+            self.middle = tk.Button(self, text=node.op, fg="purple", width=0, command=self.cb)
             self.right = ExpressionBlock(self, node.right, False)
 
         self.left.grid(row=0, column=0)
@@ -1563,11 +1555,11 @@ class AssignBlock(Block):
         self.op = op
         if node == None:
             self.left = ExpressionBlock(self, None, True)
-            middle = tk.Button(self, text=op, command=self.cb)
+            middle = tk.Button(self, text=op, fg="purple", command=self.cb)
             self.right = ExpressionBlock(self, None, False)
         else:
             self.left = ExpressionBlock(self, node.left, True)
-            middle = tk.Button(self, text=op, command=self.cb)
+            middle = tk.Button(self, text=op, fg="purple", command=self.cb)
             self.right = ExpressionBlock(self, node.right, False)
         self.left.grid(row=0, column=0)
         middle.grid(row=0, column=1)
@@ -1597,7 +1589,7 @@ class PassBlock(Block):
         self.parent = parent
         self.level = level
         self.rowblk = rowblk
-        btn = tk.Button(self, text="pass", width=0, command=self.cb)
+        btn = tk.Button(self, text="pass", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
 
     def genForm(self):
@@ -1707,7 +1699,7 @@ class ReturnBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
-        tk.Button(self, text="return ", command=self.cb).grid(row=0, column=0)
+        tk.Button(self, text="return", fg="red", command=self.cb).grid(row=0, column=0)
         if node == None:
             self.expr = ExpressionBlock(self, None, False)
         else:
@@ -1736,7 +1728,7 @@ class ImportBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
-        tk.Button(self, text="import ", command=self.cb).grid(row=0, column=0)
+        tk.Button(self, text="import", fg="red", command=self.cb).grid(row=0, column=0)
         if node == None:
             self.module = NameBlock(self, "")
         else:
@@ -1892,7 +1884,7 @@ class DefBlock(Block):
         else:
             self.mname.set(node.name)
             self.args = node.args
-            self.minimized = False # should be node.minimized
+            self.minimized = node.minimized
 
         self.setHeader()
 
@@ -1905,9 +1897,9 @@ class DefBlock(Block):
 
     def setHeader(self):
         self.hdr = tk.Frame(self)
-        self.btn = tk.Button(self.hdr, text="def", width=0, command=self.cb)
+        self.btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
-        self.name = tk.Button(self.hdr, textvariable=self.mname, command=self.cb)
+        self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
         self.name.grid(row=0, column=1)
         tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
 
@@ -1916,10 +1908,11 @@ class DefBlock(Block):
             if i != 0:
                 tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
                 column += 1
-            tk.Button(self.hdr, text=self.args[i], command=self.cb).grid(row=0, column=column)
+            tk.Button(self.hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=0, column=column)
             column += 1
 
-        tk.Button(self.hdr, text="):", command=self.cb).grid(row=0, column=column)
+        tk.Button(self.hdr, text=")", command=self.cb).grid(row=0, column=column)
+        tk.Button(self.hdr, text=":", command=self.minmax).grid(row=0, column=column+1)
         self.hdr.grid(row=0, column=0, sticky=tk.W)
 
     def genForm(self):
@@ -1929,6 +1922,15 @@ class DefBlock(Block):
 
     def cb(self):
         self.setBlock(self)
+
+    def minmax(self):
+        if self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+            self.update()
+            self.minimized = False
+        else:
+            self.body.grid_forget()
+            self.minimized = True
 
     def defUpdate(self, mname, args):
         self.mname.set(mname)
@@ -1961,7 +1963,7 @@ class DefBlock(Block):
         self.body.print(fd)
 
     def toNode(self):
-        return DefNode(self.mname.get(), self.args, self.body.toNode())
+        return DefNode(self.mname.get(), self.args, self.body.toNode(), self.minimized)
 
 class IfBlock(Block):
     """
@@ -1976,7 +1978,8 @@ class IfBlock(Block):
 
         if node == None:
             self.hdrs = [tk.Frame(self)]
-            tk.Button(self.hdrs[0], text="if", width=0, command=self.cb).grid(row=0, column=0)
+            self.minimizeds = [ Falsies[0] ]
+            tk.Button(self.hdrs[0], text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
             self.conds = [ExpressionBlock(self.hdrs[0], None, False)]
             self.conds[0].grid(row=0, column=1)
             tk.Button(self.hdrs[0], text=":", command=self.cb).grid(row=0, column=2, sticky=tk.W)
@@ -1984,20 +1987,23 @@ class IfBlock(Block):
         else:
             self.bodies = [ SeqBlock(self, n, level + 1) for n in node.bodies ]
             self.hdrs = [ ]
+            self.minimizeds = node.minimizeds
             self.conds = [ ]
             for i in range(len(self.bodies)):
-                if i == 0 or i < len(node.conds):
+                if i < len(node.conds):
                     hdr = tk.Frame(self)
                     cond = ExpressionBlock(hdr, node.conds[i], False)
                     self.conds.append(cond)
                     if i == 0:
-                        tk.Button(hdr, text="if", width=0, command=self.cb).grid(row=0, column=0)
+                        tk.Button(hdr, text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                     else:
-                        tk.Button(hdr, text="elif", width=0, command=self.cb).grid(row=0, column=0)
+                        tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                     cond.grid(row=0, column=1)
-                    tk.Button(hdr, text=":", command=self.cb).grid(row=0, column=2, sticky=tk.W)
+                    tk.Button(hdr, text=":", command=lambda: self.minmax(self.bodies[i])).grid(row=0, column=2, sticky=tk.W)
                 else:
-                    hdr = tk.Button(self, text="else:", width=0, command=self.cb)
+                    hdr = tk.Frame(self)
+                    tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+                    tk.Button(hdr, text=":", width=0, command=lambda: self.minmax(self.bodies[-1])).grid(row=0, column=1)
                 self.hdrs.append(hdr)
         self.gridUpdate()
 
@@ -2007,9 +2013,24 @@ class IfBlock(Block):
     def cb(self):
         self.setBlock(self)
 
+    def minmax(self, body):
+        which = self.bodies.index(body)
+        if self.minimizeds[which]:
+            body.grid(row=1, column=0, sticky=tk.W)
+            self.update()
+            self.minimizeds[which] = False
+        else:
+            body.grid_forget()
+            self.minimizeds[which] = True
+        self.gridUpdate()
+
     def addElse(self):
         self.bodies.append(SeqBlock(self, None, self.level + 1))
-        self.hdrs.append(tk.Button(self, text="else:", width=0, command=self.cb))
+        hdr = tk.Frame(self)
+        tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(hdr, text=":", width=0, command=lambda: self.minmax(self.bodies[-1])).grid(row=0, column=1)
+        self.hdrs.append(hdr)
+        self.minimizeds.append(False)
         self.gridUpdate()
         self.needsSaving()
 
@@ -2023,12 +2044,14 @@ class IfBlock(Block):
 
     def insertElif(self):
         hdr = tk.Frame(self)
-        tk.Button(hdr, text="elif", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         cond = ExpressionBlock(hdr, None, False)
         cond.grid(row=0, column=1)
-        tk.Button(hdr, text=":", command=self.cb).grid(row=0, column=2)
+        body = SeqBlock(self, None, self.level + 1)
+        tk.Button(hdr, text=":", command=lambda: self.minmax(body)).grid(row=0, column=2)
         self.hdrs.insert(len(self.conds), hdr)
-        self.bodies.insert(len(self.conds), SeqBlock(self, None, self.level + 1))
+        self.minimizeds.insert(len(self.conds), False)
+        self.bodies.insert(len(self.conds), body)
         self.conds.append(cond)
         self.gridUpdate()
         self.setBlock(self)
@@ -2038,7 +2061,10 @@ class IfBlock(Block):
         for i in range(len(self.bodies)):
             if i < len(self.hdrs):
                 self.hdrs[i].grid(row=2*i, column = 0, sticky=tk.W)
-            self.bodies[i].grid(row=2*i+1, column = 0, sticky=tk.W)
+            if self.minimizeds[i]:
+                self.bodies[i].grid_forget()
+            else:
+                self.bodies[i].grid(row=2*i+1, column = 0, sticky=tk.W)
         self.scrollUpdate()
 
     def print(self, fd):
@@ -2057,7 +2083,7 @@ class IfBlock(Block):
             self.bodies[i].print(fd)
 
     def toNode(self):
-        return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.bodies])
+        return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.bodies], self.minimizeds)
 
 class WhileBlock(Block):
     def __init__(self, parent, node, level):
@@ -2068,15 +2094,17 @@ class WhileBlock(Block):
         self.level = level
 
         hdr = tk.Frame(self)
-        tk.Button(hdr, text="while", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         if node == None:
             self.cond = ExpressionBlock(hdr, None, False)
             self.body = SeqBlock(self, None, level + 1)
+            self.minimized = False
         else:
             self.cond = ExpressionBlock(hdr, node.cond, False)
             self.body = SeqBlock(self, node.body, level + 1)
+            self.minimized = node.minimized
         self.cond.grid(row=0, column=1)
-        tk.Button(hdr, text=":", command=self.cb).grid(row=0, column=2, sticky=tk.W)
+        tk.Button(hdr, text=":", command=self.minmax).grid(row=0, column=2, sticky=tk.W)
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
@@ -2087,6 +2115,15 @@ class WhileBlock(Block):
     def cb(self):
         self.setBlock(self)
 
+    def minmax(self):
+        if self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+            self.update()
+            self.minimized = False
+        else:
+            self.body.grid_forget()
+            self.minimized = True
+
     def print(self, fd):
         self.printIndent(fd)
         print("while ", end="", file=fd)
@@ -2095,7 +2132,7 @@ class WhileBlock(Block):
         self.body.print(fd)
 
     def toNode(self):
-        return WhileNode(self.cond.toNode(), self.body.toNode())
+        return WhileNode(self.cond.toNode(), self.body.toNode(), self.minimized)
 
 class ForBlock(Block):
     def __init__(self, parent, node, level):
@@ -2106,19 +2143,21 @@ class ForBlock(Block):
         self.level = level
 
         hdr = tk.Frame(self)
-        tk.Button(hdr, text="for", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         if node == None:
             self.var = NameBlock(hdr, "")
             self.expr = ExpressionBlock(hdr, None, False)
             self.body = SeqBlock(self, None, level + 1)
+            self.minimized = False
         else:
             self.var = node.var.toBlock(hdr, 0, self)
             self.expr = ExpressionBlock(hdr, node.expr, False)
             self.body = SeqBlock(self, node.body, level + 1)
+            self.minimized = node.minimized
         self.var.grid(row=0, column=1)
-        tk.Button(hdr, text="in", command=self.cb).grid(row=0, column=2)
+        tk.Button(hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
-        tk.Button(hdr, text=":", command=self.cb).grid(row=0, column=4, sticky=tk.W)
+        tk.Button(hdr, text=":", command=self.minmax).grid(row=0, column=4, sticky=tk.W)
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
@@ -2128,6 +2167,15 @@ class ForBlock(Block):
 
     def cb(self):
         self.setBlock(self)
+
+    def minmax(self):
+        if self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+            self.update()
+            self.minimized = False
+        else:
+            self.body.grid_forget()
+            self.minimized = True
 
     def print(self, fd):
         self.printIndent(fd)
@@ -2139,7 +2187,7 @@ class ForBlock(Block):
         self.body.print(fd)
 
     def toNode(self):
-        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode())
+        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), self.minimized)
 
 class Scrollable(tk.Frame):
     """
