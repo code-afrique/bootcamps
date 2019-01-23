@@ -288,19 +288,21 @@ class TextForm(Form):
         self.parent = parent
         self.block = block
 
+        self.lineno = tk.Text(self, width=4, height=30, relief=tk.SUNKEN, wrap=tk.NONE, tabs=('0.2i', tk.RIGHT))
         self.text = tk.Text(self, width=50, height=30, relief=tk.SUNKEN, wrap=tk.NONE)
 
         ysbar = tk.Scrollbar(self)
         ysbar['command'] = self.text.yview
         self.text['yscrollcommand'] = ysbar.set
-        ysbar.grid(row=0, column=1, sticky=tk.S+tk.N+tk.W)
+        ysbar.grid(row=0, column=2, sticky=tk.S+tk.N+tk.W)
 
-        self.text.grid(row=0, column=0, sticky=tk.W+tk.N+tk.E+tk.S)
+        self.lineno.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S)
+        self.text.grid(row=0, column=1, sticky=tk.W+tk.N+tk.E+tk.S)
 
         xsbar = tk.Scrollbar(self, orient=tk.HORIZONTAL)
         xsbar['command'] = self.text.xview
         self.text['xscrollcommand'] = xsbar.set
-        xsbar.grid(row=1, column=0, sticky=tk.W+tk.E+tk.N)
+        xsbar.grid(row=1, column=1, sticky=tk.W+tk.E+tk.N)
 
     def settext(self, text):
         print("settext")
@@ -308,6 +310,9 @@ class TextForm(Form):
         self.text.insert('1.0', text)
         self.text.mark_set(tk.INSERT, '1.0')
         self.text.focus()
+
+        for i in range(text.count("\n")):
+            self.lineno.insert(tk.END, "\t{}\n".format(i + 1))
 
     def gettext(self):
         return self.text.get('1.0', tk.END + '-1c')
