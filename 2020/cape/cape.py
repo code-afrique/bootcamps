@@ -3,6 +3,7 @@ import tempfile
 import subprocess
 import pickle
 import sys
+import io
 import keyword
 import tkinter as tk
 import tkinter as ttk
@@ -277,7 +278,33 @@ class HelpForm(Form):
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Help").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements.  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to minimize or maximize their bodies.").grid(sticky=tk.W)
         tk.Message(self, width=350, font='Helvetica 14', text="You can save the program into a '.pyn' file.  If you run this editor without arguments, you start a new Python program.  Otherwise the argument should be an existing '.pyn' file.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font='Helvetica 14', text="You can also 'print' the program to render a Python 3 program that you can send to a Python interpreter.  Or you can 'run' the program.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font='Helvetica 14', text="The 'code' button renders a Python 3 program that you can send to a Python interpreter.  Or you can 'run' the program.").grid(sticky=tk.W)
+
+class TextForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)
+        self.text = tk.Text(self, width=50, height=30, relief=tk.SUNKEN, wrap=tk.NONE)
+
+        ysbar = tk.Scrollbar(self)
+        ysbar['command'] = self.text.yview
+        self.text['yscrollcommand'] = ysbar.set
+        ysbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        xsbar = tk.Scrollbar(self, orient=tk.HORIZONTAL)
+        xsbar['command'] = self.text.xview
+        self.text['xscrollcommand'] = xsbar.set
+        xsbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.text.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
+
+    def settext(self, text):
+        self.text.delete('1.0', tk.END)
+        self.text.insert('1.0', text)
+        self.text.mark_set(tk.INSERT, '1.0')
+        self.text.focus()
+
+    def gettext(self):
+        return self.text.get('1.0', tk.END + '-1c')
 
 class RowForm(Form):
     def __init__(self, parent, block):
@@ -1049,7 +1076,7 @@ class BooleanBlock(Block):
         self.parent = parent
         self.value = tk.StringVar()
         self.value.set(value)
-        self.btn = tk.Button(self, textvariable=self.value, fg="red", width=0, command=self.cb)
+        self.btn = tk.Button(self, textvariable=self.value, fg="purple", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
 
     def genForm(self):
@@ -2212,7 +2239,7 @@ class Scrollable(tk.Frame):
     """
 
     def __init__(self, frame, width=16):
-        self.canvas = tk.Canvas(frame)
+        self.canvas = tk.Canvas(frame, width=750, height=475)
         sb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
 
         sb.pack(side=tk.LEFT, fill=tk.Y, expand=False)
@@ -2246,14 +2273,17 @@ class TopLevel(tk.Frame):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.parent = parent
 
+        # self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
+
         # menubar = tk.Frame(self, borderwidth=1, relief=tk.SUNKEN, style="Custom.TFrame")
         menubar = tk.Frame(self)
-        tk.Button(menubar, text="Print", command=self.print).grid(row=0, column=0, sticky=tk.W)
+        tk.Button(menubar, text="Code", command=self.text).grid(row=0, column=0, sticky=tk.W)
         tk.Button(menubar, text="Save", command=self.save).grid(row=0, column=1, sticky=tk.W)
         tk.Button(menubar, text="Run", command=self.run).grid(row=0, column=2, sticky=tk.W)
         tk.Button(menubar, text="Help", command=self.help).grid(row=0, column=3, sticky=tk.W)
         tk.Button(menubar, text="Quit", command=self.quit).grid(row=0, column=4, sticky=tk.W)
-        menubar.grid(row=0, column=0, sticky=tk.W)
+        # menubar.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
+        menubar.grid(row=0, column=0, sticky=tk.W, columnspan=2)
 
         if file != None:
             f = open(file, 'rb')
@@ -2264,18 +2294,21 @@ class TopLevel(tk.Frame):
             n = None
             clean = False
 
-        frame = tk.Frame(self, width=1250, height=500)
-        frame.grid(row=1, column=0)
+        frame = tk.Frame(self, width=1200, height=500)
+        frame.grid(row=1, column=0, sticky=tk.W)
         frame.grid_propagate(0)
+        # frame.configure(bd=2, highlightbackground="purple", highlightcolor="purple", highlightthickness=2)
         
         global confarea
-        # confarea = tk.Frame(frame, width=500, height=500, bd=10, highlightbackground="green", highlightcolor="green", highlightthickness=3)
-        confarea = tk.Frame(frame, width=500, height=500)
-        confarea.pack_propagate(0)
+        # confarea = tk.Frame(frame, width=400, height=475, bd=10, highlightbackground="green", highlightcolor="green", highlightthickness=3)
+        confarea = tk.Frame(frame, width=400, height=475)
+        # confarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
+        confarea.grid_propagate(0)
 
         # progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
         progarea = tk.Frame(frame, width=750, height=500)
-        progarea.pack_propagate(0)
+        # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
+        progarea.grid_propagate(0)
 
         global scrollable
         scrollable = Scrollable(progarea, width=16)
@@ -2286,8 +2319,12 @@ class TopLevel(tk.Frame):
         global saved
         saved = clean
 
-        confarea.place(x=0, y=0)
-        progarea.place(x=400, y=0)
+        # confarea.place(x=0, y=0)
+        # progarea.place(x=400, y=0)
+        # confarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
+        # progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
+        confarea.grid(row=0, column=0, sticky=tk.N)
+        progarea.grid(row=0, column=1, sticky=tk.NW)
 
         self.help()
 
@@ -2337,6 +2374,25 @@ class TopLevel(tk.Frame):
         curForm.grid(row=0, column=0, sticky=tk.E)
         curForm.update()
 
+    def text(self):
+        global confarea, curForm
+
+        if curForm:
+            curForm.grid_forget()
+        curForm = tk.Frame(confarea, width=300)
+        tf = TextForm(curForm, self)
+
+        global printError
+        printError = False
+
+        f = io.StringIO("")
+        self.program.print(f)
+        tf.settext(f.getvalue())
+        tf.pack(expand=tk.YES, fill=tk.BOTH)
+        curForm.grid_propagate(0)
+        curForm.grid(row=0, column=0, sticky=tk.E)
+        curForm.update()
+
     def quit(self):
         if saved:
             sys.exit(0)
@@ -2352,6 +2408,7 @@ if __name__ == '__main__':
     stmtBuffer = None
     exprBuffer = None
     tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None)
-    tl.pack()
+    tl.grid()
+    tl.grid_propagate(0)
 
     root.mainloop()  
