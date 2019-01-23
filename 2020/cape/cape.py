@@ -428,7 +428,7 @@ class PassForm(Form):
             self.stmtFor()
         elif ev.char == 'w':
             self.stmtWhile()
-        elif ev.char == 'r':
+        elif self.block.isWithinDef and ev.char == 'r':
             self.stmtReturn()
         elif ev.char == 'd':
             self.stmtDef()
@@ -444,7 +444,7 @@ class ExpressionForm(Form):
         self.block = block
         self.lvalue = lvalue
 
-        frame = Block(self)
+        frame = tk.Frame(self)
         frame.bind("<Key>", self.key)
         frame.focus_set()
         frame.grid()
