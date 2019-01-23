@@ -283,21 +283,27 @@ class HelpForm(Form):
 class TextForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+
         self.text = tk.Text(self, width=50, height=30, relief=tk.SUNKEN, wrap=tk.NONE)
 
         ysbar = tk.Scrollbar(self)
         ysbar['command'] = self.text.yview
         self.text['yscrollcommand'] = ysbar.set
-        ysbar.pack(side=tk.RIGHT, fill=tk.Y)
+        ysbar.grid(row=0, column=1, sticky=tk.S+tk.N+tk.W)
+
+        self.text.grid(row=0, column=0, sticky=tk.W+tk.N+tk.E+tk.S)
 
         xsbar = tk.Scrollbar(self, orient=tk.HORIZONTAL)
         xsbar['command'] = self.text.xview
         self.text['xscrollcommand'] = xsbar.set
-        xsbar.pack(side=tk.BOTTOM, fill=tk.X)
-
-        self.text.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
+        xsbar.grid(row=1, column=0, sticky=tk.W+tk.E+tk.N)
 
     def settext(self, text):
+        print("settext")
         self.text.delete('1.0', tk.END)
         self.text.insert('1.0', text)
         self.text.mark_set(tk.INSERT, '1.0')
@@ -380,10 +386,11 @@ class PassForm(Form):
         tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=4)
         tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=5)
         tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=6)
-        tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid(row=7)
-        tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid(row=8)
-        tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(row=9, columnspan=2)
-        tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid(row=10)
+        if self.block.isWithinDef:
+            tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
+        tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
+        tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
         tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: '?' inserts an expression, '<ctrl>v' pastes a statement, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=2)
 
     def stmtDef(self):
@@ -437,7 +444,7 @@ class ExpressionForm(Form):
         self.block = block
         self.lvalue = lvalue
 
-        frame = tk.Frame(self)
+        frame = Block(self)
         frame.bind("<Key>", self.key)
         frame.focus_set()
         frame.grid()
@@ -952,6 +959,7 @@ class Block(tk.Frame):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.isExpression = False
         self.isStatement = False
+        self.isWithinDef = False if parent == None else parent.isWithinDef
 
     def printIndent(self, fd):
         for i in range(self.level):
@@ -1800,15 +1808,14 @@ class RowBlock(Block):
         self.parent = parent
         self.level = level
         self.row = row
-        frame = tk.Frame(self)
-        menu = tk.Button(frame, text="-", width=3, command=self.listcmd)
+
+        menu = tk.Button(self, text="-", width=3, command=self.listcmd)
         menu.grid(row=0, column=0, sticky=tk.W)
         if node == None:
-            self.what = PassBlock(frame, None, level, self)
+            self.what = PassBlock(self, None, level, self)
         else:
-            self.what = node.what.toBlock(frame, level, self)
+            self.what = node.what.toBlock(self, level, self)
         self.what.grid(row=0, column=1, sticky=tk.W)
-        frame.grid()
 
     def genForm(self):
         f = RowForm(confarea, self)
@@ -1918,6 +1925,7 @@ class DefBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
+        self.isWithinDef = True
         self.mname = tk.StringVar()
 
         if node == None:
@@ -1938,7 +1946,7 @@ class DefBlock(Block):
             self.body.grid(row=1, column=0, sticky=tk.W)
 
     def setHeader(self):
-        self.hdr = tk.Frame(self)
+        self.hdr = Block(self)
         self.btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
         self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
@@ -2019,7 +2027,7 @@ class IfBlock(Block):
         self.level = level
 
         if node == None:
-            self.hdrs = [tk.Frame(self)]
+            self.hdrs = [Block(self)]
             self.minimizeds = [ Falsies[0] ]
             tk.Button(self.hdrs[0], text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
             self.conds = [ExpressionBlock(self.hdrs[0], None, False)]
@@ -2033,7 +2041,7 @@ class IfBlock(Block):
             self.conds = [ ]
             for i in range(len(self.bodies)):
                 if i < len(node.conds):
-                    hdr = tk.Frame(self)
+                    hdr = Block(self)
                     cond = ExpressionBlock(hdr, node.conds[i], False)
                     self.conds.append(cond)
                     if i == 0:
@@ -2043,7 +2051,7 @@ class IfBlock(Block):
                     cond.grid(row=0, column=1)
                     tk.Button(hdr, text=":", command=lambda: self.minmax(self.bodies[i])).grid(row=0, column=2, sticky=tk.W)
                 else:
-                    hdr = tk.Frame(self)
+                    hdr = Block(self)
                     tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                     tk.Button(hdr, text=":", width=0, command=lambda: self.minmax(self.bodies[-1])).grid(row=0, column=1)
                 self.hdrs.append(hdr)
@@ -2068,7 +2076,7 @@ class IfBlock(Block):
 
     def addElse(self):
         self.bodies.append(SeqBlock(self, None, self.level + 1))
-        hdr = tk.Frame(self)
+        hdr = Block(self)
         tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         tk.Button(hdr, text=":", width=0, command=lambda: self.minmax(self.bodies[-1])).grid(row=0, column=1)
         self.hdrs.append(hdr)
@@ -2085,7 +2093,7 @@ class IfBlock(Block):
         self.needsSaving()
 
     def insertElif(self):
-        hdr = tk.Frame(self)
+        hdr = Block(self)
         tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         cond = ExpressionBlock(hdr, None, False)
         cond.grid(row=0, column=1)
@@ -2135,7 +2143,7 @@ class WhileBlock(Block):
         self.parent = parent
         self.level = level
 
-        hdr = tk.Frame(self)
+        hdr = Block(self)
         tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         if node == None:
             self.cond = ExpressionBlock(hdr, None, False)
@@ -2184,7 +2192,7 @@ class ForBlock(Block):
         self.parent = parent
         self.level = level
 
-        hdr = tk.Frame(self)
+        hdr = Block(self)
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         if node == None:
             self.var = NameBlock(hdr, "")
@@ -2231,7 +2239,7 @@ class ForBlock(Block):
     def toNode(self):
         return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), self.minimized)
 
-class Scrollable(tk.Frame):
+class Scrollable(Block):
     """
        Make a frame scrollable with a scrollbar
        After adding or removing widgets to the scrollable frame, 
@@ -2239,6 +2247,7 @@ class Scrollable(tk.Frame):
     """
 
     def __init__(self, frame, width=16):
+        super().__init__(None)   
         self.canvas = tk.Canvas(frame, width=750, height=475)
         sb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
 
@@ -2379,18 +2388,15 @@ class TopLevel(tk.Frame):
 
         if curForm:
             curForm.grid_forget()
-        curForm = tk.Frame(confarea, width=300)
-        tf = TextForm(curForm, self)
+        curForm = TextForm(confarea, self)
 
         global printError
         printError = False
 
         f = io.StringIO("")
         self.program.print(f)
-        tf.settext(f.getvalue())
-        tf.pack(expand=tk.YES, fill=tk.BOTH)
-        curForm.grid_propagate(0)
-        curForm.grid(row=0, column=0, sticky=tk.E)
+        curForm.settext(f.getvalue())
+        curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
         curForm.update()
 
     def quit(self):
