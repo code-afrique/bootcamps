@@ -217,7 +217,7 @@ class ExpressionNode(Node):
         self.what = what
 
     def toBlock(self, frame, level, block):
-        return ExpressionBlock(frame, self.what)
+        return ExpressionBlock(frame, self.what, False)
 
 class SeqNode(Node):
     def __init__(self, rows):
@@ -482,6 +482,7 @@ class ExpressionForm(Form):
         tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
         tk.Button(frame, text="x.y", command=self.exprRef).grid(row=row, column=1, sticky=tk.W)
         tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
+        row += 1
         if not lvalue:
             tk.Button(frame, text="x[y:z]", command=self.exprSliceYY).grid(row=row, column=0, sticky=tk.W)
             tk.Button(frame, text="x[y:]", command=self.exprSliceYN).grid(row=row, column=1, sticky=tk.W)
@@ -2301,7 +2302,7 @@ class Scrollable(Block):
         self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
 
 class TopLevel(tk.Frame):
-    def __init__(self, parent, file):
+    def __init__(self, parent, file, fm):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.parent = parent
 
@@ -2323,7 +2324,8 @@ class TopLevel(tk.Frame):
             f.close()
             clean = True
         else:
-            n = None
+            # n = None
+            n = fm
             clean = False
 
         frame = tk.Frame(self, width=1200, height=500)
@@ -2428,6 +2430,194 @@ class TopLevel(tk.Frame):
         else:
             messagebox.showinfo("Warning", "You must save the program first")
 
+def Module(body):
+    return SeqNode(body)
+
+def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
+    return RowNode(DefNode(name, args, SeqNode(body), False))
+
+def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
+    return args
+
+def args(lineno, col_offset, arg, annotation):
+    return arg
+
+def Assign(lineno, col_offset, targets, value):
+    return RowNode(AssignNode(targets[0], value, "="))
+
+def Name(lineno, col_offset, id, ctx):
+    return ExpressionNode(NameNode(id))
+
+def Subscript(lineno, col_offset, value, slice, ctx):
+    return ExpressionNode(IndexNode(value, slice))
+
+def Index(value):
+    return value
+
+def Num(lineno, col_offset, n):
+    return ExpressionNode(NumberNode(n))
+
+def For(lineno, col_offset, target, iter, body, orelse):
+    return RowNode(ForNode(target.what, iter, SeqNode(body), False))
+
+def If(lineno, col_offset, test, body, orelse):
+    return RowNode(IfNode([test], [SeqNode(body)], [False]))
+
+def Compare(lineno, col_offset, left, ops, comparators):
+    return ExpressionNode(BinaryopNode(left, comparators[0], ops[0]))
+
+def Lt():
+    return "<"
+
+def Return(lineno, col_offset, value):
+    return RowNode(ReturnNode(value))
+
+def Pass(lineno, col_offset):
+    return RowNode(PassNode())
+        
+def Call(lineno, col_offset, func, args, keywords):
+    return ExpressionNode(FuncNode(func, args))
+
+def Load():
+    return None
+
+def Store():
+    return None
+
+def List(lineno, col_offset, elts, ctx):
+    return ExpressionNode(ListNode(elts))
+
+def Expr(lineno, col_offset, value):
+    return RowNode(CallNode(value))
+
+def Attribute(lineno, col_offset, value, attr, ctx):
+    return ExpressionNode(RefNode(value, NameNode(attr)))
+
+def arg(lineno, col_offset, arg, annotation):
+	return arg
+
+def Str(lineno, col_offset, s):
+	return ExpressionNode(StringNode(s))
+
+fm = Module(
+    body=[
+        FunctionDef(
+            lineno=1,
+            col_offset=0,
+            name='findMinimum',
+            args=arguments(
+                args=[arg(lineno=1, col_offset=16, arg='list', annotation=None)],
+                vararg=None,
+                kwonlyargs=[],
+                kw_defaults=[],
+                kwarg=None,
+                defaults=[],
+            ),
+            body=[
+                Assign(
+                    lineno=2,
+                    col_offset=4,
+                    targets=[Name(lineno=2, col_offset=4, id='current', ctx=Store())],
+                    value=Subscript(
+                        lineno=2,
+                        col_offset=14,
+                        value=Name(lineno=2, col_offset=14, id='list', ctx=Load()),
+                        slice=Index(
+                            value=Num(lineno=2, col_offset=19, n=0),
+                        ),
+                        ctx=Load(),
+                    ),
+                ),
+                For(
+                    lineno=3,
+                    col_offset=4,
+                    target=Name(lineno=3, col_offset=8, id='x', ctx=Store()),
+                    iter=Name(lineno=3, col_offset=13, id='list', ctx=Load()),
+                    body=[
+                        If(
+                            lineno=4,
+                            col_offset=8,
+                            test=Compare(
+                                lineno=4,
+                                col_offset=12,
+                                left=Name(lineno=4, col_offset=12, id='x', ctx=Load()),
+                                ops=[Lt()],
+                                comparators=[Name(lineno=4, col_offset=16, id='current', ctx=Load())],
+                            ),
+                            body=[
+                                Assign(
+                                    lineno=5,
+                                    col_offset=12,
+                                    targets=[Name(lineno=5, col_offset=12, id='current', ctx=Store())],
+                                    value=Name(lineno=5, col_offset=22, id='x', ctx=Load()),
+                                ),
+                            ],
+                            orelse=[],
+                        ),
+                    ],
+                    orelse=[],
+                ),
+                Return(
+                    lineno=6,
+                    col_offset=4,
+                    value=Name(lineno=6, col_offset=11, id='current', ctx=Load()),
+                ),
+            ],
+            decorator_list=[],
+            returns=None,
+        ),
+        Pass(lineno=7, col_offset=0),
+        Assign(
+            lineno=8,
+            col_offset=0,
+            targets=[Name(lineno=8, col_offset=0, id='min', ctx=Store())],
+            value=Call(
+                lineno=8,
+                col_offset=6,
+                func=Name(lineno=8, col_offset=6, id='findMinimum', ctx=Load()),
+                args=[
+                    List(
+                        lineno=8,
+                        col_offset=18,
+                        elts=[
+                            Num(lineno=8, col_offset=19, n=4),
+                            Num(lineno=8, col_offset=22, n=1),
+                            Num(lineno=8, col_offset=25, n=6),
+                        ],
+                        ctx=Load(),
+                    ),
+                ],
+                keywords=[],
+            ),
+        ),
+        Expr(
+            lineno=9,
+            col_offset=0,
+            value=Call(
+                lineno=9,
+                col_offset=0,
+                func=Name(lineno=9, col_offset=0, id='print', ctx=Load()),
+                args=[
+                    Call(
+                        lineno=9,
+                        col_offset=6,
+                        func=Attribute(
+                            lineno=9,
+                            col_offset=6,
+                            value=Str(lineno=9, col_offset=6, s='the minimum is "{}"'),
+                            attr='format',
+                            ctx=Load(),
+                        ),
+                        args=[Name(lineno=9, col_offset=37, id='min', ctx=Load())],
+                        keywords=[],
+                    ),
+                ],
+                keywords=[],
+            ),
+        ),
+    ],
+)
+
 if __name__ == '__main__':
     root = tk.Tk()
     root.title("CAPE")
@@ -2436,7 +2626,7 @@ if __name__ == '__main__':
     curBlock = None
     stmtBuffer = None
     exprBuffer = None
-    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None)
+    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None, fm)
     tl.grid()
     tl.grid_propagate(0)
 
