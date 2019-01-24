@@ -2750,6 +2750,10 @@ def Import(lineno, col_offset, names):
     assert len(names) == 1
     return RowNode(ImportNode(names[0]))
 
+def ImportFrom(lineno, col_offset, module, names, level):
+    assert len(names) == 1
+    return RowNode(ImportNode(names[0]))
+
 def Add():
     return "+"
 
