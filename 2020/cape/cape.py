@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import os
 import tempfile
 import subprocess
-import pickle
 import sys
 import io
 import keyword
@@ -9,6 +12,10 @@ import tkinter as tk
 import tkinter as ttk
 from tkinter import messagebox
 from tkinter.filedialog import asksaveasfilename
+from tkinter.filedialog import askopenfilename
+import argparse
+import ast
+import contextlib
 
 """
     A row contains a statement with a menu button
@@ -50,6 +57,17 @@ class DefNode(Node):
     def toBlock(self, frame, level, block):
         return DefBlock(frame, self, level)
 
+class ClassNode(Node):
+    def __init__(self, name, bases, body, minimized):
+        super().__init__()   
+        self.name = name
+        self.bases = bases
+        self.body = body
+        self.minimized = minimized
+
+    def toBlock(self, frame, level, block):
+        return ClassBlock(frame, self, level)
+
 class IfNode(Node):
     def __init__(self, conds, bodies, minimizeds):
         super().__init__()   
@@ -61,22 +79,26 @@ class IfNode(Node):
         return IfBlock(frame, self, level)
 
 class WhileNode(Node):
-    def __init__(self, cond, body, minimized):
+    def __init__(self, cond, body, orelse, minimized, minimized2):
         super().__init__()   
         self.cond = cond
         self.body = body
+        self.orelse = orelse
         self.minimized = minimized
+        self.minimized2 = minimized2
 
     def toBlock(self, frame, level, block):
         return WhileBlock(frame, self, level)
 
 class ForNode(Node):
-    def __init__(self, var, expr, body, minimized):
+    def __init__(self, var, expr, body, orelse, minimized, minimized2):
         super().__init__()   
         self.var = var
         self.expr = expr
         self.body = body
+        self.orelse = orelse
         self.minimized = minimized
+        self.minimized2 = minimized2
 
     def toBlock(self, frame, level, block):
         return ForBlock(frame, self, level)
@@ -89,6 +111,13 @@ class ReturnNode(Node):
     def toBlock(self, frame, level, block):
         return ReturnBlock(frame, self, level)
 
+class BreakNode(Node):
+    def __init__(self):
+        super().__init__()   
+
+    def toBlock(self, frame, level, block):
+        return BreakBlock(frame, self, level)
+
 class ImportNode(Node):
     def __init__(self, what):
         super().__init__()   
@@ -96,6 +125,14 @@ class ImportNode(Node):
 
     def toBlock(self, frame, level, block):
         return ImportBlock(frame, self, level)
+
+class GlobalNode(Node):
+    def __init__(self, what):
+        super().__init__()   
+        self.what = what
+
+    def toBlock(self, frame, level, block):
+        return GlobalBlock(frame, self, level)
 
 class AssignNode(Node):
     def __init__(self, left, right, op):
@@ -162,22 +199,22 @@ class ListNode(Node):
     def toBlock(self, frame, level, block):
         return ListBlock(frame, self)
 
-class RefNode(Node):
+class AttrNode(Node):
     def __init__(self, array, ref):
         super().__init__()   
         self.array = array
         self.ref = ref
 
     def toBlock(self, frame, level, block):
-        return RefBlock(frame, self)
+        return AttrBlock(frame, self)
 
-class CallNode(Node):
+class EvalNode(Node):
     def __init__(self, what):
         super().__init__()   
         self.what = what
 
     def toBlock(self, frame, level, block):
-        return CallBlock(frame, self, level)
+        return EvalBlock(frame, self, level)
 
 class NumberNode(Node):
     def __init__(self, what):
@@ -217,7 +254,7 @@ class ExpressionNode(Node):
         self.what = what
 
     def toBlock(self, frame, level, block):
-        return ExpressionBlock(frame, self.what)
+        return ExpressionBlock(frame, self.what, False)
 
 class SeqNode(Node):
     def __init__(self, rows):
@@ -277,8 +314,7 @@ class HelpForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Help").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements.  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to minimize or maximize their bodies.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font='Helvetica 14', text="You can save the program into a '.pyn' file.  If you run this editor without arguments, you start a new Python program.  Otherwise the argument should be an existing '.pyn' file.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font='Helvetica 14', text="The 'code' button renders a Python 3 program that you can send to a Python interpreter.  Or you can 'run' the program.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font='Helvetica 14', text="Use 'Import' and 'Export' to load and save Python source files.  The 'Code' button renders a Python 3 program that you can send to a Python interpreter.  Or more easily, you can select 'Run'.").grid(sticky=tk.W)
 
 class TextForm(Form):
     def __init__(self, parent, block):
@@ -305,7 +341,6 @@ class TextForm(Form):
         xsbar.grid(row=1, column=1, sticky=tk.W+tk.E+tk.N)
 
     def settext(self, text):
-        print("settext")
         self.text.delete('1.0', tk.END)
         self.text.insert('1.0', text)
         self.text.mark_set(tk.INSERT, '1.0')
@@ -383,16 +418,35 @@ class PassForm(Form):
         self.bind("<Key>", self.key)
         self.focus_set()
 
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="'pass' statement").grid(row=0, columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=1, columnspan=2)
-        tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=2)
+        row = 0
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'pass' statement").grid(row=row, columnspan=2)
+        row += 1
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=row, columnspan=2)
+        row += 1
+        tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=row)
+        row += 1
 
-        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtCall).grid(row=3)
-        tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=4)
-        tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=5)
-        tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=6)
+        tk.Button(self, text="assignment", width=0, command=self.stmtAssign).grid(row=row)
+        self.assignop = tk.StringVar(self)
+        self.assignop.set("=")
+        assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
+        assignops.grid(row=row, column=1, sticky=tk.W)
+
+        row += 1
+        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row)
+        row += 1
+        tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=row)
+        row += 1
+        tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=row)
+        row += 1
+        tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=row)
+        row += 1
+        if self.block.isWithinLoop:
+            tk.Button(self, text="break statement", width=0, command=self.stmtBreak).grid(row=row)
+            row += 1
         if self.block.isWithinDef:
             tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
+        tk.Button(self, text="global statement", width=0, command=self.stmtGlobal).grid()
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
         tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
         tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
@@ -401,8 +455,11 @@ class PassForm(Form):
     def stmtDef(self):
         self.block.stmtDef()
 
-    def stmtCall(self):
-        self.block.stmtCall()
+    def stmtAssign(self):
+        self.block.stmtAssign(self.assignop.get())
+
+    def stmtEval(self):
+        self.block.stmtEval()
 
     def stmtIf(self):
         self.block.stmtIf()
@@ -415,6 +472,12 @@ class PassForm(Form):
 
     def stmtReturn(self):
         self.block.stmtReturn()
+
+    def stmtBreak(self):
+        self.block.stmtBreak()
+
+    def stmtGlobal(self):
+        self.block.stmtGlobal()
 
     def stmtImport(self):
         self.block.stmtImport()
@@ -433,12 +496,16 @@ class PassForm(Form):
             self.stmtFor()
         elif ev.char == 'w':
             self.stmtWhile()
+        elif self.block.isWithinLoop and ev.char == 'b':
+            self.stmtBreak()
         elif self.block.isWithinDef and ev.char == 'r':
             self.stmtReturn()
         elif ev.char == 'd':
             self.stmtDef()
+        elif ev.char == '=':
+            self.stmtAssign()
         elif ev.char == '?':
-            self.stmtCall()
+            self.stmtEval()
 
 class ExpressionForm(Form):
     def __init__(self, parent, block, lvalue):
@@ -460,8 +527,9 @@ class ExpressionForm(Form):
         tk.Message(frame, width=350, font='Helvetica 14', text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, columnspan=2)
         row += 1
         tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
-        tk.Button(frame, text="x.y", command=self.exprRef).grid(row=row, column=1, sticky=tk.W)
+        tk.Button(frame, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
         tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
+        row += 1
         if not lvalue:
             tk.Button(frame, text="x[y:z]", command=self.exprSliceYY).grid(row=row, column=0, sticky=tk.W)
             tk.Button(frame, text="x[y:]", command=self.exprSliceYN).grid(row=row, column=1, sticky=tk.W)
@@ -481,13 +549,6 @@ class ExpressionForm(Form):
             row += 1
 
             tk.Label(frame, text="").grid(row=row)
-            row += 1
-
-            tk.Button(frame, text="x = y", command=self.exprAssign).grid(row=row, sticky=tk.W)
-            self.assignop = tk.StringVar(self)
-            self.assignop.set("=")
-            assignops = tk.OptionMenu(frame, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
-            assignops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
             tk.Button(frame, text="x <op> y", command=self.exprBinaryop).grid(row=row, sticky=tk.W)
@@ -525,8 +586,8 @@ class ExpressionForm(Form):
     def exprName(self):
         self.block.exprName("")
 
-    def exprRef(self):
-        self.block.exprRef()
+    def exprAttr(self):
+        self.block.exprAttr()
 
     def exprIndex(self):
         self.block.exprIndex()
@@ -566,14 +627,10 @@ class ExpressionForm(Form):
             return
         if ev.char == '\026':
             self.block.exprPaste()
-        elif ev.char == '?':
-            self.block.exprBoolean("False")
-        elif ev.char == '!':
-            self.block.exprBoolean("True")
         elif ev.char.isidentifier():
             self.block.exprName(ev.char)
         elif ev.char == '.':
-            self.block.exprRef()
+            self.block.exprAttr()
         elif ev.char == ']':
             self.block.exprIndex()
         elif not self.lvalue:
@@ -588,7 +645,9 @@ class ExpressionForm(Form):
             elif ev.char == ':':
                 self.block.exprSlice(True, True)
             elif ev.char == '=':
-                self.block.exprAssign("=")
+                self.block.exprAssign("==")
+            elif ev.char == '!':
+                self.block.exprAssign("!=")
             elif ev.char in "+-*/%<>":
                 self.block.exprBinaryop(ev.char)
             elif ev.char == "&":
@@ -659,6 +718,63 @@ class DefForm(Form):
     def keyEnter(self, x):
         self.cb()
 
+class ClassForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Set class information").grid(row=0, columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="A method has a name, a list of bases, and a 'body'.  With this form, you can edit the method name and bases.").grid(row=1, columnspan=2)
+        tk.Label(self, text="Class name: ").grid(row=2, sticky=tk.W)
+        self.entry = tk.Entry(self)
+        self.entry.insert(tk.END, block.mname.get())
+        self.entry.bind('<Return>', self.keyEnter)
+        self.entry.grid(row=2, column=1)
+        self.bases = [ ]
+        for base in block.bases:
+            self.addBase(base)
+        ma = tk.Button(self, text="+ Add base", command=self.newBase)
+        ma.grid(row=100, column=0)
+        enter = tk.Button(self, text="Enter", command=self.cb)
+        enter.grid(row=100, column=1, sticky=tk.E)
+
+    def newBase(self):
+        self.addBase("")
+
+    def addBase(self, name):
+        nbases = len(self.bases)
+        tk.Label(self, text="Base {}:".format(nbases+1)).grid(row=nbases+3, sticky=tk.W)
+        e = tk.Entry(self)
+        e.insert(tk.END, name)
+        e.grid(row=nbases+3, column=1)
+        e.focus()
+        self.bases.append(e)
+
+    def cb(self):
+        name = self.entry.get()
+        if name in keyword.kwlist:
+            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+            return
+        if not name.isidentifier():
+            messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
+            return
+
+        bases = [ ]
+        for base in self.bases:
+            a = base.get()
+            if a in keyword.kwlist:
+                messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+            if not a.isidentifier():
+                messagebox.showinfo("Format Error", "'{}' is not a valid base name".format(a))
+                return
+            bases.append(a)
+        self.block.classUpdate(name, bases)
+
+    def keyEnter(self, x):
+        self.cb()
+
 class IfForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)   
@@ -694,6 +810,17 @@ class ForForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'for' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
+        if block.orelse == None:
+            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
+        else:
+            eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
+        eb.grid(row=2)
+
+    def addElse(self):
+        self.block.addElse()
+
+    def removeElse(self):
+        self.block.removeElse()
 
 class WhileForm(Form):
     def __init__(self, parent, block):
@@ -704,6 +831,17 @@ class WhileForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'while' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.").grid(row=1)
+        if block.orelse == None:
+            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
+        else:
+            eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
+        eb.grid(row=2)
+
+    def addElse(self):
+        self.block.addElse()
+
+    def removeElse(self):
+        self.block.removeElse()
 
 class ReturnForm(Form):
     def __init__(self, parent, block):
@@ -714,6 +852,26 @@ class ReturnForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
+
+class BreakForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'break' statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'break' statement' terminates the loop that it is in.").grid(row=1)
+
+class GlobalForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'global' statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'global' statement' lists names of variables that are global in scope.").grid(row=1)
 
 class ImportForm(Form):
     def __init__(self, parent, block):
@@ -759,7 +917,7 @@ class IndexForm(Form):
         delb = tk.Button(self, text="delete", command=self.delete)
         delb.grid(row=2, column=1)
 
-class RefForm(Form):
+class AttrForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)   
         self.isExpression = True
@@ -965,6 +1123,7 @@ class Block(tk.Frame):
         self.isExpression = False
         self.isStatement = False
         self.isWithinDef = False if parent == None else parent.isWithinDef
+        self.isWithinLoop = False if parent == None else parent.isWithinLoop
 
     def printIndent(self, fd):
         for i in range(self.level):
@@ -1136,6 +1295,8 @@ class StringBlock(Block):
         for c in self.string.get():
             if c == '"':
                 print('\\"', end="", file=fd)
+            elif c == '\n':
+                print('\\n', end="", file=fd)
             else:
                 print(c, end="", file=fd)
         print('"', end="", file=fd)
@@ -1219,7 +1380,7 @@ class SliceBlock(Block):
     def toNode(self):
         return SliceNode(self.array.toNode(), self.start.toNode(), self.finish.toNode())
 
-class RefBlock(Block):
+class AttrBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
         self.isExpression = True
@@ -1241,7 +1402,7 @@ class RefBlock(Block):
         self.setBlock(self)
 
     def genForm(self):
-        self.setForm(RefForm(confarea, self))
+        self.setForm(AttrForm(confarea, self))
 
     def print(self, fd):
         self.array.print(fd)
@@ -1249,7 +1410,7 @@ class RefBlock(Block):
         self.ref.print(fd)
 
     def toNode(self):
-        return RefNode(self.array.toNode(), self.ref.toNode())
+        return AttrNode(self.array.toNode(), self.ref.toNode())
 
 class UnaryopBlock(Block):
     def __init__(self, parent, node, op):
@@ -1507,9 +1668,9 @@ class ExpressionBlock(Block):
         self.setBlock(self.what.array)
         self.needsSaving()
 
-    def exprRef(self):
+    def exprAttr(self):
         self.what.grid_forget()
-        self.what = RefBlock(self, None)
+        self.what = AttrBlock(self, None)
         self.what.grid()
         self.init = True
         self.setBlock(self.what.array)
@@ -1603,8 +1764,8 @@ class NilBlock(Block):
 class AssignBlock(Block):
     def __init__(self, parent, node, level, op):
         super().__init__(parent)   
-        self.isExpression = True
-        self.isStatement = False
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
         self.op = op
@@ -1627,11 +1788,11 @@ class AssignBlock(Block):
         self.setBlock(self)
 
     def print(self, fd):
-        # self.printIndent(fd)
+        self.printIndent(fd)
         self.left.print(fd)
         print(" {} ".format(self.op), end="", file=fd)
         self.right.print(fd)
-        # print("", file=fd)
+        print("", file=fd)
 
     def toNode(self):
         return AssignNode(self.left.toNode(), self.right.toNode(), self.op)
@@ -1661,9 +1822,16 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what)
         self.needsSaving()
 
-    def stmtCall(self):
+    def stmtAssign(self, op):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = CallBlock(self.rowblk, None, self.level)
+        self.rowblk.what = AssignBlock(self.rowblk, None, self.level, op)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.left)
+        self.needsSaving()
+
+    def stmtEval(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = EvalBlock(self.rowblk, None, self.level)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.expr)
         self.needsSaving()
@@ -1696,6 +1864,20 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.expr)
         self.needsSaving()
 
+    def stmtBreak(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = BreakBlock(self.rowblk, None, self.level)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what)
+        self.needsSaving()
+
+    def stmtGlobal(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = GlobalBlock(self.rowblk, None, self.level)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.var)
+        self.needsSaving()
+
     def stmtImport(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ImportBlock(self.rowblk, None, self.level)
@@ -1719,14 +1901,7 @@ class PassBlock(Block):
     def toNode(self):
         return PassNode()
 
-class CallBlock(Block):
-    """
-        Perhaps misnamed, this block represents an expression
-        as a statement in Python.  Often this is a function call
-        but it doesn't have to be.  In fact, this very comment
-        is an example of a CallBlock, as is an assignment.
-    """
-
+class EvalBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
         self.isExpression = False
@@ -1745,7 +1920,7 @@ class CallBlock(Block):
         print("", file=fd)
 
     def toNode(self):
-        return CallNode(self.expr.toNode())
+        return EvalNode(self.expr.toNode())
 
 class ReturnBlock(Block):
     def __init__(self, parent, node, level):
@@ -1775,6 +1950,57 @@ class ReturnBlock(Block):
 
     def toNode(self):
         return ReturnNode(self.expr.toNode())
+
+class BreakBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        tk.Button(self, text="break", fg="red", command=self.cb).grid(row=0, column=0)
+
+    def genForm(self):
+        self.setForm(BreakForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        print("break", file=fd)
+
+    def toNode(self):
+        return BreakNode()
+
+class GlobalBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        tk.Button(self, text="global", fg="red", command=self.cb).grid(row=0, column=0)
+        if node == None:
+            self.var = NameBlock(self, "")
+        else:
+            self.var = NameBlock(self, node.what)
+        self.var.grid(row=0, column=1)
+
+    def genForm(self):
+        self.setForm(GlobalForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        print("global ", end="", file=fd)
+        self.var.print(fd)
+        print("", file=fd)
+
+    def toNode(self):
+        return GlobalNode(self.var.toNode())
 
 class ImportBlock(Block):
     def __init__(self, parent, node, level):
@@ -2020,6 +2246,96 @@ class DefBlock(Block):
     def toNode(self):
         return DefNode(self.mname.get(), self.args, self.body.toNode(), self.minimized)
 
+class ClassBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        self.mname = tk.StringVar()
+        self.bases = [ ]
+
+        if node == None:
+            self.minimized = False
+        else:
+            self.mname.set(node.name)
+            self.minimized = node.minimized
+
+        self.hdr = Block(self)
+        self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
+        self.btn.grid(row=0, column=0)
+        self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
+        self.name.grid(row=0, column=1)
+        tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
+
+        column = 3
+        if node != Node:
+            for i in range(len(node.bases)):
+                if i != 0:
+                    tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
+                    column += 1
+                base = node.bases[i].toBlock(self.hdr, 0, self)
+                self.bases.append(base)
+                base.grid(row=0, column=column)
+                column += 1
+
+        tk.Button(self.hdr, text=")", command=self.cb).grid(row=0, column=column)
+        tk.Button(self.hdr, text=":", command=self.minmax).grid(row=0, column=column+1)
+        self.hdr.grid(row=0, column=0, sticky=tk.W)
+
+        if node == None:
+            self.body = SeqBlock(self, None, level + 1)
+        else:
+            self.body = SeqBlock(self, node.body, level + 1)
+        if not self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+
+    def genForm(self):
+        f = ClassForm(confarea, self)
+        self.setForm(f)
+        f.entry.focus()
+
+    def cb(self):
+        self.setBlock(self)
+
+    def minmax(self):
+        if self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+            self.update()
+            self.minimized = False
+        else:
+            self.body.grid_forget()
+            self.minimized = True
+
+    def classUpdate(self, mname, bases):
+        self.mname.set(mname)
+        self.bases = bases
+        self.hdr.grid_forget()
+        # self.setHeader()
+        self.needsSaving()
+
+    def print(self, fd):
+        global printError
+
+        self.printIndent(fd)
+        v = self.mname.get()
+        print("class {}(".format(v), end="", file=fd)
+        if not v.isidentifier():
+            if not printError:
+                self.setBlock(self)
+                messagebox.showinfo("Print Error", "Fix bad method name")
+                printError = True
+        for i in range(len(self.bases)):
+            if i != 0:
+                print(", ", end="", file=fd)
+            self.bases[i].print(fd)
+        print("):", file=fd)
+        self.body.print(fd)
+
+    def toNode(self):
+        return ClassNode(self.mname.get(), self.bases, self.body.toNode(), self.minimized)
+
 class IfBlock(Block):
     """
         An if statement has N conditions and N (no else) or N+1 (with else) bodies.
@@ -2147,22 +2463,36 @@ class WhileBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
+        self.isWithinLoop = True
 
         hdr = Block(self)
         tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         if node == None:
             self.cond = ExpressionBlock(hdr, None, False)
             self.body = SeqBlock(self, None, level + 1)
+            self.orelse = None
             self.minimized = False
+            self.minimized2 = False
         else:
             self.cond = ExpressionBlock(hdr, node.cond, False)
             self.body = SeqBlock(self, node.body, level + 1)
+            self.orelse = None if node.orelse == None else SeqBlock(self, node.orelse, level + 1)
             self.minimized = node.minimized
+            self.minimized2 = node.minimized2
         self.cond.grid(row=0, column=1)
         tk.Button(hdr, text=":", command=self.minmax).grid(row=0, column=2, sticky=tk.W)
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
+
+        if self.orelse == None:
+            self.hdr2 = None
+        else:
+            self.hdr2 = Block(self)
+            tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            tk.Button(self.hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
+            self.hdr2.grid(row=2, column=0, sticky=tk.W)
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
         self.setForm(WhileForm(confarea, self))
@@ -2179,15 +2509,46 @@ class WhileBlock(Block):
             self.body.grid_forget()
             self.minimized = True
 
+    def minmax2(self):
+        if self.minimized2:
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
+            self.update()
+            self.minimized2 = False
+        else:
+            self.orelse.grid_forget()
+            self.minimized2 = True
+
+    def addElse(self):
+        self.orelse = SeqBlock(self, None, self.level + 1)
+        self.hdr2 = Block(self)
+        tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
+        self.hdr2.grid(row=2, column=0, sticky=tk.W)
+        self.orelse.grid(row=3, column=0, sticky=tk.W)
+        self.setBlock(self.orelse.what)
+        self.needsSaving()
+
+    def removeElse(self):
+        self.hdr2.grid_forget()
+        self.hdr2 = None
+        self.orelse.grid_forget()
+        self.orelse = None
+        self.setBlock(self)
+        self.needsSaving()
+
     def print(self, fd):
         self.printIndent(fd)
         print("while ", end="", file=fd)
         self.cond.print(fd)
         print(":", file=fd)
         self.body.print(fd)
+        if self.orelse != None:
+            self.printIndent(fd)
+            print("else:", file=fd)
+            self.orelse.print(fd)
 
     def toNode(self):
-        return WhileNode(self.cond.toNode(), self.body.toNode(), self.minimized)
+        return WhileNode(self.cond.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
 
 class ForBlock(Block):
     def __init__(self, parent, node, level):
@@ -2196,6 +2557,7 @@ class ForBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
+        self.isWithinLoop = True
 
         hdr = Block(self)
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
@@ -2203,12 +2565,16 @@ class ForBlock(Block):
             self.var = NameBlock(hdr, "")
             self.expr = ExpressionBlock(hdr, None, False)
             self.body = SeqBlock(self, None, level + 1)
+            self.orelse = None
             self.minimized = False
+            self.minimized2 = False
         else:
             self.var = node.var.toBlock(hdr, 0, self)
             self.expr = ExpressionBlock(hdr, node.expr, False)
             self.body = SeqBlock(self, node.body, level + 1)
+            self.orelse = None if node.orelse == None else SeqBlock(self, node.orelse, level + 1)
             self.minimized = node.minimized
+            self.minimized2 = node.minimized2
         self.var.grid(row=0, column=1)
         tk.Button(hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
@@ -2216,6 +2582,15 @@ class ForBlock(Block):
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
+
+        if self.orelse == None:
+            self.hdr2 = None
+        else:
+            self.hdr2 = Block(self)
+            tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            tk.Button(self.hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
+            self.hdr2.grid(row=2, column=0, sticky=tk.W)
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
         self.setForm(ForForm(confarea, self))
@@ -2232,6 +2607,33 @@ class ForBlock(Block):
             self.body.grid_forget()
             self.minimized = True
 
+    def minmax2(self):
+        if self.minimized2:
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
+            self.update()
+            self.minimized2 = False
+        else:
+            self.orelse.grid_forget()
+            self.minimized2 = True
+
+    def addElse(self):
+        self.orelse = SeqBlock(self, None, self.level + 1)
+        self.hdr2 = Block(self)
+        tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
+        self.hdr2.grid(row=2, column=0, sticky=tk.W)
+        self.orelse.grid(row=3, column=0, sticky=tk.W)
+        self.setBlock(self.orelse.what)
+        self.needsSaving()
+
+    def removeElse(self):
+        self.hdr2.grid_forget()
+        self.hdr2 = None
+        self.orelse.grid_forget()
+        self.orelse = None
+        self.setBlock(self)
+        self.needsSaving()
+
     def print(self, fd):
         self.printIndent(fd)
         print("for ", end="", file=fd)
@@ -2240,9 +2642,13 @@ class ForBlock(Block):
         self.expr.print(fd)
         print(":", file=fd)
         self.body.print(fd)
+        if self.orelse != None:
+            self.printIndent(fd)
+            print("else:", file=fd)
+            self.orelse.print(fd)
 
     def toNode(self):
-        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), self.minimized)
+        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
 
 class Scrollable(Block):
     """
@@ -2283,30 +2689,24 @@ class Scrollable(Block):
         self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
 
 class TopLevel(tk.Frame):
-    def __init__(self, parent, file):
+    def __init__(self, parent):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.parent = parent
+        self.curFile = None
+        self.curDir = None
 
         # self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
 
         # menubar = tk.Frame(self, borderwidth=1, relief=tk.SUNKEN, style="Custom.TFrame")
         menubar = tk.Frame(self)
-        tk.Button(menubar, text="Code", command=self.text).grid(row=0, column=0, sticky=tk.W)
-        tk.Button(menubar, text="Save", command=self.save).grid(row=0, column=1, sticky=tk.W)
-        tk.Button(menubar, text="Run", command=self.run).grid(row=0, column=2, sticky=tk.W)
-        tk.Button(menubar, text="Help", command=self.help).grid(row=0, column=3, sticky=tk.W)
-        tk.Button(menubar, text="Quit", command=self.quit).grid(row=0, column=4, sticky=tk.W)
+        tk.Button(menubar, text="Import", command=self.load).grid(row=0, column=0, sticky=tk.W)
+        tk.Button(menubar, text="Export", command=self.save).grid(row=0, column=1, sticky=tk.W)
+        tk.Button(menubar, text="Code", command=self.text).grid(row=0, column=2, sticky=tk.W)
+        tk.Button(menubar, text="Run", command=self.run).grid(row=0, column=3, sticky=tk.W)
+        tk.Button(menubar, text="Help", command=self.help).grid(row=0, column=4, sticky=tk.W)
+        tk.Button(menubar, text="Quit", command=self.quit).grid(row=0, column=5, sticky=tk.W)
         # menubar.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         menubar.grid(row=0, column=0, sticky=tk.W, columnspan=2)
-
-        if file != None:
-            f = open(file, 'rb')
-            n = pickle.load(f)
-            f.close()
-            clean = True
-        else:
-            n = None
-            clean = False
 
         frame = tk.Frame(self, width=1200, height=500)
         frame.grid(row=1, column=0, sticky=tk.W)
@@ -2319,26 +2719,23 @@ class TopLevel(tk.Frame):
         # confarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         confarea.grid_propagate(0)
 
-        # progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
-        progarea = tk.Frame(frame, width=750, height=500)
+        # self.progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
+        self.progarea = tk.Frame(frame, width=750, height=500)
         # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
-        progarea.grid_propagate(0)
+        self.progarea.grid_propagate(0)
 
         global scrollable
-        scrollable = Scrollable(progarea, width=16)
-        self.program = SeqBlock(scrollable, n, 0)
+        scrollable = Scrollable(self.progarea, width=16)
+        self.program = SeqBlock(scrollable, None, 0)
         self.program.grid(sticky=tk.W)
         scrollable.update()
 
-        global saved
-        saved = clean
-
         # confarea.place(x=0, y=0)
-        # progarea.place(x=400, y=0)
+        # self.progarea.place(x=400, y=0)
         # confarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
-        # progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
+        # self.progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
         confarea.grid(row=0, column=0, sticky=tk.N)
-        progarea.grid(row=0, column=1, sticky=tk.NW)
+        self.progarea.grid(row=0, column=1, sticky=tk.NW)
 
         self.help()
 
@@ -2350,16 +2747,44 @@ class TopLevel(tk.Frame):
         self.program.print(sys.stdout)
         print("'=== END OF PROGRAM ==='")
 
-    def save(self):
-        node = self.program.toNode()
-        filename = asksaveasfilename(defaultextension='.pyn',
-                                     filetypes=(('Pyn files', '*.pyn'),
+    def load(self):
+        filename = askopenfilename(defaultextension='.py',
+                                     filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
-            pickle.dump(node, open(filename, "wb" ))
-            print("saved")
-            global saved
-            saved = True
+            self.curFile = os.path.basename(filename)
+            self.curDir = os.path.dirname(filename)
+            with open(filename, "r") as fd:
+                contents = fd.read()
+                rtree = ast.parse(contents)
+                ftree = pformat(rtree)
+                n = eval(ftree)
+
+                global scrollable
+                if self.program != None:
+                    self.program.grid_forget()
+                self.program = SeqBlock(scrollable, n, 0)
+                self.program.grid(sticky=tk.W)
+                scrollable.update()
+
+    def save(self):
+        node = self.program.toNode()
+        if self.curFile == None:
+            filename = asksaveasfilename(defaultextension='.py',
+                                     filetypes=(('Python source files', '*.py'),
+                                                ('All files', '*.*')))
+        else:
+            filename = asksaveasfilename(initialdir=self.curDir, initialfile=self.curFile, defaultextension='.py',
+                                     filetypes=(('Python source files', '*.py'),
+                                                ('All files', '*.*')))
+        if filename:
+            self.curFile = os.path.basename(filename)
+            self.curDir = os.path.dirname(filename)
+            with open(filename, "w") as fd:
+                self.program.print(fd)
+                print("saved")
+                global saved
+                saved = True
 
     def run(self):
         global printError
@@ -2410,15 +2835,317 @@ class TopLevel(tk.Frame):
         else:
             messagebox.showinfo("Warning", "You must save the program first")
 
+########################################################################
+
+def Module(body):
+    return SeqNode(body)
+
+def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
+    return RowNode(DefNode(name, args, SeqNode(body), False))
+
+def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
+    return RowNode(ClassNode(name, [x.what for x in bases], SeqNode(body), False))
+
+def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
+    return args
+
+def args(lineno, col_offset, arg, annotation):
+    return arg
+
+def Assign(lineno, col_offset, targets, value):
+    assert len(targets) == 1
+    return RowNode(AssignNode(targets[0], value, "="))
+
+def AugAssign(lineno, col_offset, target, op, value):
+    return RowNode(AssignNode(target, value, op + '='))
+
+def Name(lineno, col_offset, id, ctx):
+    return ExpressionNode(NameNode(id))
+
+def Subscript(lineno, col_offset, value, slice, ctx):
+    return ExpressionNode(IndexNode(value, slice))
+
+def Index(value):
+    return value
+
+def Num(lineno, col_offset, n):
+    return ExpressionNode(NumberNode(n))
+
+def For(lineno, col_offset, target, iter, body, orelse):
+    return RowNode(ForNode(target.what, iter, SeqNode(body),
+        None if orelse == [] else SeqNode(orelse), False, False))
+
+def While(lineno, col_offset, test, body, orelse):
+    return RowNode(WhileNode(test, SeqNode(body),
+        None if orelse == [] else SeqNode(orelse), False, False))
+
+def If(lineno, col_offset, test, body, orelse):
+    if orelse == []:
+        return RowNode(IfNode([test], [SeqNode(body)], [False]))
+    elif len(orelse) == 1:
+        row = orelse[0]
+        assert isinstance(row, RowNode)
+        stmt = row.what
+        if isinstance(stmt, IfNode):
+            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)] + stmt.bodies, [False] + stmt.minimizeds))
+        else:
+            return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
+    else:
+        return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
+
+def Compare(lineno, col_offset, left, ops, comparators):
+    assert len(ops) == 1
+    assert len(comparators) == 1
+    return ExpressionNode(BinaryopNode(left, comparators[0], ops[0]))
+
+def Eq():
+    return "=="
+
+def NotEq():
+    return "!="
+
+def Lt():
+    return "<"
+
+def LtE():
+    return "<="
+
+def Gt():
+    return ">"
+
+def GtE():
+    return ">="
+
+def Return(lineno, col_offset, value):
+    return RowNode(ReturnNode(value))
+
+def Break(lineno, col_offset):
+    return RowNode(BreakNode())
+
+def Pass(lineno, col_offset):
+    return RowNode(PassNode())
+        
+def Call(lineno, col_offset, func, args, keywords):
+    return ExpressionNode(FuncNode(func, args))
+
+def Load():
+    return None
+
+def Store():
+    return None
+
+def List(lineno, col_offset, elts, ctx):
+    return ExpressionNode(ListNode(elts))
+
+def Expr(lineno, col_offset, value):
+    return RowNode(EvalNode(value))
+
+def Attribute(lineno, col_offset, value, attr, ctx):
+    return ExpressionNode(AttrNode(value, NameNode(attr)))
+
+def arg(lineno, col_offset, arg, annotation):
+    return arg
+
+def Str(lineno, col_offset, s):
+    return ExpressionNode(StringNode(s))
+
+def NameConstant(lineno, col_offset, value):
+    if value in [False, True]:
+        return ExpressionNode(BooleanNode("True" if value else "False"))
+    else:
+        return ExpressionNode(NameNode("".format(value)))
+
+def BinOp(lineno, col_offset, left, op, right):
+    return ExpressionNode(BinaryopNode(left, right, op))
+
+def UnaryOp(lineno, col_offset, op, operand):
+    return ExpressionNode(UnaryopNode(operand, op))
+
+def BoolOp(lineno, col_offset, op, values):
+    return ExpressionNode(BinaryopNode(values[0], values[1], op))
+
+def alias(name, asname):
+    return name
+
+def Import(lineno, col_offset, names):
+    assert len(names) == 1
+    return RowNode(ImportNode(names[0]))
+
+def ImportFrom(lineno, col_offset, module, names, level):
+    assert len(names) == 1
+    return RowNode(ImportNode(names[0]))
+
+def Global(lineno, col_offset, names):
+    assert len(names) == 1
+    return RowNode(GlobalNode(names[0]))
+
+def Add():
+    return "+"
+
+def Sub():
+    return "-"
+
+def Div():
+    return "/"
+
+def FloorDiv():
+    return "//"
+
+def Mod():
+    return "%"
+
+def Mult():
+    return "*"
+
+def Pow():
+    return "**"
+
+def USub():
+    return "-"
+
+def Not():
+    return "not"
+
+def Or():
+    return "or"
+
+def And():
+    return "and"
+
+def In():
+    return "in"
+
+def NotIn():
+    return "not in"
+
+########################################################################
+# This code borrowed from https://github.com/asottile/astpretty
+
+AST = (ast.AST,)
+expr_context = (ast.expr_context,)
+
+try:  # pragma: no cover (with typed-ast)
+    from typed_ast import ast27
+    from typed_ast import ast3
+except ImportError:  # pragma: no cover (without typed-ast)
+    typed_support = False
+else:  # pragma: no cover (with typed-ast)
+    AST += (ast27.AST, ast3.AST)
+    expr_context += (ast27.expr_context, ast3.expr_context)
+    typed_support = True
+
+
+def _is_sub_node(node):
+    return isinstance(node, AST) and not isinstance(node, expr_context)
+
+
+def _is_leaf(node):
+    for field in node._fields:
+        attr = getattr(node, field)
+        if _is_sub_node(attr):
+            return False
+        elif isinstance(attr, (list, tuple)):
+            for val in attr:
+                if _is_sub_node(val):
+                    return False
+    else:
+        return True
+
+
+def _fields(n, show_offsets=True):
+    if show_offsets and hasattr(n, 'lineno') and hasattr(n, 'col_offset'):
+        return ('lineno', 'col_offset') + n._fields
+    else:
+        return n._fields
+
+
+def _leaf(node, show_offsets=True):
+    if isinstance(node, AST):
+        return '{}({})'.format(
+            type(node).__name__,
+            ', '.join(
+                '{}={}'.format(
+                    field,
+                    _leaf(getattr(node, field), show_offsets=show_offsets),
+                )
+                for field in _fields(node, show_offsets=show_offsets)
+            ),
+        )
+    elif isinstance(node, list):
+        return '[{}]'.format(
+            ', '.join(_leaf(x, show_offsets=show_offsets) for x in node),
+        )
+    else:
+        return repr(node)
+
+
+def pformat(node, indent='    ', show_offsets=True, _indent=0):
+    if node is None:  # pragma: no cover (py35+ unpacking in literals)
+        return repr(node)
+    elif isinstance(node, str):  # pragma: no cover (ast27 typed-ast args)
+        return repr(node)
+    elif _is_leaf(node):
+        return _leaf(node, show_offsets=show_offsets)
+    else:
+        class state:
+            indent = _indent
+
+        @contextlib.contextmanager
+        def indented():
+            state.indent += 1
+            yield
+            state.indent -= 1
+
+        def indentstr():
+            return state.indent * indent
+
+        def _pformat(el, _indent=0):
+            return pformat(
+                el, indent=indent, show_offsets=show_offsets,
+                _indent=_indent,
+            )
+
+        out = type(node).__name__ + '(\n'
+        with indented():
+            for field in _fields(node, show_offsets=show_offsets):
+                attr = getattr(node, field)
+                if attr == []:
+                    representation = '[]'
+                elif (
+                        isinstance(attr, list) and
+                        len(attr) == 1 and
+                        isinstance(attr[0], AST) and
+                        _is_leaf(attr[0])
+                ):
+                    representation = '[{}]'.format(_pformat(attr[0]))
+                elif isinstance(attr, list):
+                    representation = '[\n'
+                    with indented():
+                        for el in attr:
+                            representation += '{}{},\n'.format(
+                                indentstr(), _pformat(el, state.indent),
+                            )
+                    representation += indentstr() + ']'
+                elif isinstance(attr, AST):
+                    representation = _pformat(attr, state.indent)
+                else:
+                    representation = repr(attr)
+                out += '{}{}={},\n'.format(indentstr(), field, representation)
+        out += indentstr() + ')'
+        return out
+
+########################################################################
+
 if __name__ == '__main__':
     root = tk.Tk()
-    root.title("CAPE")
+    root.title("Code Afrique Python Editor")
     root.geometry("1250x550")
     curForm = None
     curBlock = None
     stmtBuffer = None
     exprBuffer = None
-    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None)
+    saved = False
+    tl = TopLevel(root)
     tl.grid()
     tl.grid_propagate(0)
 
