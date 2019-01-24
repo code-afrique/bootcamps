@@ -2538,14 +2538,53 @@ def NameConstant(lineno, col_offset, value):
     else:
         return None
 
+def BinOp(lineno, col_offset, left, op, right):
+    return ExpressionNode(BinaryopNode(left, right, op))
+
+def UnaryOp(lineno, col_offset, op, operand):
+    return ExpressionNode(UnaryopNode(operand, op))
+
+def BoolOp(lineno, col_offset, op, values):
+    return ExpressionNode(BinaryopNode(values[0], values[1], op))
+
 def Add():
 	return "+"
 
 def Sub():
 	return "-"
 
-def BinOp(lineno, col_offset, left, op, right):
-    return ExpressionNode(BinaryopNode(left, right, op))
+def Div():
+	return "/"
+
+def FloorDiv():
+	return "//"
+
+def Mod():
+	return "%"
+
+def Mult():
+	return "*"
+
+def Pow():
+	return "**"
+
+def USub():
+	return "-"
+
+def Not():
+	return "not"
+
+def Or():
+	return "or"
+
+def And():
+	return "and"
+
+def In():
+	return "in"
+
+def NotIn():
+	return "not in"
 
 ########################################################################
 # This code borrowed from https://github.com/asottile/astpretty
