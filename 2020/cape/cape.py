@@ -224,13 +224,13 @@ class NumberNode(Node):
     def toBlock(self, frame, level, block):
         return NumberBlock(frame, self.what)
 
-class BooleanNode(Node):
+class ConstantNode(Node):
     def __init__(self, what):
         super().__init__()   
         self.what = what
 
     def toBlock(self, frame, level, block):
-        return BooleanBlock(frame, self.what)
+        return ConstantBlock(frame, self.what)
 
 class NameNode(Node):
     def __init__(self, what):
@@ -543,6 +543,7 @@ class ExpressionForm(Form):
             row += 1
             tk.Button(frame, text="False", command=self.exprFalse).grid(row=row, column=0, sticky=tk.W)
             tk.Button(frame, text="True", command=self.exprTrue).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(frame, text="None", command=self.exprNone).grid(row=row, column=2, sticky=tk.W)
             row += 1
             tk.Button(frame, text="[ ]", command=self.exprList).grid(row=row, sticky=tk.W)
             tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=1, sticky=tk.W)
@@ -575,10 +576,13 @@ class ExpressionForm(Form):
         self.block.exprNumber("")
 
     def exprFalse(self):
-        self.block.exprBoolean("False")
+        self.block.exprConstant("False")
 
     def exprTrue(self):
-        self.block.exprBoolean("True")
+        self.block.exprConstant("True")
+
+    def exprNone(self):
+        self.block.exprConstant("None")
 
     def exprString(self):
         self.block.exprString()
@@ -958,15 +962,15 @@ class UnaryopForm(Form):
         delb = tk.Button(self, text="delete", command=self.delete)
         delb.grid(row=2, column=1)
 
-class BooleanForm(Form):
+class ConstantForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)   
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
         self.block = block
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="Boolean value").grid(columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="A Boolean is either True or False.").grid(row=1,columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Constant").grid(columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="Python supports three constants: False, True, and None.").grid(row=1,columnspan=2)
         copy = tk.Button(self, text="copy", command=self.copy)
         copy.grid(row=2, column=0)
         delb = tk.Button(self, text="delete", command=self.delete)
@@ -1225,7 +1229,7 @@ class NumberBlock(Block):
     def toNode(self):
         return NumberNode(self.value.get())
 
-class BooleanBlock(Block):
+class ConstantBlock(Block):
     def __init__(self, parent, value):
         super().__init__(parent)   
         self.isExpression = True
@@ -1237,7 +1241,7 @@ class BooleanBlock(Block):
         self.btn.grid(row=0, column=0)
 
     def genForm(self):
-        self.setForm(BooleanForm(confarea, self))
+        self.setForm(ConstantForm(confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1246,7 +1250,7 @@ class BooleanBlock(Block):
         print(self.value.get(), end="", file=fd)
 
     def toNode(self):
-        return BooleanNode(self.value.get())
+        return ConstantNode(self.value.get())
 
 class StringBlock(Block):
     def __init__(self, parent, value):
@@ -1708,9 +1712,9 @@ class ExpressionBlock(Block):
         self.setBlock(self.what)
         self.needsSaving()
 
-    def exprBoolean(self, value):
+    def exprConstant(self, value):
         self.what.grid_forget()
-        self.what = BooleanBlock(self, value)
+        self.what = ConstantBlock(self, value)
         self.what.grid()
         self.init = True
         self.setBlock(self.what)
@@ -2329,96 +2333,6 @@ class DefBlock(Block):
     def toNode(self):
         return DefNode(self.mname.get(), self.args, self.body.toNode(), self.minimized)
 
-class XXXBlock(Block):
-    def __init__(self, parent, node, level):
-        super().__init__(parent)   
-        self.isExpression = False
-        self.isStatement = True
-        self.parent = parent
-        self.level = level
-        self.mname = tk.StringVar()
-        self.bases = [ ]
-
-        if node == None:
-            self.minimized = False
-        else:
-            self.mname.set(node.name)
-            self.minimized = node.minimized
-
-        self.hdr = Block(self)
-        self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
-        self.btn.grid(row=0, column=0)
-        self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
-        self.name.grid(row=0, column=1)
-        tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
-
-        column = 3
-        if node != Node:
-            for i in range(len(node.bases)):
-                if i != 0:
-                    tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
-                    column += 1
-                base = node.bases[i].toBlock(self.hdr, 0, self)
-                self.bases.append(base)
-                base.grid(row=0, column=column)
-                column += 1
-
-        tk.Button(self.hdr, text=")", command=self.cb).grid(row=0, column=column)
-        tk.Button(self.hdr, text=":", command=self.minmax).grid(row=0, column=column+1)
-        self.hdr.grid(row=0, column=0, sticky=tk.W)
-
-        if node == None:
-            self.body = SeqBlock(self, None, level + 1)
-        else:
-            self.body = SeqBlock(self, node.body, level + 1)
-        if not self.minimized:
-            self.body.grid(row=1, column=0, sticky=tk.W)
-
-    def genForm(self):
-        f = ClassForm(confarea, self)
-        self.setForm(f)
-        f.entry.focus()
-
-    def cb(self):
-        self.setBlock(self)
-
-    def minmax(self):
-        if self.minimized:
-            self.body.grid(row=1, column=0, sticky=tk.W)
-            self.update()
-            self.minimized = False
-        else:
-            self.body.grid_forget()
-            self.minimized = True
-
-    def classUpdate(self, mname, bases):
-        self.mname.set(mname)
-        self.bases = bases
-        self.hdr.grid_forget()
-        # self.setHeader()
-        self.needsSaving()
-
-    def print(self, fd):
-        global printError
-
-        self.printIndent(fd)
-        v = self.mname.get()
-        print("class {}(".format(v), end="", file=fd)
-        if not v.isidentifier():
-            if not printError:
-                self.setBlock(self)
-                messagebox.showinfo("Print Error", "Fix bad method name")
-                printError = True
-        for i in range(len(self.bases)):
-            if i != 0:
-                print(", ", end="", file=fd)
-            self.bases[i].print(fd)
-        print("):", file=fd)
-        self.body.print(fd)
-
-    def toNode(self):
-        return ClassNode(self.mname.get(), self.bases, self.body.toNode(), self.minimized)
-
 class IfBlock(Block):
     """
         An if statement has N conditions and N (no else) or N+1 (with else) bodies.
@@ -2831,6 +2745,10 @@ class TopLevel(tk.Frame):
         print("'=== END OF PROGRAM ==='")
 
     def load(self):
+        if not saved:
+            messagebox.showinfo("Warning", "You must save the program first")
+            return
+
         filename = askopenfilename(defaultextension='.py',
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
@@ -3035,10 +2953,7 @@ def Str(lineno, col_offset, s):
     return ExpressionNode(StringNode(s))
 
 def NameConstant(lineno, col_offset, value):
-    if value in [False, True]:
-        return ExpressionNode(BooleanNode("True" if value else "False"))
-    else:
-        return ExpressionNode(NameNode("".format(value)))
+    return ExpressionNode(ConstantNode(str(value)))
 
 def BinOp(lineno, col_offset, left, op, right):
     return ExpressionNode(BinaryopNode(left, right, op))
@@ -3053,7 +2968,7 @@ def alias(name, asname):
     return name
 
 def keyword(arg, value):
-	return None
+    return None
 
 def Import(lineno, col_offset, names):
     assert len(names) == 1
@@ -3232,7 +3147,7 @@ if __name__ == '__main__':
     curBlock = None
     stmtBuffer = None
     exprBuffer = None
-    saved = False
+    saved = True
     tl = TopLevel(root)
     tl.grid()
     tl.grid_propagate(0)
