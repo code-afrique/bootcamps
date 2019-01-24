@@ -2841,6 +2841,8 @@ class TopLevel(tk.Frame):
                 contents = fd.read()
                 rtree = ast.parse(contents)
                 ftree = pformat(rtree)
+                # with open("cape.log", "w") as log:
+                #     log.write(ftree)
                 n = eval(ftree)
 
                 global scrollable
@@ -3008,7 +3010,7 @@ def Break(lineno, col_offset):
 def Pass(lineno, col_offset):
     return RowNode(PassNode())
         
-def Call(lineno, col_offset, func, args, keywords):
+def Call(lineno, col_offset, func, args, keywords, starargs=None, kwargs=None):
     return ExpressionNode(FuncNode(func, args))
 
 def Load():
@@ -3049,6 +3051,9 @@ def BoolOp(lineno, col_offset, op, values):
 
 def alias(name, asname):
     return name
+
+def keyword(arg, value):
+	return None
 
 def Import(lineno, col_offset, names):
     assert len(names) == 1
