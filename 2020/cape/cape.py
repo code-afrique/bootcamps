@@ -12,6 +12,7 @@ import tkinter as tk
 import tkinter as ttk
 from tkinter import messagebox
 from tkinter.filedialog import asksaveasfilename
+from tkinter.filedialog import askopenfilename
 import argparse
 import ast
 import contextlib
@@ -294,8 +295,7 @@ class HelpForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Help").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements.  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to minimize or maximize their bodies.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font='Helvetica 14', text="If you run this editor without arguments, you start a new Python program.  Otherwise the argument should be a Python source file.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font='Helvetica 14', text="The 'code' button renders a Python 3 program that you can send to a Python interpreter.  Or more easily, you can select 'run'.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font='Helvetica 14', text="Use 'Import' and 'Export' to load and save Python source files.  The 'Code' button renders a Python 3 program that you can send to a Python interpreter.  Or more easily, you can select 'Run'.").grid(sticky=tk.W)
 
 class TextForm(Form):
     def __init__(self, parent, block):
@@ -2473,32 +2473,23 @@ class Scrollable(Block):
         self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
 
 class TopLevel(tk.Frame):
-    def __init__(self, parent, file):
+    def __init__(self, parent):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.parent = parent
+        self.filename = None
 
         # self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
 
         # menubar = tk.Frame(self, borderwidth=1, relief=tk.SUNKEN, style="Custom.TFrame")
         menubar = tk.Frame(self)
-        tk.Button(menubar, text="Code", command=self.text).grid(row=0, column=0, sticky=tk.W)
-        tk.Button(menubar, text="Save", command=self.save).grid(row=0, column=1, sticky=tk.W)
-        tk.Button(menubar, text="Run", command=self.run).grid(row=0, column=2, sticky=tk.W)
-        tk.Button(menubar, text="Help", command=self.help).grid(row=0, column=3, sticky=tk.W)
-        tk.Button(menubar, text="Quit", command=self.quit).grid(row=0, column=4, sticky=tk.W)
+        tk.Button(menubar, text="Import", command=self.load).grid(row=0, column=0, sticky=tk.W)
+        tk.Button(menubar, text="Export", command=self.save).grid(row=0, column=1, sticky=tk.W)
+        tk.Button(menubar, text="Code", command=self.text).grid(row=0, column=2, sticky=tk.W)
+        tk.Button(menubar, text="Run", command=self.run).grid(row=0, column=3, sticky=tk.W)
+        tk.Button(menubar, text="Help", command=self.help).grid(row=0, column=4, sticky=tk.W)
+        tk.Button(menubar, text="Quit", command=self.quit).grid(row=0, column=5, sticky=tk.W)
         # menubar.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         menubar.grid(row=0, column=0, sticky=tk.W, columnspan=2)
-
-        if file != None:
-            with open(file, 'r') as fd:
-                contents = fd.read()
-                rtree = ast.parse(contents)
-                ftree = pformat(rtree)
-                n = eval(ftree)
-                clean = True
-        else:
-            n = None
-            clean = False
 
         frame = tk.Frame(self, width=1200, height=500)
         frame.grid(row=1, column=0, sticky=tk.W)
@@ -2511,26 +2502,23 @@ class TopLevel(tk.Frame):
         # confarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         confarea.grid_propagate(0)
 
-        # progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
-        progarea = tk.Frame(frame, width=750, height=500)
+        # self.progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
+        self.progarea = tk.Frame(frame, width=750, height=500)
         # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
-        progarea.grid_propagate(0)
+        self.progarea.grid_propagate(0)
 
         global scrollable
-        scrollable = Scrollable(progarea, width=16)
-        self.program = SeqBlock(scrollable, n, 0)
+        scrollable = Scrollable(self.progarea, width=16)
+        self.program = SeqBlock(scrollable, None, 0)
         self.program.grid(sticky=tk.W)
         scrollable.update()
 
-        global saved
-        saved = clean
-
         # confarea.place(x=0, y=0)
-        # progarea.place(x=400, y=0)
+        # self.progarea.place(x=400, y=0)
         # confarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
-        # progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
+        # self.progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
         confarea.grid(row=0, column=0, sticky=tk.N)
-        progarea.grid(row=0, column=1, sticky=tk.NW)
+        self.progarea.grid(row=0, column=1, sticky=tk.NW)
 
         self.help()
 
@@ -2542,12 +2530,38 @@ class TopLevel(tk.Frame):
         self.program.print(sys.stdout)
         print("'=== END OF PROGRAM ==='")
 
-    def save(self):
-        node = self.program.toNode()
-        filename = asksaveasfilename(defaultextension='.py',
+    def load(self):
+        filename = askopenfilename(defaultextension='.py',
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
+            self.filename = filename
+            with open(filename, "r") as fd:
+                contents = fd.read()
+                rtree = ast.parse(contents)
+                ftree = pformat(rtree)
+                n = eval(ftree)
+
+                global scrollable
+                if self.program != None:
+                    self.program.grid_forget()
+                self.program = SeqBlock(scrollable, n, 0)
+                self.program.grid(sticky=tk.W)
+                scrollable.update()
+
+    def save(self):
+        node = self.program.toNode()
+        if self.filename == None:
+            filename = asksaveasfilename(defaultextension='.py',
+                                     filetypes=(('Python source files', '*.py'),
+                                                ('All files', '*.*')))
+        else:
+            print("FILE {}".format(self.filename))
+            filename = asksaveasfilename(initialfile=self.filename, defaultextension='.py',
+                                     filetypes=(('Python source files', '*.py'),
+                                                ('All files', '*.*')))
+        if filename:
+            self.filename = filename
             with open(filename, "w") as fd:
                 self.program.print(fd)
                 print("saved")
@@ -2899,7 +2913,8 @@ if __name__ == '__main__':
     curBlock = None
     stmtBuffer = None
     exprBuffer = None
-    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None)
+    saved = False
+    tl = TopLevel(root)
     tl.grid()
     tl.grid_propagate(0)
 
