@@ -2512,6 +2512,7 @@ def args(lineno, col_offset, arg, annotation):
     return arg
 
 def Assign(lineno, col_offset, targets, value):
+    assert len(targets) == 1
     return RowNode(AssignNode(targets[0], value, "="))
 
 def AugAssign(lineno, col_offset, target, op, value):
@@ -2530,20 +2531,22 @@ def Num(lineno, col_offset, n):
     return ExpressionNode(NumberNode(n))
 
 def For(lineno, col_offset, target, iter, body, orelse):
+    assert orelse == []
     return RowNode(ForNode(target.what, iter, SeqNode(body), False))
 
 def While(lineno, col_offset, test, body, orelse):
+    assert orelse == []
     return RowNode(WhileNode(test, SeqNode(body), False))
 
 def If(lineno, col_offset, test, body, orelse):
     if orelse == []:
-        print("If")
         return RowNode(IfNode([test], [SeqNode(body)], [False]))
     else:
-        print("ELSE")
         return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
 
 def Compare(lineno, col_offset, left, ops, comparators):
+    assert len(ops) == 1
+    assert len(comparators) == 1
     return ExpressionNode(BinaryopNode(left, comparators[0], ops[0]))
 
 def Eq():
@@ -2598,10 +2601,8 @@ def Str(lineno, col_offset, s):
     return ExpressionNode(StringNode(s))
 
 def NameConstant(lineno, col_offset, value):
-    if (value in [False, True]):
-        return ExpressionNode(BooleanNode("True" if value else "False"))
-    else:
-        return None
+    assert value in [False, True]
+    return ExpressionNode(BooleanNode("True" if value else "False"))
 
 def BinOp(lineno, col_offset, left, op, right):
     return ExpressionNode(BinaryopNode(left, right, op))
@@ -2616,6 +2617,7 @@ def alias(name, asname):
     return name
 
 def Import(lineno, col_offset, names):
+    assert len(names) == 1
     return RowNode(ImportNode(names[0]))
 
 def Add():
