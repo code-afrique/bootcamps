@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import os
 import tempfile
 import subprocess
-import pickle
 import sys
 import io
 import keyword
@@ -284,8 +283,8 @@ class HelpForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Help").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements.  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to minimize or maximize their bodies.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font='Helvetica 14', text="You can save the program into a '.pyn' file.  If you run this editor without arguments, you start a new Python program.  Otherwise the argument should be an existing '.pyn' file.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font='Helvetica 14', text="The 'code' button renders a Python 3 program that you can send to a Python interpreter.  Or you can 'run' the program.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font='Helvetica 14', text="If you run this editor without arguments, you start a new Python program.  Otherwise the argument should be a Python source file.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font='Helvetica 14', text="The 'code' button renders a Python 3 program that you can send to a Python interpreter.  Or more easily, you can select 'run'.").grid(sticky=tk.W)
 
 class TextForm(Form):
     def __init__(self, parent, block):
@@ -2309,7 +2308,7 @@ class Scrollable(Block):
         self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
 
 class TopLevel(tk.Frame):
-    def __init__(self, parent, file, fm):
+    def __init__(self, parent, file):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.parent = parent
 
@@ -2326,13 +2325,14 @@ class TopLevel(tk.Frame):
         menubar.grid(row=0, column=0, sticky=tk.W, columnspan=2)
 
         if file != None:
-            f = open(file, 'rb')
-            n = pickle.load(f)
-            f.close()
-            clean = True
+            with open(file, 'r') as fd:
+                contents = fd.read()
+                rtree = ast.parse(contents)
+                ftree = pformat(rtree)
+                n = eval(ftree)
+                clean = True
         else:
-            # n = None
-            n = fm
+            n = None
             clean = False
 
         frame = tk.Frame(self, width=1200, height=500)
@@ -2379,14 +2379,15 @@ class TopLevel(tk.Frame):
 
     def save(self):
         node = self.program.toNode()
-        filename = asksaveasfilename(defaultextension='.pyn',
-                                     filetypes=(('Pyn files', '*.pyn'),
+        filename = asksaveasfilename(defaultextension='.py',
+                                     filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
-            pickle.dump(node, open(filename, "wb" ))
-            print("saved")
-            global saved
-            saved = True
+            with open(filename, "w") as fd:
+                self.program.print(fd)
+                print("saved")
+                global saved
+                saved = True
 
     def run(self):
         global printError
@@ -2396,7 +2397,6 @@ class TopLevel(tk.Frame):
         try:
             with os.fdopen(fd, 'w') as tmp:
                 self.program.print(tmp)
-                tmp.close()
                 if printError:
                     print("===== Fix program first =====")
                 else:
@@ -2503,10 +2503,10 @@ def Attribute(lineno, col_offset, value, attr, ctx):
     return ExpressionNode(RefNode(value, NameNode(attr)))
 
 def arg(lineno, col_offset, arg, annotation):
-	return arg
+    return arg
 
 def Str(lineno, col_offset, s):
-	return ExpressionNode(StringNode(s))
+    return ExpressionNode(StringNode(s))
 
 ########################################################################
 
@@ -2625,29 +2625,15 @@ def pformat(node, indent='    ', show_offsets=True, _indent=0):
 
 ########################################################################
 
-fmc = '''
-def findMinimum(list):
-    current = list[0]
-    for x in list:
-        if (x < current):
-            current = x
-    return current
-pass
-min = findMinimum([4, 1, 6])
-print("the minimum is \\"{}\\"".format(min))
-'''
-
 if __name__ == '__main__':
-    x = ast.parse(fmc)
-    y = pformat(x)
     root = tk.Tk()
-    root.title("CAPE")
+    root.title("Code Afrique Python Editor")
     root.geometry("1250x550")
     curForm = None
     curBlock = None
     stmtBuffer = None
     exprBuffer = None
-    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None, eval(y))
+    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None)
     tl.grid()
     tl.grid_propagate(0)
 
