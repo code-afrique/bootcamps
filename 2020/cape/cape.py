@@ -25,8 +25,11 @@ import tokenize
 """
 
 class Node():
-    def toBlock(frame):
+    def toBlock(self, frame):
         return None
+
+    def setComments(self, comments):
+        print("setComments")
 
 class NilNode(Node):
     def __init__(self):
@@ -43,9 +46,17 @@ class PassNode(Node):
         return PassBlock(frame, self, level, block)
 
 class RowNode(Node):
-    def __init__(self, what):
+    def __init__(self, what, lineno):
         super().__init__()   
         self.what = what
+        self.lineno = lineno
+        self.comment = None
+
+    def setComments(self, comments):
+        if self.lineno in comments:
+            self.comment = comments[self.lineno]
+            print("LINE {0}".format(self.lineno))
+        self.what.setComments(comments)
 
 class DefNode(Node):
     def __init__(self, name, args, body, minimized):
@@ -58,6 +69,9 @@ class DefNode(Node):
     def toBlock(self, frame, level, block):
         return DefBlock(frame, self, level)
 
+    def setComments(self, comments):
+        self.body.setComments(comments)
+
 class ClassNode(Node):
     def __init__(self, name, bases, body, minimized):
         super().__init__()   
@@ -69,6 +83,9 @@ class ClassNode(Node):
     def toBlock(self, frame, level, block):
         return ClassBlock(frame, self, level)
 
+    def setComments(self, comments):
+        self.body.setComments(comments)
+
 class IfNode(Node):
     def __init__(self, conds, bodies, minimizeds):
         super().__init__()   
@@ -78,6 +95,10 @@ class IfNode(Node):
 
     def toBlock(self, frame, level, block):
         return IfBlock(frame, self, level)
+
+    def setComments(self, comments):
+        for b in self.bodies:
+            b.setComments(comments)
 
 class WhileNode(Node):
     def __init__(self, cond, body, orelse, minimized, minimized2):
@@ -91,6 +112,11 @@ class WhileNode(Node):
     def toBlock(self, frame, level, block):
         return WhileBlock(frame, self, level)
 
+    def setComments(self, comments):
+        self.body.setComments(comments)
+        if self.orelse != None:
+            self.orelse.setComments(comments)
+
 class ForNode(Node):
     def __init__(self, var, expr, body, orelse, minimized, minimized2):
         super().__init__()   
@@ -103,6 +129,11 @@ class ForNode(Node):
 
     def toBlock(self, frame, level, block):
         return ForBlock(frame, self, level)
+
+    def setComments(self, comments):
+        self.body.setComments(comments)
+        if self.orelse != None:
+            self.orelse.setComments(comments)
 
 class ReturnNode(Node):
     def __init__(self, what):
@@ -264,6 +295,10 @@ class SeqNode(Node):
 
     def toBlock(self, frame, level, block):
         return SeqBlock(frame, self.rows, level)
+
+    def setComments(self, comments):
+        for row in self.rows:
+            row.setComments(comments)
 
 class Form(tk.Frame):
     def __init__(self, parent):
@@ -2135,6 +2170,8 @@ class RowBlock(Block):
         else:
             self.what = node.what.toBlock(self, level, self)
         self.what.grid(row=0, column=1, sticky=tk.W)
+        if node != None and node.comment != None:
+            tk.Label(self, text=node.comment).grid(row=0, column=2, sticky=tk.N+tk.W)
 
     def genForm(self):
         f = RowForm(confarea, self)
@@ -2173,7 +2210,7 @@ class RowBlock(Block):
         self.what.print(fd)
 
     def toNode(self):
-        return RowNode(self.what.toNode())
+        return RowNode(self.what.toNode(), 0)
 
 class SeqBlock(Block):
     def __init__(self, parent, node, level):
@@ -2746,12 +2783,12 @@ class TopLevel(tk.Frame):
         print("'=== END OF PROGRAM ==='")
 
     def extractComments(self, code):
-        comments = []
+        comments = {}
         fd = io.StringIO(code)
         for toktype, tokval, begin, end, line in tokenize.generate_tokens(fd.readline):
             if toktype == tokenize.COMMENT:
                 (row, col) = begin
-                comments.append((row, tokenize.untokenize([(toktype, tokval)])))
+                comments[row] = tokenize.untokenize([(toktype, tokval)])
         return comments
 
     def load(self):
@@ -2773,6 +2810,7 @@ class TopLevel(tk.Frame):
                 #     log.write(ftree)
                 n = eval(ftree)
                 comments = self.extractComments(code)
+                n.setComments(comments)
                 print(comments)
 
                 global scrollable
@@ -2856,10 +2894,10 @@ def Module(body):
     return SeqNode(body)
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
-    return RowNode(DefNode(name, args, SeqNode(body), False))
+    return RowNode(DefNode(name, args, SeqNode(body), False), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
-    return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), False))
+    return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), False), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
     return args
@@ -2869,10 +2907,10 @@ def args(lineno, col_offset, arg, annotation):
 
 def Assign(lineno, col_offset, targets, value):
     assert len(targets) == 1
-    return RowNode(AssignNode(targets[0], value, "="))
+    return RowNode(AssignNode(targets[0], value, "="), lineno)
 
 def AugAssign(lineno, col_offset, target, op, value):
-    return RowNode(AssignNode(target, value, op + '='))
+    return RowNode(AssignNode(target, value, op + '='), lineno)
 
 def Name(lineno, col_offset, id, ctx):
     return ExpressionNode(NameNode(id))
@@ -2888,25 +2926,25 @@ def Num(lineno, col_offset, n):
 
 def For(lineno, col_offset, target, iter, body, orelse):
     return RowNode(ForNode(target.what, iter, SeqNode(body),
-        None if orelse == [] else SeqNode(orelse), False, False))
+        None if orelse == [] else SeqNode(orelse), False, False), lineno)
 
 def While(lineno, col_offset, test, body, orelse):
-    return RowNode(WhileNode(test, SeqNode(body),
+    return RowNode(WhileNode(test, SeqNode(body), lineno,
         None if orelse == [] else SeqNode(orelse), False, False))
 
 def If(lineno, col_offset, test, body, orelse):
     if orelse == []:
-        return RowNode(IfNode([test], [SeqNode(body)], [False]))
+        return RowNode(IfNode([test], [SeqNode(body)], [False]), lineno)
     elif len(orelse) == 1:
         row = orelse[0]
         assert isinstance(row, RowNode)
         stmt = row.what
         if isinstance(stmt, IfNode):
-            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)] + stmt.bodies, [False] + stmt.minimizeds))
+            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)] + stmt.bodies, [False] + stmt.minimizeds), lineno)
         else:
-            return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
+            return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]), lineno)
     else:
-        return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
+        return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]), lineno)
 
 def Compare(lineno, col_offset, left, ops, comparators):
     assert len(ops) == 1
@@ -2932,13 +2970,13 @@ def GtE():
     return ">="
 
 def Return(lineno, col_offset, value):
-    return RowNode(ReturnNode(value))
+    return RowNode(ReturnNode(value), lineno)
 
 def Break(lineno, col_offset):
-    return RowNode(BreakNode())
+    return RowNode(BreakNode(), lineno)
 
 def Pass(lineno, col_offset):
-    return RowNode(PassNode())
+    return RowNode(PassNode(), lineno)
         
 def Call(lineno, col_offset, func, args, keywords, starargs=None, kwargs=None):
     return ExpressionNode(FuncNode(func, args))
@@ -2953,7 +2991,7 @@ def List(lineno, col_offset, elts, ctx):
     return ExpressionNode(ListNode(elts))
 
 def Expr(lineno, col_offset, value):
-    return RowNode(EvalNode(value))
+    return RowNode(EvalNode(value), lineno)
 
 def Attribute(lineno, col_offset, value, attr, ctx):
     return ExpressionNode(AttrNode(value, NameNode(attr)))
@@ -2984,15 +3022,15 @@ def keyword(arg, value):
 
 def Import(lineno, col_offset, names):
     assert len(names) == 1
-    return RowNode(ImportNode(names[0]))
+    return RowNode(ImportNode(names[0]), lineno)
 
 def ImportFrom(lineno, col_offset, module, names, level):
     assert len(names) == 1
-    return RowNode(ImportNode(names[0]))
+    return RowNode(ImportNode(names[0]), lineno)
 
 def Global(lineno, col_offset, names):
     assert len(names) == 1
-    return RowNode(GlobalNode(names[0]))
+    return RowNode(GlobalNode(names[0]), lineno)
 
 def Add():
     return "+"
