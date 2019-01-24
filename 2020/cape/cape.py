@@ -2499,7 +2499,7 @@ def arg(lineno, col_offset, arg, annotation):
 def Str(lineno, col_offset, s):
 	return ExpressionNode(StringNode(s))
 
-fm = Module(
+fms = """Module(
     body=[
         FunctionDef(
             lineno=1,
@@ -2616,7 +2616,7 @@ fm = Module(
             ),
         ),
     ],
-)
+)"""
 
 if __name__ == '__main__':
     root = tk.Tk()
@@ -2626,7 +2626,7 @@ if __name__ == '__main__':
     curBlock = None
     stmtBuffer = None
     exprBuffer = None
-    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None, fm)
+    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None, eval(fms))
     tl.grid()
     tl.grid_propagate(0)
 
