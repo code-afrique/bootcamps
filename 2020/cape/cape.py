@@ -179,22 +179,22 @@ class ListNode(Node):
     def toBlock(self, frame, level, block):
         return ListBlock(frame, self)
 
-class RefNode(Node):
+class AttrNode(Node):
     def __init__(self, array, ref):
         super().__init__()   
         self.array = array
         self.ref = ref
 
     def toBlock(self, frame, level, block):
-        return RefBlock(frame, self)
+        return AttrBlock(frame, self)
 
-class CallNode(Node):
+class EvalNode(Node):
     def __init__(self, what):
         super().__init__()   
         self.what = what
 
     def toBlock(self, frame, level, block):
-        return CallBlock(frame, self, level)
+        return EvalBlock(frame, self, level)
 
 class NumberNode(Node):
     def __init__(self, what):
@@ -414,7 +414,7 @@ class PassForm(Form):
         assignops.grid(row=row, column=1, sticky=tk.W)
 
         row += 1
-        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtCall).grid(row=row)
+        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row)
         row += 1
         tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=row)
         row += 1
@@ -438,8 +438,8 @@ class PassForm(Form):
     def stmtAssign(self):
         self.block.stmtAssign(self.assignop.get())
 
-    def stmtCall(self):
-        self.block.stmtCall()
+    def stmtEval(self):
+        self.block.stmtEval()
 
     def stmtIf(self):
         self.block.stmtIf()
@@ -482,7 +482,7 @@ class PassForm(Form):
         elif ev.char == '=':
             self.stmtAssign()
         elif ev.char == '?':
-            self.stmtCall()
+            self.stmtEval()
 
 class ExpressionForm(Form):
     def __init__(self, parent, block, lvalue):
@@ -504,7 +504,7 @@ class ExpressionForm(Form):
         tk.Message(frame, width=350, font='Helvetica 14', text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, columnspan=2)
         row += 1
         tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
-        tk.Button(frame, text="x.y", command=self.exprRef).grid(row=row, column=1, sticky=tk.W)
+        tk.Button(frame, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
         tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
         row += 1
         if not lvalue:
@@ -563,8 +563,8 @@ class ExpressionForm(Form):
     def exprName(self):
         self.block.exprName("")
 
-    def exprRef(self):
-        self.block.exprRef()
+    def exprAttr(self):
+        self.block.exprAttr()
 
     def exprIndex(self):
         self.block.exprIndex()
@@ -607,7 +607,7 @@ class ExpressionForm(Form):
         elif ev.char.isidentifier():
             self.block.exprName(ev.char)
         elif ev.char == '.':
-            self.block.exprRef()
+            self.block.exprAttr()
         elif ev.char == ']':
             self.block.exprIndex()
         elif not self.lvalue:
@@ -827,7 +827,7 @@ class IndexForm(Form):
         delb = tk.Button(self, text="delete", command=self.delete)
         delb.grid(row=2, column=1)
 
-class RefForm(Form):
+class AttrForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)   
         self.isExpression = True
@@ -1290,7 +1290,7 @@ class SliceBlock(Block):
     def toNode(self):
         return SliceNode(self.array.toNode(), self.start.toNode(), self.finish.toNode())
 
-class RefBlock(Block):
+class AttrBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)   
         self.isExpression = True
@@ -1312,7 +1312,7 @@ class RefBlock(Block):
         self.setBlock(self)
 
     def genForm(self):
-        self.setForm(RefForm(confarea, self))
+        self.setForm(AttrForm(confarea, self))
 
     def print(self, fd):
         self.array.print(fd)
@@ -1320,7 +1320,7 @@ class RefBlock(Block):
         self.ref.print(fd)
 
     def toNode(self):
-        return RefNode(self.array.toNode(), self.ref.toNode())
+        return AttrNode(self.array.toNode(), self.ref.toNode())
 
 class UnaryopBlock(Block):
     def __init__(self, parent, node, op):
@@ -1578,9 +1578,9 @@ class ExpressionBlock(Block):
         self.setBlock(self.what.array)
         self.needsSaving()
 
-    def exprRef(self):
+    def exprAttr(self):
         self.what.grid_forget()
-        self.what = RefBlock(self, None)
+        self.what = AttrBlock(self, None)
         self.what.grid()
         self.init = True
         self.setBlock(self.what.array)
@@ -1739,9 +1739,9 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.left)
         self.needsSaving()
 
-    def stmtCall(self):
+    def stmtEval(self):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = CallBlock(self.rowblk, None, self.level)
+        self.rowblk.what = EvalBlock(self.rowblk, None, self.level)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.expr)
         self.needsSaving()
@@ -1804,14 +1804,7 @@ class PassBlock(Block):
     def toNode(self):
         return PassNode()
 
-class CallBlock(Block):
-    """
-        Perhaps misnamed, this block represents an expression
-        as a statement in Python.  Often this is a function call
-        but it doesn't have to be.  In fact, this very comment
-        is an example of a CallBlock, as is an assignment.
-    """
-
+class EvalBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
         self.isExpression = False
@@ -1830,7 +1823,7 @@ class CallBlock(Block):
         print("", file=fd)
 
     def toNode(self):
-        return CallNode(self.expr.toNode())
+        return EvalNode(self.expr.toNode())
 
 class ReturnBlock(Block):
     def __init__(self, parent, node, level):
@@ -2710,10 +2703,10 @@ def List(lineno, col_offset, elts, ctx):
     return ExpressionNode(ListNode(elts))
 
 def Expr(lineno, col_offset, value):
-    return RowNode(CallNode(value))
+    return RowNode(EvalNode(value))
 
 def Attribute(lineno, col_offset, value, attr, ctx):
-    return ExpressionNode(RefNode(value, NameNode(attr)))
+    return ExpressionNode(AttrNode(value, NameNode(attr)))
 
 def arg(lineno, col_offset, arg, annotation):
     return arg
