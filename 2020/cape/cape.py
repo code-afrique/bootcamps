@@ -95,6 +95,13 @@ class ReturnNode(Node):
     def toBlock(self, frame, level, block):
         return ReturnBlock(frame, self, level)
 
+class BreakNode(Node):
+    def __init__(self):
+        super().__init__()   
+
+    def toBlock(self, frame, level, block):
+        return BreakBlock(frame, self, level)
+
 class ImportNode(Node):
     def __init__(self, what):
         super().__init__()   
@@ -412,6 +419,9 @@ class PassForm(Form):
         row += 1
         tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=row)
         row += 1
+        if self.block.isWithinLoop:
+            tk.Button(self, text="break statement", width=0, command=self.stmtBreak).grid(row=row)
+            row += 1
         if self.block.isWithinDef:
             tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
@@ -440,6 +450,9 @@ class PassForm(Form):
     def stmtReturn(self):
         self.block.stmtReturn()
 
+    def stmtBreak(self):
+        self.block.stmtBreak()
+
     def stmtImport(self):
         self.block.stmtImport()
 
@@ -457,6 +470,8 @@ class PassForm(Form):
             self.stmtFor()
         elif ev.char == 'w':
             self.stmtWhile()
+        elif self.block.isWithinLoop and ev.char == 'b':
+            self.stmtBreak()
         elif self.block.isWithinDef and ev.char == 'r':
             self.stmtReturn()
         elif ev.char == 'd':
@@ -733,6 +748,16 @@ class ReturnForm(Form):
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
 
+class BreakForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'break' statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'break' statement' terminates the loop that it is in.").grid(row=1)
+
 class ImportForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)   
@@ -983,6 +1008,7 @@ class Block(tk.Frame):
         self.isExpression = False
         self.isStatement = False
         self.isWithinDef = False if parent == None else parent.isWithinDef
+        self.isWithinLoop = False if parent == None else parent.isWithinLoop
 
     def printIndent(self, fd):
         for i in range(self.level):
@@ -1621,8 +1647,8 @@ class NilBlock(Block):
 class AssignBlock(Block):
     def __init__(self, parent, node, level, op):
         super().__init__(parent)   
-        self.isExpression = True
-        self.isStatement = False
+        self.isExpression = False
+        self.isStatement = True
         self.parent = parent
         self.level = level
         self.op = op
@@ -1721,6 +1747,13 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.expr)
         self.needsSaving()
 
+    def stmtBreak(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = BreakBlock(self.rowblk, None, self.level)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what)
+        self.needsSaving()
+
     def stmtImport(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ImportBlock(self.rowblk, None, self.level)
@@ -1800,6 +1833,28 @@ class ReturnBlock(Block):
 
     def toNode(self):
         return ReturnNode(self.expr.toNode())
+
+class BreakBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        tk.Button(self, text="break", fg="red", command=self.cb).grid(row=0, column=0)
+
+    def genForm(self):
+        self.setForm(BreakForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        print("break", file=fd)
+
+    def toNode(self):
+        return BreakNode()
 
 class ImportBlock(Block):
     def __init__(self, parent, node, level):
@@ -2172,6 +2227,7 @@ class WhileBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
+        self.isWithinLoop = True
 
         hdr = Block(self)
         tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
@@ -2221,6 +2277,7 @@ class ForBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
+        self.isWithinLoop = True
 
         hdr = Block(self)
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
@@ -2505,6 +2562,9 @@ def GtE():
 
 def Return(lineno, col_offset, value):
     return RowNode(ReturnNode(value))
+
+def Break(lineno, col_offset):
+    return RowNode(BreakNode())
 
 def Pass(lineno, col_offset):
     return RowNode(PassNode())
