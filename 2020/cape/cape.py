@@ -2397,6 +2397,7 @@ class TopLevel(tk.Frame):
         try:
             with os.fdopen(fd, 'w') as tmp:
                 self.program.print(tmp)
+                tmp.close()
                 if printError:
                     print("===== Fix program first =====")
                 else:
@@ -2548,49 +2549,49 @@ def BoolOp(lineno, col_offset, op, values):
     return ExpressionNode(BinaryopNode(values[0], values[1], op))
 
 def alias(name, asname):
-	return name
+    return name
 
 def Import(lineno, col_offset, names):
-	return RowNode(ImportNode(names[0]))
+    return RowNode(ImportNode(names[0]))
 
 def Add():
-	return "+"
+    return "+"
 
 def Sub():
-	return "-"
+    return "-"
 
 def Div():
-	return "/"
+    return "/"
 
 def FloorDiv():
-	return "//"
+    return "//"
 
 def Mod():
-	return "%"
+    return "%"
 
 def Mult():
-	return "*"
+    return "*"
 
 def Pow():
-	return "**"
+    return "**"
 
 def USub():
-	return "-"
+    return "-"
 
 def Not():
-	return "not"
+    return "not"
 
 def Or():
-	return "or"
+    return "or"
 
 def And():
-	return "and"
+    return "and"
 
 def In():
-	return "in"
+    return "in"
 
 def NotIn():
-	return "not in"
+    return "not in"
 
 ########################################################################
 # This code borrowed from https://github.com/asottile/astpretty
