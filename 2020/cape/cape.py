@@ -2454,6 +2454,9 @@ def args(lineno, col_offset, arg, annotation):
 def Assign(lineno, col_offset, targets, value):
     return RowNode(AssignNode(targets[0], value, "="))
 
+def AugAssign(lineno, col_offset, target, op, value):
+    return RowNode(AssignNode(target, value, op + '='))
+
 def Name(lineno, col_offset, id, ctx):
     return ExpressionNode(NameNode(id))
 
@@ -2534,6 +2537,15 @@ def NameConstant(lineno, col_offset, value):
         return ExpressionNode(BooleanNode("True" if value else "False"))
     else:
         return None
+
+def Add():
+	return "+"
+
+def Sub():
+	return "-"
+
+def BinOp(lineno, col_offset, left, op, right):
+    return ExpressionNode(BinaryopNode(left, right, op))
 
 ########################################################################
 # This code borrowed from https://github.com/asottile/astpretty
