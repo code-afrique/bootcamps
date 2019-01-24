@@ -2540,6 +2540,14 @@ def While(lineno, col_offset, test, body, orelse):
 def If(lineno, col_offset, test, body, orelse):
     if orelse == []:
         return RowNode(IfNode([test], [SeqNode(body)], [False]))
+    elif len(orelse) == 1:
+        row = orelse[0]
+        assert isinstance(row, RowNode)
+        stmt = row.what
+        if isinstance(stmt, IfNode):
+            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)] + stmt.bodies, [False] + stmt.minimizeds))
+        else:
+            return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
     else:
         return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
 
