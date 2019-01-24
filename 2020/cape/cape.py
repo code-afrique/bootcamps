@@ -1180,6 +1180,8 @@ class StringBlock(Block):
         for c in self.string.get():
             if c == '"':
                 print('\\"', end="", file=fd)
+            elif c == '\n':
+                print('\\n', end="", file=fd)
             else:
                 print(c, end="", file=fd)
         print('"', end="", file=fd)
@@ -2535,8 +2537,10 @@ def While(lineno, col_offset, test, body, orelse):
 
 def If(lineno, col_offset, test, body, orelse):
     if orelse == []:
+        print("If")
         return RowNode(IfNode([test], [SeqNode(body)], [False]))
     else:
+        print("ELSE")
         return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
 
 def Compare(lineno, col_offset, left, ops, comparators):
