@@ -2469,14 +2469,35 @@ def Num(lineno, col_offset, n):
 def For(lineno, col_offset, target, iter, body, orelse):
     return RowNode(ForNode(target.what, iter, SeqNode(body), False))
 
+def While(lineno, col_offset, test, body, orelse):
+    return RowNode(WhileNode(test, SeqNode(body), False))
+
 def If(lineno, col_offset, test, body, orelse):
-    return RowNode(IfNode([test], [SeqNode(body)], [False]))
+    if orelse == []:
+        return RowNode(IfNode([test], [SeqNode(body)], [False]))
+    else:
+        return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]))
 
 def Compare(lineno, col_offset, left, ops, comparators):
     return ExpressionNode(BinaryopNode(left, comparators[0], ops[0]))
 
+def Eq():
+    return "=="
+
+def NotEq():
+    return "!="
+
 def Lt():
     return "<"
+
+def LtE():
+    return "<="
+
+def Gt():
+    return ">"
+
+def GtE():
+    return ">="
 
 def Return(lineno, col_offset, value):
     return RowNode(ReturnNode(value))
@@ -2508,7 +2529,14 @@ def arg(lineno, col_offset, arg, annotation):
 def Str(lineno, col_offset, s):
     return ExpressionNode(StringNode(s))
 
+def NameConstant(lineno, col_offset, value):
+    if (value in [False, True]):
+        return ExpressionNode(BooleanNode("True" if value else "False"))
+    else:
+        return None
+
 ########################################################################
+# This code borrowed from https://github.com/asottile/astpretty
 
 AST = (ast.AST,)
 expr_context = (ast.expr_context,)
