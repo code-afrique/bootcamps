@@ -2547,6 +2547,12 @@ def UnaryOp(lineno, col_offset, op, operand):
 def BoolOp(lineno, col_offset, op, values):
     return ExpressionNode(BinaryopNode(values[0], values[1], op))
 
+def alias(name, asname):
+	return name
+
+def Import(lineno, col_offset, names):
+	return RowNode(ImportNode(names[0]))
+
 def Add():
 	return "+"
 
