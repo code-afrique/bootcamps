@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import os
 import tempfile
 import subprocess
@@ -9,6 +13,9 @@ import tkinter as tk
 import tkinter as ttk
 from tkinter import messagebox
 from tkinter.filedialog import asksaveasfilename
+import argparse
+import ast
+import contextlib
 
 """
     A row contains a statement with a menu button
@@ -2430,6 +2437,8 @@ class TopLevel(tk.Frame):
         else:
             messagebox.showinfo("Warning", "You must save the program first")
 
+########################################################################
+
 def Module(body):
     return SeqNode(body)
 
@@ -2499,126 +2508,138 @@ def arg(lineno, col_offset, arg, annotation):
 def Str(lineno, col_offset, s):
 	return ExpressionNode(StringNode(s))
 
-fms = """Module(
-    body=[
-        FunctionDef(
-            lineno=1,
-            col_offset=0,
-            name='findMinimum',
-            args=arguments(
-                args=[arg(lineno=1, col_offset=16, arg='list', annotation=None)],
-                vararg=None,
-                kwonlyargs=[],
-                kw_defaults=[],
-                kwarg=None,
-                defaults=[],
+########################################################################
+
+AST = (ast.AST,)
+expr_context = (ast.expr_context,)
+
+try:  # pragma: no cover (with typed-ast)
+    from typed_ast import ast27
+    from typed_ast import ast3
+except ImportError:  # pragma: no cover (without typed-ast)
+    typed_support = False
+else:  # pragma: no cover (with typed-ast)
+    AST += (ast27.AST, ast3.AST)
+    expr_context += (ast27.expr_context, ast3.expr_context)
+    typed_support = True
+
+
+def _is_sub_node(node):
+    return isinstance(node, AST) and not isinstance(node, expr_context)
+
+
+def _is_leaf(node):
+    for field in node._fields:
+        attr = getattr(node, field)
+        if _is_sub_node(attr):
+            return False
+        elif isinstance(attr, (list, tuple)):
+            for val in attr:
+                if _is_sub_node(val):
+                    return False
+    else:
+        return True
+
+
+def _fields(n, show_offsets=True):
+    if show_offsets and hasattr(n, 'lineno') and hasattr(n, 'col_offset'):
+        return ('lineno', 'col_offset') + n._fields
+    else:
+        return n._fields
+
+
+def _leaf(node, show_offsets=True):
+    if isinstance(node, AST):
+        return '{}({})'.format(
+            type(node).__name__,
+            ', '.join(
+                '{}={}'.format(
+                    field,
+                    _leaf(getattr(node, field), show_offsets=show_offsets),
+                )
+                for field in _fields(node, show_offsets=show_offsets)
             ),
-            body=[
-                Assign(
-                    lineno=2,
-                    col_offset=4,
-                    targets=[Name(lineno=2, col_offset=4, id='current', ctx=Store())],
-                    value=Subscript(
-                        lineno=2,
-                        col_offset=14,
-                        value=Name(lineno=2, col_offset=14, id='list', ctx=Load()),
-                        slice=Index(
-                            value=Num(lineno=2, col_offset=19, n=0),
-                        ),
-                        ctx=Load(),
-                    ),
-                ),
-                For(
-                    lineno=3,
-                    col_offset=4,
-                    target=Name(lineno=3, col_offset=8, id='x', ctx=Store()),
-                    iter=Name(lineno=3, col_offset=13, id='list', ctx=Load()),
-                    body=[
-                        If(
-                            lineno=4,
-                            col_offset=8,
-                            test=Compare(
-                                lineno=4,
-                                col_offset=12,
-                                left=Name(lineno=4, col_offset=12, id='x', ctx=Load()),
-                                ops=[Lt()],
-                                comparators=[Name(lineno=4, col_offset=16, id='current', ctx=Load())],
-                            ),
-                            body=[
-                                Assign(
-                                    lineno=5,
-                                    col_offset=12,
-                                    targets=[Name(lineno=5, col_offset=12, id='current', ctx=Store())],
-                                    value=Name(lineno=5, col_offset=22, id='x', ctx=Load()),
-                                ),
-                            ],
-                            orelse=[],
-                        ),
-                    ],
-                    orelse=[],
-                ),
-                Return(
-                    lineno=6,
-                    col_offset=4,
-                    value=Name(lineno=6, col_offset=11, id='current', ctx=Load()),
-                ),
-            ],
-            decorator_list=[],
-            returns=None,
-        ),
-        Pass(lineno=7, col_offset=0),
-        Assign(
-            lineno=8,
-            col_offset=0,
-            targets=[Name(lineno=8, col_offset=0, id='min', ctx=Store())],
-            value=Call(
-                lineno=8,
-                col_offset=6,
-                func=Name(lineno=8, col_offset=6, id='findMinimum', ctx=Load()),
-                args=[
-                    List(
-                        lineno=8,
-                        col_offset=18,
-                        elts=[
-                            Num(lineno=8, col_offset=19, n=4),
-                            Num(lineno=8, col_offset=22, n=1),
-                            Num(lineno=8, col_offset=25, n=6),
-                        ],
-                        ctx=Load(),
-                    ),
-                ],
-                keywords=[],
-            ),
-        ),
-        Expr(
-            lineno=9,
-            col_offset=0,
-            value=Call(
-                lineno=9,
-                col_offset=0,
-                func=Name(lineno=9, col_offset=0, id='print', ctx=Load()),
-                args=[
-                    Call(
-                        lineno=9,
-                        col_offset=6,
-                        func=Attribute(
-                            lineno=9,
-                            col_offset=6,
-                            value=Str(lineno=9, col_offset=6, s='the minimum is "{}"'),
-                            attr='format',
-                            ctx=Load(),
-                        ),
-                        args=[Name(lineno=9, col_offset=37, id='min', ctx=Load())],
-                        keywords=[],
-                    ),
-                ],
-                keywords=[],
-            ),
-        ),
-    ],
-)"""
+        )
+    elif isinstance(node, list):
+        return '[{}]'.format(
+            ', '.join(_leaf(x, show_offsets=show_offsets) for x in node),
+        )
+    else:
+        return repr(node)
+
+
+def pformat(node, indent='    ', show_offsets=True, _indent=0):
+    if node is None:  # pragma: no cover (py35+ unpacking in literals)
+        return repr(node)
+    elif isinstance(node, str):  # pragma: no cover (ast27 typed-ast args)
+        return repr(node)
+    elif _is_leaf(node):
+        return _leaf(node, show_offsets=show_offsets)
+    else:
+        class state:
+            indent = _indent
+
+        @contextlib.contextmanager
+        def indented():
+            state.indent += 1
+            yield
+            state.indent -= 1
+
+        def indentstr():
+            return state.indent * indent
+
+        def _pformat(el, _indent=0):
+            return pformat(
+                el, indent=indent, show_offsets=show_offsets,
+                _indent=_indent,
+            )
+
+        out = type(node).__name__ + '(\n'
+        with indented():
+            for field in _fields(node, show_offsets=show_offsets):
+                attr = getattr(node, field)
+                if attr == []:
+                    representation = '[]'
+                elif (
+                        isinstance(attr, list) and
+                        len(attr) == 1 and
+                        isinstance(attr[0], AST) and
+                        _is_leaf(attr[0])
+                ):
+                    representation = '[{}]'.format(_pformat(attr[0]))
+                elif isinstance(attr, list):
+                    representation = '[\n'
+                    with indented():
+                        for el in attr:
+                            representation += '{}{},\n'.format(
+                                indentstr(), _pformat(el, state.indent),
+                            )
+                    representation += indentstr() + ']'
+                elif isinstance(attr, AST):
+                    representation = _pformat(attr, state.indent)
+                else:
+                    representation = repr(attr)
+                out += '{}{}={},\n'.format(indentstr(), field, representation)
+        out += indentstr() + ')'
+        return out
+
+########################################################################
+
+fmc = '''
+def findMinimum(list):
+    current = list[0]
+    for x in list:
+        if (x < current):
+            current = x
+    return current
+pass
+min = findMinimum([4, 1, 6])
+print("the minimum is \\"{}\\"".format(min))
+'''
 
 if __name__ == '__main__':
+    x = ast.parse(fmc)
+    y = pformat(x)
     root = tk.Tk()
     root.title("CAPE")
     root.geometry("1250x550")
@@ -2626,7 +2647,7 @@ if __name__ == '__main__':
     curBlock = None
     stmtBuffer = None
     exprBuffer = None
-    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None, eval(fms))
+    tl = TopLevel(root, sys.argv[1] if len(sys.argv) > 1 else None, eval(y))
     tl.grid()
     tl.grid_propagate(0)
 
