@@ -383,14 +383,29 @@ class PassForm(Form):
         self.bind("<Key>", self.key)
         self.focus_set()
 
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="'pass' statement").grid(row=0, columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=1, columnspan=2)
-        tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=2)
+        row = 0
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'pass' statement").grid(row=row, columnspan=2)
+        row += 1
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=row, columnspan=2)
+        row += 1
+        tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=row)
+        row += 1
 
-        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtCall).grid(row=3)
-        tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=4)
-        tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=5)
-        tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=6)
+        tk.Button(self, text="assignment", width=0, command=self.stmtAssign).grid(row=row)
+        self.assignop = tk.StringVar(self)
+        self.assignop.set("=")
+        assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
+        assignops.grid(row=row, column=1, sticky=tk.W)
+
+        row += 1
+        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtCall).grid(row=row)
+        row += 1
+        tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=row)
+        row += 1
+        tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=row)
+        row += 1
+        tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=row)
+        row += 1
         if self.block.isWithinDef:
             tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
@@ -400,6 +415,9 @@ class PassForm(Form):
 
     def stmtDef(self):
         self.block.stmtDef()
+
+    def stmtAssign(self):
+        self.block.stmtAssign(self.assignop.get())
 
     def stmtCall(self):
         self.block.stmtCall()
@@ -437,6 +455,8 @@ class PassForm(Form):
             self.stmtReturn()
         elif ev.char == 'd':
             self.stmtDef()
+        elif ev.char == '=':
+            self.stmtAssign()
         elif ev.char == '?':
             self.stmtCall()
 
@@ -481,13 +501,6 @@ class ExpressionForm(Form):
             row += 1
 
             tk.Label(frame, text="").grid(row=row)
-            row += 1
-
-            tk.Button(frame, text="x = y", command=self.exprAssign).grid(row=row, sticky=tk.W)
-            self.assignop = tk.StringVar(self)
-            self.assignop.set("=")
-            assignops = tk.OptionMenu(frame, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
-            assignops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
             tk.Button(frame, text="x <op> y", command=self.exprBinaryop).grid(row=row, sticky=tk.W)
@@ -566,10 +579,6 @@ class ExpressionForm(Form):
             return
         if ev.char == '\026':
             self.block.exprPaste()
-        elif ev.char == '?':
-            self.block.exprBoolean("False")
-        elif ev.char == '!':
-            self.block.exprBoolean("True")
         elif ev.char.isidentifier():
             self.block.exprName(ev.char)
         elif ev.char == '.':
@@ -588,7 +597,9 @@ class ExpressionForm(Form):
             elif ev.char == ':':
                 self.block.exprSlice(True, True)
             elif ev.char == '=':
-                self.block.exprAssign("=")
+                self.block.exprAssign("==")
+            elif ev.char == '!':
+                self.block.exprAssign("!=")
             elif ev.char in "+-*/%<>":
                 self.block.exprBinaryop(ev.char)
             elif ev.char == "&":
@@ -1627,11 +1638,11 @@ class AssignBlock(Block):
         self.setBlock(self)
 
     def print(self, fd):
-        # self.printIndent(fd)
+        self.printIndent(fd)
         self.left.print(fd)
         print(" {} ".format(self.op), end="", file=fd)
         self.right.print(fd)
-        # print("", file=fd)
+        print("", file=fd)
 
     def toNode(self):
         return AssignNode(self.left.toNode(), self.right.toNode(), self.op)
@@ -1659,6 +1670,13 @@ class PassBlock(Block):
         self.rowblk.what = DefBlock(self.rowblk, None, self.level)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what)
+        self.needsSaving()
+
+    def stmtAssign(self, op):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = AssignBlock(self.rowblk, None, self.level, op)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.left)
         self.needsSaving()
 
     def stmtCall(self):
