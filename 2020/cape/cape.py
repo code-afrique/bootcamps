@@ -67,22 +67,26 @@ class IfNode(Node):
         return IfBlock(frame, self, level)
 
 class WhileNode(Node):
-    def __init__(self, cond, body, minimized):
+    def __init__(self, cond, body, orelse, minimized, minimized2):
         super().__init__()   
         self.cond = cond
         self.body = body
+        self.orelse = orelse
         self.minimized = minimized
+        self.minimized2 = minimized2
 
     def toBlock(self, frame, level, block):
         return WhileBlock(frame, self, level)
 
 class ForNode(Node):
-    def __init__(self, var, expr, body, minimized):
+    def __init__(self, var, expr, body, orelse, minimized, minimized2):
         super().__init__()   
         self.var = var
         self.expr = expr
         self.body = body
+        self.orelse = orelse
         self.minimized = minimized
+        self.minimized2 = minimized2
 
     def toBlock(self, frame, level, block):
         return ForBlock(frame, self, level)
@@ -2235,16 +2239,27 @@ class WhileBlock(Block):
         if node == None:
             self.cond = ExpressionBlock(hdr, None, False)
             self.body = SeqBlock(self, None, level + 1)
+            self.orelse = None
             self.minimized = False
+            self.minimized2 = False
         else:
             self.cond = ExpressionBlock(hdr, node.cond, False)
             self.body = SeqBlock(self, node.body, level + 1)
+            self.orelse = None if node.orelse == None else SeqBlock(self, node.orelse, level + 1)
             self.minimized = node.minimized
+            self.minimized2 = node.minimized2
         self.cond.grid(row=0, column=1)
         tk.Button(hdr, text=":", command=self.minmax).grid(row=0, column=2, sticky=tk.W)
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
+
+        if self.orelse != None:
+            hdr2 = Block(self)
+            tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            tk.Button(hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
+            hdr2.grid(row=2, column=0, sticky=tk.W)
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
         self.setForm(WhileForm(confarea, self))
@@ -2261,15 +2276,28 @@ class WhileBlock(Block):
             self.body.grid_forget()
             self.minimized = True
 
+    def minmax2(self):
+        if self.minimized2:
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
+            self.update()
+            self.minimized2 = False
+        else:
+            self.orelse.grid_forget()
+            self.minimized2 = True
+
     def print(self, fd):
         self.printIndent(fd)
         print("while ", end="", file=fd)
         self.cond.print(fd)
         print(":", file=fd)
         self.body.print(fd)
+        if self.orelse != None:
+            self.printIndent(fd)
+            print("else:", file=fd)
+            self.orelse.print(fd)
 
     def toNode(self):
-        return WhileNode(self.cond.toNode(), self.body.toNode(), self.minimized)
+        return WhileNode(self.cond.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
 
 class ForBlock(Block):
     def __init__(self, parent, node, level):
@@ -2286,12 +2314,16 @@ class ForBlock(Block):
             self.var = NameBlock(hdr, "")
             self.expr = ExpressionBlock(hdr, None, False)
             self.body = SeqBlock(self, None, level + 1)
+            self.orelse = None
             self.minimized = False
+            self.minimized2 = False
         else:
             self.var = node.var.toBlock(hdr, 0, self)
             self.expr = ExpressionBlock(hdr, node.expr, False)
             self.body = SeqBlock(self, node.body, level + 1)
+            self.orelse = None if node.orelse == None else SeqBlock(self, node.orelse, level + 1)
             self.minimized = node.minimized
+            self.minimized2 = node.minimized2
         self.var.grid(row=0, column=1)
         tk.Button(hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
@@ -2299,6 +2331,13 @@ class ForBlock(Block):
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
+
+        if self.orelse != None:
+            hdr2 = Block(self)
+            tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            tk.Button(hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
+            hdr2.grid(row=2, column=0, sticky=tk.W)
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
         self.setForm(ForForm(confarea, self))
@@ -2315,6 +2354,15 @@ class ForBlock(Block):
             self.body.grid_forget()
             self.minimized = True
 
+    def minmax2(self):
+        if self.minimized2:
+            self.orelse.grid(row=3, column=0, sticky=tk.W)
+            self.update()
+            self.minimized2 = False
+        else:
+            self.orelse.grid_forget()
+            self.minimized2 = True
+
     def print(self, fd):
         self.printIndent(fd)
         print("for ", end="", file=fd)
@@ -2323,9 +2371,13 @@ class ForBlock(Block):
         self.expr.print(fd)
         print(":", file=fd)
         self.body.print(fd)
+        if self.orelse != None:
+            self.printIndent(fd)
+            print("else:", file=fd)
+            self.orelse.print(fd)
 
     def toNode(self):
-        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), self.minimized)
+        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
 
 class Scrollable(Block):
     """
@@ -2530,12 +2582,12 @@ def Num(lineno, col_offset, n):
     return ExpressionNode(NumberNode(n))
 
 def For(lineno, col_offset, target, iter, body, orelse):
-    assert orelse == []
-    return RowNode(ForNode(target.what, iter, SeqNode(body), False))
+    return RowNode(ForNode(target.what, iter, SeqNode(body),
+        None if orelse == [] else SeqNode(orelse), False, False))
 
 def While(lineno, col_offset, test, body, orelse):
-    assert orelse == []
-    return RowNode(WhileNode(test, SeqNode(body), False))
+    return RowNode(WhileNode(test, SeqNode(body),
+        None if orelse == [] else SeqNode(orelse), False, False))
 
 def If(lineno, col_offset, test, body, orelse):
     if orelse == []:
