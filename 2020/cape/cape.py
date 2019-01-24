@@ -126,6 +126,14 @@ class ImportNode(Node):
     def toBlock(self, frame, level, block):
         return ImportBlock(frame, self, level)
 
+class GlobalNode(Node):
+    def __init__(self, what):
+        super().__init__()   
+        self.what = what
+
+    def toBlock(self, frame, level, block):
+        return GlobalBlock(frame, self, level)
+
 class AssignNode(Node):
     def __init__(self, left, right, op):
         super().__init__()   
@@ -438,6 +446,7 @@ class PassForm(Form):
             row += 1
         if self.block.isWithinDef:
             tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
+        tk.Button(self, text="global statement", width=0, command=self.stmtGlobal).grid()
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
         tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
         tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
@@ -466,6 +475,9 @@ class PassForm(Form):
 
     def stmtBreak(self):
         self.block.stmtBreak()
+
+    def stmtGlobal(self):
+        self.block.stmtGlobal()
 
     def stmtImport(self):
         self.block.stmtImport()
@@ -850,6 +862,16 @@ class BreakForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'break' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'break' statement' terminates the loop that it is in.").grid(row=1)
+
+class GlobalForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'global' statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'global' statement' lists names of variables that are global in scope.").grid(row=1)
 
 class ImportForm(Form):
     def __init__(self, parent, block):
@@ -1849,6 +1871,13 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what)
         self.needsSaving()
 
+    def stmtGlobal(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = GlobalBlock(self.rowblk, None, self.level)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.var)
+        self.needsSaving()
+
     def stmtImport(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ImportBlock(self.rowblk, None, self.level)
@@ -1943,6 +1972,35 @@ class BreakBlock(Block):
 
     def toNode(self):
         return BreakNode()
+
+class GlobalBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        tk.Button(self, text="global", fg="red", command=self.cb).grid(row=0, column=0)
+        if node == None:
+            self.var = NameBlock(self, "")
+        else:
+            self.var = NameBlock(self, node.what)
+        self.var.grid(row=0, column=1)
+
+    def genForm(self):
+        self.setForm(GlobalForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        print("global ", end="", file=fd)
+        self.var.print(fd)
+        print("", file=fd)
+
+    def toNode(self):
+        return GlobalNode(self.var.toNode())
 
 class ImportBlock(Block):
     def __init__(self, parent, node, level):
@@ -2922,6 +2980,10 @@ def Import(lineno, col_offset, names):
 def ImportFrom(lineno, col_offset, module, names, level):
     assert len(names) == 1
     return RowNode(ImportNode(names[0]))
+
+def Global(lineno, col_offset, names):
+    assert len(names) == 1
+    return RowNode(GlobalNode(names[0]))
 
 def Add():
     return "+"
