@@ -2254,25 +2254,14 @@ class ClassBlock(Block):
         self.parent = parent
         self.level = level
         self.mname = tk.StringVar()
+        self.bases = [ ]
 
         if node == None:
-            self.bases = [ ]
             self.minimized = False
         else:
             self.mname.set(node.name)
-            self.bases = node.bases
             self.minimized = node.minimized
 
-        self.setHeader()
-
-        if node == None:
-            self.body = SeqBlock(self, None, level + 1)
-        else:
-            self.body = SeqBlock(self, node.body, level + 1)
-        if not self.minimized:
-            self.body.grid(row=1, column=0, sticky=tk.W)
-
-    def setHeader(self):
         self.hdr = Block(self)
         self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
@@ -2281,16 +2270,26 @@ class ClassBlock(Block):
         tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
 
         column = 3
-        for i in range(len(self.bases)):
-            if i != 0:
-                tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
+        if node != Node:
+            for i in range(len(node.bases)):
+                if i != 0:
+                    tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
+                    column += 1
+                base = node.bases[i].toBlock(self.hdr, 0, self)
+                self.bases.append(base)
+                base.grid(row=0, column=column)
                 column += 1
-            tk.Button(self.hdr, text=self.bases[i], fg="blue", command=self.cb).grid(row=0, column=column)
-            column += 1
 
         tk.Button(self.hdr, text=")", command=self.cb).grid(row=0, column=column)
         tk.Button(self.hdr, text=":", command=self.minmax).grid(row=0, column=column+1)
         self.hdr.grid(row=0, column=0, sticky=tk.W)
+
+        if node == None:
+            self.body = SeqBlock(self, None, level + 1)
+        else:
+            self.body = SeqBlock(self, node.body, level + 1)
+        if not self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
 
     def genForm(self):
         f = ClassForm(confarea, self)
@@ -2313,7 +2312,7 @@ class ClassBlock(Block):
         self.mname.set(mname)
         self.bases = bases
         self.hdr.grid_forget()
-        self.setHeader()
+        # self.setHeader()
         self.needsSaving()
 
     def print(self, fd):
@@ -2330,12 +2329,7 @@ class ClassBlock(Block):
         for i in range(len(self.bases)):
             if i != 0:
                 print(", ", end="", file=fd)
-            print(self.bases[i], end="", file=fd)
-            if not self.bases[i].isidentifier():
-                if not printError:
-                    self.setBlock(self)
-                    messagebox.showinfo("Print Error", "Fix bad base name")
-                    printError = True
+            self.bases[i].print(fd)
         print("):", file=fd)
         self.body.print(fd)
 
@@ -2850,7 +2844,7 @@ def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
     return RowNode(DefNode(name, args, SeqNode(body), False))
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
-    return RowNode(ClassNode(name, [x.what.what for x in bases], SeqNode(body), False))
+    return RowNode(ClassNode(name, [x.what for x in bases], SeqNode(body), False))
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
     return args
