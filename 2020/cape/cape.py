@@ -318,7 +318,6 @@ class TextForm(Form):
         xsbar.grid(row=1, column=1, sticky=tk.W+tk.E+tk.N)
 
     def settext(self, text):
-        print("settext")
         self.text.delete('1.0', tk.END)
         self.text.insert('1.0', text)
         self.text.mark_set(tk.INSERT, '1.0')
