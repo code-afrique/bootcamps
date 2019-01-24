@@ -16,6 +16,7 @@ from tkinter.filedialog import askopenfilename
 import argparse
 import ast
 import contextlib
+import tokenize
 
 """
     A row contains a statement with a menu button
@@ -2744,6 +2745,15 @@ class TopLevel(tk.Frame):
         self.program.print(sys.stdout)
         print("'=== END OF PROGRAM ==='")
 
+    def extractComments(self, code):
+        comments = []
+        fd = io.StringIO(code)
+        for toktype, tokval, begin, end, line in tokenize.generate_tokens(fd.readline):
+            if toktype == tokenize.COMMENT:
+                (row, col) = begin
+                comments.append((row, tokenize.untokenize([(toktype, tokval)])))
+        return comments
+
     def load(self):
         if not saved:
             messagebox.showinfo("Warning", "You must save the program first")
@@ -2756,12 +2766,14 @@ class TopLevel(tk.Frame):
             self.curFile = os.path.basename(filename)
             self.curDir = os.path.dirname(filename)
             with open(filename, "r") as fd:
-                contents = fd.read()
-                rtree = ast.parse(contents)
+                code = fd.read()
+                rtree = ast.parse(code)
                 ftree = pformat(rtree)
                 # with open("cape.log", "w") as log:
                 #     log.write(ftree)
                 n = eval(ftree)
+                comments = self.extractComments(code)
+                print(comments)
 
                 global scrollable
                 if self.program != None:
