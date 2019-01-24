@@ -2162,6 +2162,7 @@ class RowBlock(Block):
         self.parent = parent
         self.level = level
         self.row = row
+        self.comment = None
 
         menu = tk.Button(self, text="-", width=3, command=self.listcmd)
         menu.grid(row=0, column=0, sticky=tk.W)
@@ -2171,6 +2172,7 @@ class RowBlock(Block):
             self.what = node.what.toBlock(self, level, self)
         self.what.grid(row=0, column=1, sticky=tk.W)
         if node != None and node.comment != None:
+            self.comment = node.comment
             tk.Label(self, text=node.comment).grid(row=0, column=2, sticky=tk.N+tk.W)
 
     def genForm(self):
@@ -2208,6 +2210,10 @@ class RowBlock(Block):
 
     def print(self, fd):
         self.what.print(fd)
+        if self.comment == None:
+            print(file=fd)
+        else:
+            print("\t{}".format(self.comment), file=fd)
 
     def toNode(self):
         return RowNode(self.what.toNode(), 0)
