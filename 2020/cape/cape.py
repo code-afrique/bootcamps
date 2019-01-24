@@ -2476,7 +2476,8 @@ class TopLevel(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
         self.parent = parent
-        self.filename = None
+        self.curFile = None
+        self.curDir = None
 
         # self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
 
@@ -2535,7 +2536,8 @@ class TopLevel(tk.Frame):
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
-            self.filename = filename
+            self.curFile = os.path.basename(filename)
+            self.curDir = os.path.dirname(filename)
             with open(filename, "r") as fd:
                 contents = fd.read()
                 rtree = ast.parse(contents)
@@ -2551,17 +2553,17 @@ class TopLevel(tk.Frame):
 
     def save(self):
         node = self.program.toNode()
-        if self.filename == None:
+        if self.curFile == None:
             filename = asksaveasfilename(defaultextension='.py',
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         else:
-            print("FILE {}".format(self.filename))
-            filename = asksaveasfilename(initialfile=self.filename, defaultextension='.py',
+            filename = asksaveasfilename(initialdir=self.curDir, initialfile=self.curFile, defaultextension='.py',
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
-            self.filename = filename
+            self.curFile = os.path.basename(filename)
+            self.curDir = os.path.dirname(filename)
             with open(filename, "w") as fd:
                 self.program.print(fd)
                 print("saved")
