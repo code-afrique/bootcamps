@@ -730,6 +730,17 @@ class ForForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'for' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
+        if block.orelse == None:
+            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
+        else:
+            eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
+        eb.grid(row=2)
+
+    def addElse(self):
+        self.block.addElse()
+
+    def removeElse(self):
+        self.block.removeElse()
 
 class WhileForm(Form):
     def __init__(self, parent, block):
@@ -740,6 +751,17 @@ class WhileForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'while' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.").grid(row=1)
+        if block.orelse == None:
+            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
+        else:
+            eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
+        eb.grid(row=2)
+
+    def addElse(self):
+        self.block.addElse()
+
+    def removeElse(self):
+        self.block.removeElse()
 
 class ReturnForm(Form):
     def __init__(self, parent, block):
@@ -2254,11 +2276,13 @@ class WhileBlock(Block):
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
 
-        if self.orelse != None:
-            hdr2 = Block(self)
-            tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-            tk.Button(hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
-            hdr2.grid(row=2, column=0, sticky=tk.W)
+        if self.orelse == None:
+            self.hdr2 = None
+        else:
+            self.hdr2 = Block(self)
+            tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            tk.Button(self.hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
+            self.hdr2.grid(row=2, column=0, sticky=tk.W)
             self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
@@ -2284,6 +2308,24 @@ class WhileBlock(Block):
         else:
             self.orelse.grid_forget()
             self.minimized2 = True
+
+    def addElse(self):
+        self.orelse = SeqBlock(self, None, self.level + 1)
+        self.hdr2 = Block(self)
+        tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
+        self.hdr2.grid(row=2, column=0, sticky=tk.W)
+        self.orelse.grid(row=3, column=0, sticky=tk.W)
+        self.setBlock(self.orelse.what)
+        self.needsSaving()
+
+    def removeElse(self):
+        self.hdr2.grid_forget()
+        self.hdr2 = None
+        self.orelse.grid_forget()
+        self.orelse = None
+        self.setBlock(self)
+        self.needsSaving()
 
     def print(self, fd):
         self.printIndent(fd)
@@ -2332,11 +2374,13 @@ class ForBlock(Block):
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
 
-        if self.orelse != None:
-            hdr2 = Block(self)
-            tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-            tk.Button(hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
-            hdr2.grid(row=2, column=0, sticky=tk.W)
+        if self.orelse == None:
+            self.hdr2 = None
+        else:
+            self.hdr2 = Block(self)
+            tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            tk.Button(self.hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
+            self.hdr2.grid(row=2, column=0, sticky=tk.W)
             self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
@@ -2362,6 +2406,24 @@ class ForBlock(Block):
         else:
             self.orelse.grid_forget()
             self.minimized2 = True
+
+    def addElse(self):
+        self.orelse = SeqBlock(self, None, self.level + 1)
+        self.hdr2 = Block(self)
+        tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
+        self.hdr2.grid(row=2, column=0, sticky=tk.W)
+        self.orelse.grid(row=3, column=0, sticky=tk.W)
+        self.setBlock(self.orelse.what)
+        self.needsSaving()
+
+    def removeElse(self):
+        self.hdr2.grid_forget()
+        self.hdr2 = None
+        self.orelse.grid_forget()
+        self.orelse = None
+        self.setBlock(self)
+        self.needsSaving()
 
     def print(self, fd):
         self.printIndent(fd)
