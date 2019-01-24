@@ -729,28 +729,22 @@ class ClassForm(Form):
         tk.Message(self, width=350, font='Helvetica 14', text="A method has a name, a list of bases, and a 'body'.  With this form, you can edit the method name and bases.").grid(row=1, columnspan=2)
         tk.Label(self, text="Class name: ").grid(row=2, sticky=tk.W)
         self.entry = tk.Entry(self)
-        self.entry.insert(tk.END, block.mname.get())
+        self.entry.insert(tk.END, block.cname.get())
         self.entry.bind('<Return>', self.keyEnter)
         self.entry.grid(row=2, column=1)
-        self.bases = [ ]
-        for base in block.bases:
-            self.addBase(base)
-        ma = tk.Button(self, text="+ Add base", command=self.newBase)
-        ma.grid(row=100, column=0)
         enter = tk.Button(self, text="Enter", command=self.cb)
-        enter.grid(row=100, column=1, sticky=tk.E)
+        enter.grid(row=2, column=2, sticky=tk.E)
 
-    def newBase(self):
-        self.addBase("")
+        ma = tk.Button(self, text="+ Add a new base class", command=self.addBaseClass)
+        ma.grid(row=3, column=0, columnspan=2)
+        copy = tk.Button(self, text="copy", command=self.copy)
+        copy.grid(row=4, column=0)
+        delb = tk.Button(self, text="delete", command=self.delete)
+        delb.grid(row=4, column=1)
 
-    def addBase(self, name):
-        nbases = len(self.bases)
-        tk.Label(self, text="Base {}:".format(nbases+1)).grid(row=nbases+3, sticky=tk.W)
-        e = tk.Entry(self)
-        e.insert(tk.END, name)
-        e.grid(row=nbases+3, column=1)
-        e.focus()
-        self.bases.append(e)
+    def addBaseClass(self):
+        self.block.addBaseClass(None)
+        self.block.setBlock(self.block.bases[-1])
 
     def cb(self):
         name = self.entry.get()
@@ -761,16 +755,7 @@ class ClassForm(Form):
             messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
             return
 
-        bases = [ ]
-        for base in self.bases:
-            a = base.get()
-            if a in keyword.kwlist:
-                messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
-            if not a.isidentifier():
-                messagebox.showinfo("Format Error", "'{}' is not a valid base name".format(a))
-                return
-            bases.append(a)
-        self.block.classUpdate(name, bases)
+        self.block.classUpdate(name)
 
     def keyEnter(self, x):
         self.cb()
@@ -1480,6 +1465,104 @@ class BinaryopBlock(Block):
 
     def toNode(self):
         return BinaryopNode(self.left.toNode(), self.right.toNode(), self.op)
+
+class ClassBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)   
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        self.cname = tk.StringVar()
+
+        if node == None:
+            self.minimized = False
+        else:
+            self.cname.set(node.name)
+            self.minimized = node.minimized
+
+        self.hdr = Block(self)
+        self.btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
+        self.btn.grid(row=0, column=0)
+        self.name = tk.Button(self.hdr, textvariable=self.cname, fg="blue", command=self.cb)
+        self.name.grid(row=0, column=1)
+        tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
+        self.eol = tk.Button(self.hdr, text=")", command=self.cb)
+        self.colon = tk.Button(self.hdr, text=":", command=self.minmax)
+        self.hdr.grid(row=0, column=0, sticky=tk.W)
+
+        self.bases = [ ]
+        if node != None:
+            for base in node.bases:
+                self.addBaseClass(base)
+        self.setHeader()
+
+        if node == None:
+            self.body = SeqBlock(self, None, level + 1)
+        else:
+            self.body = SeqBlock(self, node.body, level + 1)
+        if not self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+
+    def genForm(self):
+        self.setForm(ClassForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def minmax(self):
+        if self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+            self.update()
+            self.minimized = False
+        else:
+            self.body.grid_forget()
+            self.minimized = True
+
+    def classUpdate(self, mname):
+        self.cname.set(mname)
+        self.needsSaving()
+
+    def addBaseClass(self, node):
+        if node == None:
+            base = ExpressionBlock(self.hdr, None, False)
+        else:
+            base = ExpressionBlock(self.hdr, node, False)
+        self.bases.append(base)
+        self.setHeader()
+        self.needsSaving()
+
+    def setHeader(self):
+        column = 3
+        for i in range(len(self.bases)):
+            if i != 0:
+                tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
+                column += 1
+            self.bases[i].grid(row=0, column=column)
+            column += 1
+        self.eol.grid(row=0, column=column)
+        self.colon.grid(row=0, column=column+1)
+
+    def print(self, fd):
+        global printError
+
+        self.printIndent(fd)
+        v = self.cname.get()
+        print("class {}(".format(v), end="", file=fd)
+        if not v.isidentifier():
+            if not printError:
+                self.setBlock(self)
+                messagebox.showinfo("Print Error", "Fix bad method name")
+                printError = True
+        for i in range(len(self.bases)):
+            if i != 0:
+                print(", ", end="", file=fd)
+            self.bases[i].print(fd)
+        print("):", file=fd)
+        self.body.print(fd)
+
+    def toNode(self):
+        return ClassNode(self.cname.get(), self.bases, self.body.toNode(), self.minimized)
 
 class FuncBlock(Block):
     def __init__(self, parent, node):
@@ -2246,7 +2329,7 @@ class DefBlock(Block):
     def toNode(self):
         return DefNode(self.mname.get(), self.args, self.body.toNode(), self.minimized)
 
-class ClassBlock(Block):
+class XXXBlock(Block):
     def __init__(self, parent, node, level):
         super().__init__(parent)   
         self.isExpression = False
@@ -2844,7 +2927,7 @@ def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
     return RowNode(DefNode(name, args, SeqNode(body), False))
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
-    return RowNode(ClassNode(name, [x.what for x in bases], SeqNode(body), False))
+    return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), False))
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
     return args
