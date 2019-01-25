@@ -2924,6 +2924,8 @@ class TopLevel(tk.Frame):
         return comments
 
     def load(self):
+        global saved
+
         if not saved:
             messagebox.showinfo("Warning", "You must save the program first")
             return
@@ -2947,7 +2949,6 @@ class TopLevel(tk.Frame):
                 for lineno, text in comments.items():
                     (sb, i) = n.findRow(lineno)
                     row = sb.rows[i]
-                    print("Found {0} at {1}".format(lineno, row.lineno))
                     if lineno < row.lineno:
                         row = RowNode(EmptyNode(), lineno)
                         sb.rows.insert(i, row)
@@ -2959,6 +2960,8 @@ class TopLevel(tk.Frame):
                 self.program = SeqBlock(scrollable.stuff, n, 0)
                 self.program.grid(sticky=tk.W)
                 scrollable.update()
+
+                saved = True
 
     def save(self):
         node = self.program.toNode()
