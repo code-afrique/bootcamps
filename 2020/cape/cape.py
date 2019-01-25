@@ -1193,7 +1193,7 @@ class Block(tk.Frame):
 
     def scrollUpdate(self):
         global scrollable
-        scrollable.update()
+        scrollable.scrollUpdate()
 
     def setForm(self, f):
         global curForm
@@ -1595,6 +1595,7 @@ class ClassBlock(Block):
         else:
             self.body.grid_forget()
             self.minimized = True
+        self.scrollUpdate()
 
     def classUpdate(self, mname):
         self.cname.set(mname)
@@ -2424,6 +2425,7 @@ class DefBlock(Block):
         else:
             self.body.grid_forget()
             self.minimized = True
+        self.scrollUpdate()
 
     def defUpdate(self, mname, args):
         self.mname.set(mname)
@@ -2515,7 +2517,8 @@ class IfBlock(Block):
         else:
             body.grid_forget()
             self.minimizeds[which] = True
-        self.gridUpdate()
+        self.gridUpdate()    # ???
+        self.scrollUpdate()
 
     def addElse(self):
         self.bodies.append(SeqBlock(self, None, self.level + 1))
@@ -2630,6 +2633,7 @@ class WhileBlock(Block):
         else:
             self.body.grid_forget()
             self.minimized = True
+        self.scrollUpdate()
 
     def minmax2(self):
         if self.minimized2:
@@ -2639,6 +2643,7 @@ class WhileBlock(Block):
         else:
             self.orelse.grid_forget()
             self.minimized2 = True
+        self.scrollUpdate()
 
     def addElse(self):
         self.orelse = SeqBlock(self, None, self.level + 1)
@@ -2728,6 +2733,7 @@ class ForBlock(Block):
         else:
             self.body.grid_forget()
             self.minimized = True
+        self.scrollUpdate()
 
     def minmax2(self):
         if self.minimized2:
@@ -2737,6 +2743,7 @@ class ForBlock(Block):
         else:
             self.orelse.grid_forget()
             self.minimized2 = True
+        self.scrollUpdate()
 
     def addElse(self):
         self.orelse = SeqBlock(self, None, self.level + 1)
@@ -2846,7 +2853,7 @@ class Scrollable(Block):
         # self.canvas.itemconfig(self.windows_item, width = canvas_width)
         # self.canvas.itemconfig(self.windows_item, height = canvas_height)
 
-    def update(self):
+    def scrollUpdate(self):
         "Update the canvas and the scrollregion"
 
         self.update_idletasks()
@@ -2895,7 +2902,7 @@ class TopLevel(tk.Frame):
         scrollable = Scrollable(self.progarea, width=16)
         self.program = SeqBlock(scrollable.stuff, None, 0)
         self.program.grid(sticky=tk.W)
-        scrollable.update()
+        scrollable.scrollUpdate()
 
         # confarea.place(x=0, y=0)
         # self.progarea.place(x=400, y=0)
@@ -2959,7 +2966,7 @@ class TopLevel(tk.Frame):
                     self.program.grid_forget()
                 self.program = SeqBlock(scrollable.stuff, n, 0)
                 self.program.grid(sticky=tk.W)
-                scrollable.update()
+                scrollable.scrollUpdate()
 
                 saved = True
 
