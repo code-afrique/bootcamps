@@ -577,7 +577,7 @@ class PassForm(Form):
             self.stmtAssign()
         elif ev.char == '?':
             self.stmtEval()
-        elif ev.char == '\n':
+        elif ev.char == '\r':
             self.stmtEmpty()
 
 class ExpressionForm(Form):
@@ -2779,38 +2779,6 @@ class ForBlock(Block):
     def toNode(self):
         return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
 
-class Test(Block):
-    def __init__(self, frame, width=16):
-        super().__init__(None)
-        tk.Grid.config(self)
-        # notice that the scroll region (20" x 20") is larger than
-        # displayed size of the widget (5" x 5")
-        blk = Block(frame)
-        blk.grid()
-        self.draw = tk.Canvas(blk, width="5i", height="5i",
-                           background="white",
-                           scrollregion=(0, 0, "20i", "20i"))
-
-        self.scrollX = tk.Scrollbar(blk, orient=tk.HORIZONTAL)
-        self.scrollY = tk.Scrollbar(blk, orient=tk.VERTICAL)
-
-        # now tie the three together. This is standard boilerplate text
-        self.draw['xscrollcommand'] = self.scrollX.set
-        self.draw['yscrollcommand'] = self.scrollY.set
-        self.scrollX['command'] = self.draw.xview
-        self.scrollY['command'] = self.draw.yview
-
-    def drawStuff(self):
-        # draw something. Note that the first square
-        # is visible, but you need to scroll to see the second one.
-        # self.draw.create_rectangle(0, 0, "3.5i", "3.5i", fill="black")
-        # self.draw.create_rectangle("10i", "10i", "13.5i", "13.5i", fill="blue")
-
-        # pack 'em up
-        self.scrollY.grid(row=0, column=0, sticky=tk.S+tk.N)
-        self.draw.grid(row=0, column=1)
-        self.scrollX.grid(row=1, column=1, sticky=tk.E+tk.W)
-
 class Scrollable(Block):
     """
        Make a frame scrollable with a scrollbar
@@ -2935,6 +2903,7 @@ class TopLevel(tk.Frame):
 
         if not saved:
             messagebox.showinfo("Warning", "You must save the program first")
+            saved = True
             return
 
         filename = askopenfilename(defaultextension='.py',
@@ -3033,10 +3002,12 @@ class TopLevel(tk.Frame):
         curForm.update()
 
     def quit(self):
+        global saved
         if saved:
             sys.exit(0)
         else:
             messagebox.showinfo("Warning", "You must save the program first")
+            saved = True
 
 ########################################################################
 
