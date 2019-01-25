@@ -45,6 +45,13 @@ class PassNode(Node):
     def toBlock(self, frame, level, block):
         return PassBlock(frame, self, level, block)
 
+class EmptyNode(Node):
+    def __init__(self):
+        super().__init__()
+
+    def toBlock(self, frame, level, block):
+        return EmptyBlock(frame, self, level, block)
+
 class RowNode(Node):
     def __init__(self, what, lineno):
         super().__init__()
@@ -508,9 +515,13 @@ class PassForm(Form):
             tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
         tk.Button(self, text="global statement", width=0, command=self.stmtGlobal).grid()
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
+        tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid()
         tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
         tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
         tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: '?' inserts an expression, '<ctrl>v' pastes a statement, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=2)
+
+    def stmtEmpty(self):
+        self.block.stmtEmpty()
 
     def stmtDef(self):
         self.block.stmtDef()
@@ -566,6 +577,8 @@ class PassForm(Form):
             self.stmtAssign()
         elif ev.char == '?':
             self.stmtEval()
+        elif ev.char == '\n':
+            self.stmtEmpty()
 
 class ExpressionForm(Form):
     def __init__(self, parent, block, lvalue):
@@ -1962,6 +1975,13 @@ class PassBlock(Block):
     def cb(self):
         self.setBlock(self)
 
+    def stmtEmpty(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = EmptyBlock(self.rowblk, None, self.level)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what)
+        self.needsSaving()
+
     def stmtDef(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = DefBlock(self.rowblk, None, self.level)
@@ -2047,6 +2067,31 @@ class PassBlock(Block):
 
     def toNode(self):
         return PassNode()
+
+class EmptyBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        # btn = tk.Button(self, text="", fg="red", width=0, command=self.cb)
+        # btn.grid(row=0, column=0)
+
+    def genForm(self):
+        # f = EmptyForm(confarea, self)
+        # self.setForm(f)
+        pass
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        print("", file=fd)
+
+    def toNode(self):
+        return EmptyNode()
 
 class EvalBlock(Block):
     def __init__(self, parent, node, level):
@@ -2247,7 +2292,7 @@ class RowBlock(Block):
         # insert the comment, if any, after the first line
         if '\n' in s and self.comment.get() != "":
             i = s.index('\n')
-            s = s[:i] + '\t' + self.comment.get() + s[i:]
+            s = s[:i] + ('' if isinstance(self.what, EmptyBlock) else '\t') + self.comment.get() + s[i:]
 
         print(s, file=fd, end="")
 
@@ -2903,8 +2948,10 @@ class TopLevel(tk.Frame):
                     (sb, i) = n.findRow(lineno)
                     row = sb.rows[i]
                     print("Found {0} at {1}".format(lineno, row.lineno))
-                    if lineno == row.lineno:
-                        row.comment = text[1:]
+                    if lineno < row.lineno:
+                        row = RowNode(EmptyNode(), lineno)
+                        sb.rows.insert(i, row)
+                    row.comment = text[1:]
 
                 global scrollable
                 if self.program != None:
