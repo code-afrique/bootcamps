@@ -50,7 +50,7 @@ class EmptyNode(Node):
         super().__init__()
 
     def toBlock(self, frame, level, block):
-        return EmptyBlock(frame, self, level, block)
+        return EmptyBlock(frame, self, level)
 
 class RowNode(Node):
     def __init__(self, what, lineno):
