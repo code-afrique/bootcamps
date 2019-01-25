@@ -33,21 +33,21 @@ class Node():
 
 class NilNode(Node):
     def __init__(self):
-        super().__init__()   
+        super().__init__()
 
     def toBlock(self, frame, level, block):
         return NilBlock(frame, self)
 
 class PassNode(Node):
     def __init__(self):
-        super().__init__()   
+        super().__init__()
 
     def toBlock(self, frame, level, block):
         return PassBlock(frame, self, level, block)
 
 class RowNode(Node):
     def __init__(self, what, lineno):
-        super().__init__()   
+        super().__init__()
         self.what = what
         self.lineno = lineno
         self.comment = None
@@ -59,7 +59,7 @@ class RowNode(Node):
 
 class DefNode(Node):
     def __init__(self, name, args, body, minimized):
-        super().__init__()   
+        super().__init__()
         self.name = name
         self.args = args
         self.body = body
@@ -73,7 +73,7 @@ class DefNode(Node):
 
 class ClassNode(Node):
     def __init__(self, name, bases, body, minimized):
-        super().__init__()   
+        super().__init__()
         self.name = name
         self.bases = bases
         self.body = body
@@ -87,7 +87,7 @@ class ClassNode(Node):
 
 class IfNode(Node):
     def __init__(self, conds, bodies, minimizeds):
-        super().__init__()   
+        super().__init__()
         self.conds = conds
         self.bodies = bodies
         self.minimizeds = minimizeds
@@ -101,7 +101,7 @@ class IfNode(Node):
 
 class WhileNode(Node):
     def __init__(self, cond, body, orelse, minimized, minimized2):
-        super().__init__()   
+        super().__init__()
         self.cond = cond
         self.body = body
         self.orelse = orelse
@@ -118,7 +118,7 @@ class WhileNode(Node):
 
 class ForNode(Node):
     def __init__(self, var, expr, body, orelse, minimized, minimized2):
-        super().__init__()   
+        super().__init__()
         self.var = var
         self.expr = expr
         self.body = body
@@ -136,7 +136,7 @@ class ForNode(Node):
 
 class ReturnNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -147,7 +147,7 @@ class ReturnNode(Node):
 
 class BreakNode(Node):
     def __init__(self):
-        super().__init__()   
+        super().__init__()
 
     def toBlock(self, frame, level, block):
         return BreakBlock(frame, self, level)
@@ -157,7 +157,7 @@ class BreakNode(Node):
 
 class ImportNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -168,7 +168,7 @@ class ImportNode(Node):
 
 class GlobalNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -179,7 +179,7 @@ class GlobalNode(Node):
 
 class AssignNode(Node):
     def __init__(self, left, right, op):
-        super().__init__()   
+        super().__init__()
         self.left = left
         self.right = right
         self.op = op
@@ -192,7 +192,7 @@ class AssignNode(Node):
 
 class BinaryopNode(Node):
     def __init__(self, left, right, op):
-        super().__init__()   
+        super().__init__()
         self.left = left
         self.right = right
         self.op = op
@@ -202,7 +202,7 @@ class BinaryopNode(Node):
 
 class UnaryopNode(Node):
     def __init__(self, right, op):
-        super().__init__()   
+        super().__init__()
         self.right = right
         self.op = op
 
@@ -211,7 +211,7 @@ class UnaryopNode(Node):
 
 class IndexNode(Node):
     def __init__(self, array, index):
-        super().__init__()   
+        super().__init__()
         self.array = array
         self.index = index
 
@@ -220,7 +220,7 @@ class IndexNode(Node):
 
 class SliceNode(Node):
     def __init__(self, array, start, finish):
-        super().__init__()   
+        super().__init__()
         self.array = array
         self.start = start
         self.finish = finish
@@ -230,7 +230,7 @@ class SliceNode(Node):
 
 class FuncNode(Node):
     def __init__(self, func, args):
-        super().__init__()   
+        super().__init__()
         self.func = func
         self.args = args
 
@@ -239,7 +239,7 @@ class FuncNode(Node):
 
 class ListNode(Node):
     def __init__(self, entries):
-        super().__init__()   
+        super().__init__()
         self.entries = entries
 
     def toBlock(self, frame, level, block):
@@ -247,7 +247,7 @@ class ListNode(Node):
 
 class AttrNode(Node):
     def __init__(self, array, ref):
-        super().__init__()   
+        super().__init__()
         self.array = array
         self.ref = ref
 
@@ -256,7 +256,7 @@ class AttrNode(Node):
 
 class EvalNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -267,7 +267,7 @@ class EvalNode(Node):
 
 class NumberNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -275,7 +275,7 @@ class NumberNode(Node):
 
 class ConstantNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -283,7 +283,7 @@ class ConstantNode(Node):
 
 class NameNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -291,7 +291,7 @@ class NameNode(Node):
 
 class StringNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -299,7 +299,7 @@ class StringNode(Node):
 
 class ExpressionNode(Node):
     def __init__(self, what):
-        super().__init__()   
+        super().__init__()
         self.what = what
 
     def toBlock(self, frame, level, block):
@@ -307,7 +307,7 @@ class ExpressionNode(Node):
 
 class SeqNode(Node):
     def __init__(self, rows):
-        super().__init__()   
+        super().__init__()
         self.rows = rows
 
     def toBlock(self, frame, level, block):
@@ -319,7 +319,7 @@ class SeqNode(Node):
 
 class Form(tk.Frame):
     def __init__(self, parent):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.catchKeys()
@@ -360,7 +360,7 @@ class Form(tk.Frame):
 
 class HelpForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -407,7 +407,7 @@ class TextForm(Form):
 
 class RowForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.parent = parent
@@ -477,7 +477,7 @@ class RowForm(Form):
 
 class PassForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.parent = parent
@@ -577,7 +577,7 @@ class PassForm(Form):
 
 class ExpressionForm(Form):
     def __init__(self, parent, block, lvalue):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.parent = parent
@@ -735,7 +735,7 @@ class ExpressionForm(Form):
 
 class DefForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -792,7 +792,7 @@ class DefForm(Form):
 
 class ClassForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -834,7 +834,7 @@ class ClassForm(Form):
 
 class IfForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -860,7 +860,7 @@ class IfForm(Form):
 
 class ForForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -881,7 +881,7 @@ class ForForm(Form):
 
 class WhileForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -902,7 +902,7 @@ class WhileForm(Form):
 
 class ReturnForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -912,7 +912,7 @@ class ReturnForm(Form):
 
 class BreakForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -922,7 +922,7 @@ class BreakForm(Form):
 
 class GlobalForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -932,7 +932,7 @@ class GlobalForm(Form):
 
 class ImportForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -942,7 +942,7 @@ class ImportForm(Form):
 
 class ListForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -962,7 +962,7 @@ class ListForm(Form):
 
 class IndexForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -976,7 +976,7 @@ class IndexForm(Form):
 
 class AttrForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -990,7 +990,7 @@ class AttrForm(Form):
 
 class SliceForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1004,7 +1004,7 @@ class SliceForm(Form):
 
 class BinaryopForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1018,7 +1018,7 @@ class BinaryopForm(Form):
 
 class UnaryopForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1032,7 +1032,7 @@ class UnaryopForm(Form):
 
 class ConstantForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1046,7 +1046,7 @@ class ConstantForm(Form):
 
 class NilForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.parent = parent
@@ -1058,7 +1058,7 @@ class NilForm(Form):
 
 class FuncForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1078,7 +1078,7 @@ class FuncForm(Form):
 
 class AssignForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1088,7 +1088,7 @@ class AssignForm(Form):
 
 class StringForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1114,7 +1114,7 @@ class StringForm(Form):
 
 class NameForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1146,7 +1146,7 @@ class NameForm(Form):
 
 class NumberForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1176,11 +1176,11 @@ class NumberForm(Form):
 
 class Block(tk.Frame):
     def __init__(self, parent):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
         self.isExpression = False
         self.isStatement = False
-        self.isWithinDef = False if parent == None else parent.isWithinDef
-        self.isWithinLoop = False if parent == None else parent.isWithinLoop
+        self.isWithinDef = False
+        self.isWithinLoop = False
 
     def printIndent(self, fd):
         for i in range(self.level):
@@ -1223,7 +1223,7 @@ class Block(tk.Frame):
 
 class NameBlock(Block):
     def __init__(self, parent, vname):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1260,7 +1260,7 @@ class NameBlock(Block):
 
 class NumberBlock(Block):
     def __init__(self, parent, value):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1299,7 +1299,7 @@ class NumberBlock(Block):
 
 class ConstantBlock(Block):
     def __init__(self, parent, value):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1322,7 +1322,7 @@ class ConstantBlock(Block):
 
 class StringBlock(Block):
     def __init__(self, parent, value):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1363,7 +1363,7 @@ class StringBlock(Block):
 
 class IndexBlock(Block):
     def __init__(self, parent, node):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1397,7 +1397,7 @@ class IndexBlock(Block):
 
 class SliceBlock(Block):
     def __init__(self, parent, node):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1439,7 +1439,7 @@ class SliceBlock(Block):
 
 class AttrBlock(Block):
     def __init__(self, parent, node):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1471,7 +1471,7 @@ class AttrBlock(Block):
 
 class UnaryopBlock(Block):
     def __init__(self, parent, node, op):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1503,7 +1503,7 @@ class UnaryopBlock(Block):
 
 class BinaryopBlock(Block):
     def __init__(self, parent, node, op):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1540,7 +1540,7 @@ class BinaryopBlock(Block):
 
 class ClassBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -1638,7 +1638,7 @@ class ClassBlock(Block):
 
 class FuncBlock(Block):
     def __init__(self, parent, node):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1695,7 +1695,7 @@ class FuncBlock(Block):
 
 class ListBlock(Block):
     def __init__(self, parent, node):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
@@ -1744,7 +1744,7 @@ class ListBlock(Block):
 
 class ExpressionBlock(Block):
     def __init__(self, parent, node, lvalue):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.parent = parent
@@ -1897,7 +1897,7 @@ class ExpressionBlock(Block):
 
 class NilBlock(Block):
     def __init__(self, parent, node):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.parent = parent
@@ -1918,7 +1918,7 @@ class NilBlock(Block):
 
 class AssignBlock(Block):
     def __init__(self, parent, node, level, op):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -1954,7 +1954,7 @@ class AssignBlock(Block):
 
 class PassBlock(Block):
     def __init__(self, parent, node, level, rowblk):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2058,7 +2058,7 @@ class PassBlock(Block):
 
 class EvalBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2079,7 +2079,7 @@ class EvalBlock(Block):
 
 class ReturnBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2108,7 +2108,7 @@ class ReturnBlock(Block):
 
 class BreakBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2130,7 +2130,7 @@ class BreakBlock(Block):
 
 class GlobalBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2159,7 +2159,7 @@ class GlobalBlock(Block):
 
 class ImportBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2188,7 +2188,7 @@ class ImportBlock(Block):
 
 class RowBlock(Block):
     def __init__(self, parent, node, level, row):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = False
         self.parent = parent
@@ -2323,7 +2323,7 @@ class SeqBlock(Block):
 
 class DefBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2423,7 +2423,7 @@ class IfBlock(Block):
         An if statement has N conditions and N (no else) or N+1 (with else) bodies.
     """
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2540,7 +2540,7 @@ class IfBlock(Block):
 
 class WhileBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2634,7 +2634,7 @@ class WhileBlock(Block):
 
 class ForBlock(Block):
     def __init__(self, parent, node, level):
-        super().__init__(parent)   
+        super().__init__(parent)
         self.isExpression = False
         self.isStatement = True
         self.parent = parent
@@ -2732,18 +2732,54 @@ class ForBlock(Block):
     def toNode(self):
         return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
 
+class Test(Block):
+    def __init__(self, frame, width=16):
+        super().__init__(None)
+        tk.Grid.config(self)
+        # notice that the scroll region (20" x 20") is larger than
+        # displayed size of the widget (5" x 5")
+        blk = Block(frame)
+        blk.grid()
+        self.draw = tk.Canvas(blk, width="5i", height="5i",
+                           background="white",
+                           scrollregion=(0, 0, "20i", "20i"))
+
+        self.scrollX = tk.Scrollbar(blk, orient=tk.HORIZONTAL)
+        self.scrollY = tk.Scrollbar(blk, orient=tk.VERTICAL)
+
+        # now tie the three together. This is standard boilerplate text
+        self.draw['xscrollcommand'] = self.scrollX.set
+        self.draw['yscrollcommand'] = self.scrollY.set
+        self.scrollX['command'] = self.draw.xview
+        self.scrollY['command'] = self.draw.yview
+
+    def drawStuff(self):
+        # draw something. Note that the first square
+        # is visible, but you need to scroll to see the second one.
+        # self.draw.create_rectangle(0, 0, "3.5i", "3.5i", fill="black")
+        # self.draw.create_rectangle("10i", "10i", "13.5i", "13.5i", fill="blue")
+
+        # pack 'em up
+        self.scrollY.grid(row=0, column=0, sticky=tk.S+tk.N)
+        self.draw.grid(row=0, column=1)
+        self.scrollX.grid(row=1, column=1, sticky=tk.E+tk.W)
+
 class Scrollable(Block):
     """
        Make a frame scrollable with a scrollbar
-       After adding or removing widgets to the scrollable frame, 
+       After adding or removing widgets to the scrollable frame,
        call the update() method to refresh the scrollable area.
     """
 
     def __init__(self, frame, width=16):
-        super().__init__(None)   
-        self.canvas = tk.Canvas(frame, width=750, height=475)
+        super().__init__(None)
+        self.canvas = tk.Canvas(frame, width=725, height=475)
         ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
         xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
+        self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+
+        self.stuff = Block(self.canvas)
+        self.stuff.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
 
         ysb.grid(row=0, column=0, sticky=tk.N+tk.S)
         self.canvas.grid(row=0, column=1)
@@ -2751,35 +2787,40 @@ class Scrollable(Block):
 
         ysb.config(command=self.canvas.yview)
         xsb.config(command=self.canvas.xview)
-        self.canvas.configure(yscrollcommand=ysb.set,xscrollcommand=xsb.set)
+        self.canvas.configure(xscrollcommand=xsb.set)
+        self.canvas.configure(yscrollcommand=ysb.set)
 
         self.canvas.bind('<Configure>', self.__fill_canvas)
 
         # base class initialization
-        tk.Frame.__init__(self, frame)         
+        tk.Frame.__init__(self, frame)
 
         # assign this obj (the inner frame) to the windows item of the canvas
-        self.windows_item = self.canvas.create_window(0,0, window=self, anchor=tk.NW)
+        self.windows_item = self.canvas.create_window(0, 0, window=self.stuff, anchor=tk.NW)
 
     def __fill_canvas(self, event):
-        "Enlarge the windows item to the canvas size"
+        "Enlarge the windows item to the canvas width"
 
         canvas_width = event.width
-        canvas_heigth = event.heigth
-        self.canvas.itemconfig(self.windows_item, width = canvas_width, height = canvas_height)        
+        canvas_height = event.height
+        # self.canvas.itemconfig(self.windows_item, width = canvas_width)
+        # self.canvas.itemconfig(self.windows_item, height = canvas_height)
+        self.canvas.itemconfig(self.windows_item, width = "1in", height = "1in")
 
     def update(self):
         "Update the canvas and the scrollregion"
 
         self.update_idletasks()
         self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
+        # self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
 class TopLevel(tk.Frame):
     def __init__(self, parent):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)   
+        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
         self.parent = parent
         self.curFile = None
         self.curDir = None
+        self.program = None
 
         # self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
 
@@ -2798,7 +2839,7 @@ class TopLevel(tk.Frame):
         frame.grid(row=1, column=0, sticky=tk.W)
         frame.grid_propagate(0)
         # frame.configure(bd=2, highlightbackground="purple", highlightcolor="purple", highlightthickness=2)
-        
+
         global confarea
         # confarea = tk.Frame(frame, width=400, height=475, bd=10, highlightbackground="green", highlightcolor="green", highlightthickness=3)
         confarea = tk.Frame(frame, width=400, height=475)
@@ -2807,12 +2848,13 @@ class TopLevel(tk.Frame):
 
         # self.progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
         self.progarea = tk.Frame(frame, width=750, height=500)
+        # self.progarea = Block(frame)
         # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         self.progarea.grid_propagate(0)
 
         global scrollable
         scrollable = Scrollable(self.progarea, width=16)
-        self.program = SeqBlock(scrollable, None, 0)
+        self.program = SeqBlock(scrollable.stuff, None, 0)
         self.program.grid(sticky=tk.W)
         scrollable.update()
 
@@ -2867,7 +2909,7 @@ class TopLevel(tk.Frame):
                 global scrollable
                 if self.program != None:
                     self.program.grid_forget()
-                self.program = SeqBlock(scrollable, n, 0)
+                self.program = SeqBlock(scrollable.stuff, n, 0)
                 self.program.grid(sticky=tk.W)
                 scrollable.update()
 
@@ -3028,7 +3070,7 @@ def Break(lineno, col_offset):
 
 def Pass(lineno, col_offset):
     return RowNode(PassNode(), lineno)
-        
+
 def Call(lineno, col_offset, func, args, keywords, starargs=None, kwargs=None):
     return ExpressionNode(FuncNode(func, args))
 
@@ -3253,4 +3295,4 @@ if __name__ == '__main__':
     tl.grid()
     tl.grid_propagate(0)
 
-    root.mainloop()  
+    root.mainloop()
