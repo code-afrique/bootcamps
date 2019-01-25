@@ -2471,7 +2471,7 @@ class IfBlock(Block):
 
         if node == None:
             self.hdrs = [Block(self)]
-            self.minimizeds = [ Falsies[0] ]
+            self.minimizeds = [ False ]
             tk.Button(self.hdrs[0], text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
             self.conds = [ExpressionBlock(self.hdrs[0], None, False)]
             self.conds[0].grid(row=0, column=1)
