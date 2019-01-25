@@ -159,6 +159,13 @@ class BreakNode(Node):
     def toBlock(self, frame, level, block):
         return BreakBlock(frame, self, level)
 
+class ContinueNode(Node):
+    def __init__(self):
+        super().__init__()
+
+    def toBlock(self, frame, level, block):
+        return ContinueBlock(frame, self, level)
+
 class ImportNode(Node):
     def __init__(self, what):
         super().__init__()
@@ -511,6 +518,8 @@ class PassForm(Form):
         if self.block.isWithinLoop:
             tk.Button(self, text="break statement", width=0, command=self.stmtBreak).grid(row=row)
             row += 1
+            tk.Button(self, text="continue statement", width=0, command=self.stmtContinue).grid(row=row)
+            row += 1
         if self.block.isWithinDef:
             tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
         tk.Button(self, text="global statement", width=0, command=self.stmtGlobal).grid()
@@ -547,6 +556,9 @@ class PassForm(Form):
     def stmtBreak(self):
         self.block.stmtBreak()
 
+    def stmtContinue(self):
+        self.block.stmtContinue()
+
     def stmtGlobal(self):
         self.block.stmtGlobal()
 
@@ -573,6 +585,8 @@ class PassForm(Form):
             self.stmtReturn()
         elif ev.char == 'd':
             self.stmtDef()
+        elif ev.char == 'c':
+            self.stmtClass()
         elif ev.char == '=':
             self.stmtAssign()
         elif ev.char == '?':
@@ -925,6 +939,16 @@ class BreakForm(Form):
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'break' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'break' statement' terminates the loop that it is in.").grid(row=1)
 
+class ContinueForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'continue' statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'continue statement' jumps to the next iteration of the loop it is in").grid(row=1)
+
 class GlobalForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)
@@ -1184,8 +1208,8 @@ class Block(tk.Frame):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
         self.isExpression = False
         self.isStatement = False
-        self.isWithinDef = False
-        self.isWithinLoop = False
+        self.isWithinDef = False if parent == None else parent.isWithinDef
+        self.isWithinLoop = False if parent == None else parent.isWithinLoop
 
     def printIndent(self, fd):
         for i in range(self.level):
@@ -2039,6 +2063,13 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what)
         self.needsSaving()
 
+    def stmtContinue(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = ContinueBlock(self.rowblk, None, self.level)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what)
+        self.needsSaving()
+
     def stmtGlobal(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = GlobalBlock(self.rowblk, None, self.level)
@@ -2165,6 +2196,28 @@ class BreakBlock(Block):
 
     def toNode(self):
         return BreakNode()
+
+class ContinueBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+        tk.Button(self, text="continue", fg="red", command=self.cb).grid(row=0, column=0)
+
+    def genForm(self):
+        self.setForm(ContinueForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        print("continue", file=fd)
+
+    def toNode(self):
+        return ContinueNode()
 
 class GlobalBlock(Block):
     def __init__(self, parent, node, level):
@@ -2789,6 +2842,8 @@ class Scrollable(Block):
     def __init__(self, frame, width=16):
         super().__init__(None)
         self.canvas = tk.Canvas(frame, width=725, height=475)
+        self.canvas.isWithinDef = False		# ???
+        self.canvas.isWithinLoop = False	# ???
         ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
         xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
         self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
@@ -3095,6 +3150,9 @@ def Return(lineno, col_offset, value):
 
 def Break(lineno, col_offset):
     return RowNode(BreakNode(), lineno)
+
+def Continue(lineno, col_offset):
+    return RowNode(ContinueNode(), lineno)
 
 def Pass(lineno, col_offset):
     return RowNode(PassNode(), lineno)
