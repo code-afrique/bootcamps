@@ -29,7 +29,7 @@ class Node():
         return None
 
     def setComments(self, comments):
-        print("setComments")
+        print("setComments ", self)
 
 class NilNode(Node):
     def __init__(self):
@@ -55,7 +55,6 @@ class RowNode(Node):
     def setComments(self, comments):
         if self.lineno in comments:
             self.comment = comments[self.lineno]
-            print("LINE {0}".format(self.lineno))
         self.what.setComments(comments)
 
 class DefNode(Node):
@@ -143,12 +142,18 @@ class ReturnNode(Node):
     def toBlock(self, frame, level, block):
         return ReturnBlock(frame, self, level)
 
+    def setComments(self, comments):
+        pass
+
 class BreakNode(Node):
     def __init__(self):
         super().__init__()   
 
     def toBlock(self, frame, level, block):
         return BreakBlock(frame, self, level)
+
+    def setComments(self, comments):
+        pass
 
 class ImportNode(Node):
     def __init__(self, what):
@@ -158,6 +163,9 @@ class ImportNode(Node):
     def toBlock(self, frame, level, block):
         return ImportBlock(frame, self, level)
 
+    def setComments(self, comments):
+        pass
+
 class GlobalNode(Node):
     def __init__(self, what):
         super().__init__()   
@@ -165,6 +173,9 @@ class GlobalNode(Node):
 
     def toBlock(self, frame, level, block):
         return GlobalBlock(frame, self, level)
+
+    def setComments(self, comments):
+        pass
 
 class AssignNode(Node):
     def __init__(self, left, right, op):
@@ -175,6 +186,9 @@ class AssignNode(Node):
 
     def toBlock(self, frame, level, block):
         return AssignBlock(frame, self, level, self.op)
+
+    def setComments(self, comments):
+        pass
 
 class BinaryopNode(Node):
     def __init__(self, left, right, op):
@@ -247,6 +261,9 @@ class EvalNode(Node):
 
     def toBlock(self, frame, level, block):
         return EvalBlock(frame, self, level)
+
+    def setComments(self, comments):
+        pass
 
 class NumberNode(Node):
     def __init__(self, what):
@@ -395,24 +412,39 @@ class RowForm(Form):
         self.isStatement = False
         self.parent = parent
         self.block = block
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="Select one of the actions below").grid(row=0, columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Select one of the actions below").grid(row=0, columnspan=3)
         tk.Button(self, text="Add a new statement below",
-                        command=self.addStmt).grid(row=1, columnspan=2)
+                        command=self.addStmt).grid(row=1, columnspan=3)
         tk.Button(self, text="Insert a new statement above",
-                        command=self.insrtStmt).grid(row=2, columnspan=2)
+                        command=self.insrtStmt).grid(row=2, columnspan=3)
         tk.Button(self, text="Move this statement up",
-                        command=self.upStmt).grid(row=3, columnspan=2)
+                        command=self.upStmt).grid(row=3, columnspan=3)
         tk.Button(self, text="Move this statement down",
-                        command=self.downStmt).grid(row=4, columnspan=2)
+                        command=self.downStmt).grid(row=4, columnspan=3)
         tk.Button(self, text="copy",
                         command=self.copyStmt).grid(row=5)
         tk.Button(self, text="delete",
                         command=self.delStmt).grid(row=5, column=1)
 
-        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: <return> or <enter> adds a new statement below, while '<ctrl>c' copies the statement, and '<delete>' deletes the statement.").grid(columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: <return> or <enter> adds a new statement below, while '<ctrl>c' copies the statement, and '<delete>' deletes the statement.").grid(row=6, columnspan=3)
 
         self.bind("<Key>", self.key)
         self.focus_set()
+
+        tk.Label(self, text="Comment: ").grid(row=7)
+        self.entry = tk.Entry(self)
+        self.entry.bind('<Return>', self.keyEnter)
+        if self.block.comment != None:
+            self.entry.insert(tk.END, self.block.comment.get())
+        self.entry.grid(row=7, column=1)
+        enter = tk.Button(self, text="Enter", command=self.cb)
+        enter.grid(row=7, column=2)
+
+    def cb(self):
+        self.block.setComment(self.entry.get())
+
+    def keyEnter(self, ev):
+        self.cb()
 
     def key(self, ev):
         if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
@@ -2172,8 +2204,12 @@ class RowBlock(Block):
             self.what = node.what.toBlock(self, level, self)
         self.what.grid(row=0, column=1, sticky=tk.W)
         if node != None and node.comment != None:
-            self.comment = node.comment
-            tk.Label(self, text=node.comment).grid(row=0, column=2, sticky=tk.N+tk.W)
+            self.comment = tk.StringVar()
+            self.comment.set(node.comment)
+            tk.Label(self, textvariable=self.comment, fg="blue").grid(row=0, column=2, sticky=tk.N+tk.W)
+
+    def setComment(self, comment):
+        self.comment.set(comment)
 
     def genForm(self):
         f = RowForm(confarea, self)
@@ -2209,11 +2245,17 @@ class RowBlock(Block):
         self.setBlock(self)
 
     def print(self, fd):
-        self.what.print(fd)
-        if self.comment == None:
-            print(file=fd)
-        else:
-            print("\t{}".format(self.comment), file=fd)
+        # first print into a string buffer
+        f = io.StringIO("")
+        self.what.print(f)
+        s = f.getvalue()
+
+        # insert the comment, if any, after the first line
+        if '\n' in s and self.comment != None:
+            i = s.index('\n')
+            s = s[:i] + '\t' + self.comment.get() + s[i:]
+
+        print(s, file=fd, end="")
 
     def toNode(self):
         return RowNode(self.what.toNode(), 0)
