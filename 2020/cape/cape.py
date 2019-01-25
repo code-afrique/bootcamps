@@ -1979,7 +1979,7 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = EmptyBlock(self.rowblk, None, self.level)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what)
+        self.setBlock(self.rowblk)
         self.needsSaving()
 
     def stmtDef(self):
@@ -3069,8 +3069,8 @@ def For(lineno, col_offset, target, iter, body, orelse):
         None if orelse == [] else SeqNode(orelse), False, False), lineno)
 
 def While(lineno, col_offset, test, body, orelse):
-    return RowNode(WhileNode(test, SeqNode(body), lineno,
-        None if orelse == [] else SeqNode(orelse), False, False))
+    return RowNode(WhileNode(test, SeqNode(body),
+        None if orelse == [] else SeqNode(orelse), False, False), lineno)
 
 def If(lineno, col_offset, test, body, orelse):
     if orelse == []:
