@@ -247,6 +247,14 @@ class ListNode(Node):
     def toBlock(self, frame, level, block):
         return ListBlock(frame, self)
 
+class TupleNode(Node):
+    def __init__(self, entries):
+        super().__init__()
+        self.entries = entries
+
+    def toBlock(self, frame, level, block):
+        return TupleBlock(frame, self)
+
 class AttrNode(Node):
     def __init__(self, array, ref):
         super().__init__()
@@ -632,8 +640,9 @@ class ExpressionForm(Form):
             tk.Button(frame, text="True", command=self.exprTrue).grid(row=row, column=1, sticky=tk.W)
             tk.Button(frame, text="None", command=self.exprNone).grid(row=row, column=2, sticky=tk.W)
             row += 1
-            tk.Button(frame, text="[ ]", command=self.exprList).grid(row=row, sticky=tk.W)
-            tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(frame, text="[...]", command=self.exprList).grid(row=row, sticky=tk.W)
+            tk.Button(frame, text="(...)", command=self.exprTuple).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=2, sticky=tk.W)
             row += 1
 
             tk.Label(frame, text="").grid(row=row)
@@ -697,6 +706,9 @@ class ExpressionForm(Form):
 
     def exprList(self):
         self.block.exprList()
+
+    def exprTuple(self):
+        self.block.exprTuple()
 
     def exprAssign(self):
         self.block.exprAssign(self.assignop.get())
@@ -979,6 +991,26 @@ class ListForm(Form):
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'list' expression").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A 'list' is simply a sequence of expressions").grid(row=1,columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the list", command=self.addEntry)
+        ma.grid(row=2, column=0, columnspan=2)
+        copy = tk.Button(self, text="copy", command=self.copy)
+        copy.grid(row=3, column=0)
+        delb = tk.Button(self, text="delete", command=self.delete)
+        delb.grid(row=3, column=1)
+
+    def addEntry(self):
+        self.block.addEntry(None)
+        self.block.setBlock(self.block.entries[-1])
+
+class TupleForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)
+        self.isExpression = True
+        self.isStatement = False
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'tuple' expression").grid(columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'tuple' is simply a sequence of expressions").grid(row=1,columnspan=2)
+        ma = tk.Button(self, text="+ Add a new expression to the tuple", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
         copy = tk.Button(self, text="copy", command=self.copy)
         copy.grid(row=3, column=0)
@@ -1772,6 +1804,55 @@ class ListBlock(Block):
     def toNode(self):
         return ListNode([ entry.toNode() for entry in self.entries ])
 
+class TupleBlock(Block):
+    def __init__(self, parent, node):
+        super().__init__(parent)
+        self.isExpression = True
+        self.isStatement = False
+        self.parent = parent
+
+        tk.Button(self, text="(", width=0, command=self.cb).grid(row=0, column=0)
+        self.eol = tk.Button(self, text=")", width=0, command=self.cb)
+
+        self.entries = [ ]
+        if node != None:
+            for e in node.entries:
+                self.addEntry(e)
+        self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(TupleForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addEntry(self, node):
+        if node == None:
+            e = ExpressionBlock(self, None, False)
+        else:
+            e = ExpressionBlock(self, node, False)
+        self.entries.append(e)
+        self.gridUpdate()
+        self.needsSaving()
+
+    def gridUpdate(self):
+        for i in range(len(self.entries)):
+            if i != 0:
+                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=2*i+1)
+            self.entries[i].grid(row=0, column=2*i+2)
+        self.eol.grid(row=0, column=2*len(self.entries)+2)
+
+    def print(self, fd):
+        print("(", end="", file=fd)
+        for i in range(len(self.entries)):
+            if i != 0:
+                print(", ", end="", file=fd)
+            self.entries[i].print(fd)
+        print(")", end="", file=fd)
+
+    def toNode(self):
+        return TupleNode([ entry.toNode() for entry in self.entries ])
+
 class ExpressionBlock(Block):
     def __init__(self, parent, node, lvalue):
         super().__init__(parent)
@@ -1864,6 +1945,14 @@ class ExpressionBlock(Block):
     def exprList(self):
         self.what.grid_forget()
         self.what = ListBlock(self, None)
+        self.what.grid()
+        self.init = True
+        self.setBlock(self.what)
+        self.needsSaving()
+
+    def exprTuple(self):
+        self.what.grid_forget()
+        self.what = TupleBlock(self, None)
         self.what.grid()
         self.init = True
         self.setBlock(self.what)
@@ -3168,6 +3257,9 @@ def Store():
 
 def List(lineno, col_offset, elts, ctx):
     return ExpressionNode(ListNode(elts))
+
+def Tuple(lineno, col_offset, elts, ctx):
+    return ExpressionNode(TupleNode(elts))
 
 def Expr(lineno, col_offset, value):
     return RowNode(EvalNode(value), lineno)
