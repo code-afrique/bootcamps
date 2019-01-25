@@ -1,5 +1,8 @@
+# next function finds minimum
+# or so it intends to
 def findMinimum(list):  # find the minimum in the list
     current = list[0]
+    # comment before loop
     for x in list:      # loop through all elements
         if (x < current):   # if statement
             current = x         # update current

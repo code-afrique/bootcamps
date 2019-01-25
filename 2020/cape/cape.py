@@ -28,8 +28,8 @@ class Node():
     def toBlock(self, frame):
         return None
 
-    def setComments(self, comments):
-        print("setComments ", self)
+    def findRow(self, lineno):
+        return None
 
 class NilNode(Node):
     def __init__(self):
@@ -52,10 +52,8 @@ class RowNode(Node):
         self.lineno = lineno
         self.comment = None
 
-    def setComments(self, comments):
-        if self.lineno in comments:
-            self.comment = comments[self.lineno]
-        self.what.setComments(comments)
+    def findRow(self, lineno):
+        return self.what.findRow(lineno)
 
 class DefNode(Node):
     def __init__(self, name, args, body, minimized):
@@ -68,8 +66,8 @@ class DefNode(Node):
     def toBlock(self, frame, level, block):
         return DefBlock(frame, self, level)
 
-    def setComments(self, comments):
-        self.body.setComments(comments)
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
 
 class ClassNode(Node):
     def __init__(self, name, bases, body, minimized):
@@ -82,8 +80,8 @@ class ClassNode(Node):
     def toBlock(self, frame, level, block):
         return ClassBlock(frame, self, level)
 
-    def setComments(self, comments):
-        self.body.setComments(comments)
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
 
 class IfNode(Node):
     def __init__(self, conds, bodies, minimizeds):
@@ -95,9 +93,12 @@ class IfNode(Node):
     def toBlock(self, frame, level, block):
         return IfBlock(frame, self, level)
 
-    def setComments(self, comments):
+    def findRow(self, lineno):
         for b in self.bodies:
-            b.setComments(comments)
+            loc = b.findRow(lineno)
+            if loc != None:
+                return loc
+        return None
 
 class WhileNode(Node):
     def __init__(self, cond, body, orelse, minimized, minimized2):
@@ -111,10 +112,11 @@ class WhileNode(Node):
     def toBlock(self, frame, level, block):
         return WhileBlock(frame, self, level)
 
-    def setComments(self, comments):
-        self.body.setComments(comments)
-        if self.orelse != None:
-            self.orelse.setComments(comments)
+    def findRow(self, lineno):
+        loc = self.body.findRow(lineno)
+        if loc == None and self.orelse != None:
+            loc = self.orelse.findRow(lineno)
+        return loc
 
 class ForNode(Node):
     def __init__(self, var, expr, body, orelse, minimized, minimized2):
@@ -129,10 +131,11 @@ class ForNode(Node):
     def toBlock(self, frame, level, block):
         return ForBlock(frame, self, level)
 
-    def setComments(self, comments):
-        self.body.setComments(comments)
-        if self.orelse != None:
-            self.orelse.setComments(comments)
+    def findRow(self, lineno):
+        loc = self.body.findRow(lineno)
+        if loc == None and self.orelse != None:
+            loc = self.orelse.findRow(lineno)
+        return loc
 
 class ReturnNode(Node):
     def __init__(self, what):
@@ -142,18 +145,12 @@ class ReturnNode(Node):
     def toBlock(self, frame, level, block):
         return ReturnBlock(frame, self, level)
 
-    def setComments(self, comments):
-        pass
-
 class BreakNode(Node):
     def __init__(self):
         super().__init__()
 
     def toBlock(self, frame, level, block):
         return BreakBlock(frame, self, level)
-
-    def setComments(self, comments):
-        pass
 
 class ImportNode(Node):
     def __init__(self, what):
@@ -163,9 +160,6 @@ class ImportNode(Node):
     def toBlock(self, frame, level, block):
         return ImportBlock(frame, self, level)
 
-    def setComments(self, comments):
-        pass
-
 class GlobalNode(Node):
     def __init__(self, what):
         super().__init__()
@@ -173,9 +167,6 @@ class GlobalNode(Node):
 
     def toBlock(self, frame, level, block):
         return GlobalBlock(frame, self, level)
-
-    def setComments(self, comments):
-        pass
 
 class AssignNode(Node):
     def __init__(self, left, right, op):
@@ -186,9 +177,6 @@ class AssignNode(Node):
 
     def toBlock(self, frame, level, block):
         return AssignBlock(frame, self, level, self.op)
-
-    def setComments(self, comments):
-        pass
 
 class BinaryopNode(Node):
     def __init__(self, left, right, op):
@@ -262,9 +250,6 @@ class EvalNode(Node):
     def toBlock(self, frame, level, block):
         return EvalBlock(frame, self, level)
 
-    def setComments(self, comments):
-        pass
-
 class NumberNode(Node):
     def __init__(self, what):
         super().__init__()
@@ -313,9 +298,14 @@ class SeqNode(Node):
     def toBlock(self, frame, level, block):
         return SeqBlock(frame, self.rows, level)
 
-    def setComments(self, comments):
-        for row in self.rows:
-            row.setComments(comments)
+    def findRow(self, lineno):
+        for i in range(len(self.rows)):
+            if self.rows[i].lineno >= lineno:
+                return (self, i)
+            r = self.rows[i].findRow(lineno)
+            if r != None:
+                return r
+        return None
 
 class Form(tk.Frame):
     def __init__(self, parent):
@@ -434,8 +424,10 @@ class RowForm(Form):
         tk.Label(self, text="Comment: ").grid(row=7)
         self.entry = tk.Entry(self)
         self.entry.bind('<Return>', self.keyEnter)
-        if self.block.comment != None:
-            self.entry.insert(tk.END, self.block.comment.get())
+        c = self.block.comment.get()
+        if len(c) > 0 and c[0] == '#':
+            c = c[1:]
+        self.entry.insert(tk.END, c)
         self.entry.grid(row=7, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=7, column=2)
@@ -2204,11 +2196,14 @@ class RowBlock(Block):
             self.what = node.what.toBlock(self, level, self)
         self.what.grid(row=0, column=1, sticky=tk.W)
         if node != None and node.comment != None:
-            self.comment.set(node.comment)
-            tk.Button(self, textvariable=self.comment, fg="brown", command=self.listcmd).grid(row=0, column=2, sticky=tk.N+tk.W)
+            self.comment.set("#" + node.comment)
+        tk.Button(self, textvariable=self.comment, fg="brown", command=self.listcmd).grid(row=0, column=2, sticky=tk.N+tk.W)
 
     def setComment(self, comment):
-        self.comment.set(comment)
+        if comment == "":
+            self.comment.set("")
+        else:
+            self.comment.set("#" + comment)
 
     def genForm(self):
         f = RowForm(confarea, self)
@@ -2805,7 +2800,6 @@ class Scrollable(Block):
         canvas_height = event.height
         # self.canvas.itemconfig(self.windows_item, width = canvas_width)
         # self.canvas.itemconfig(self.windows_item, height = canvas_height)
-        self.canvas.itemconfig(self.windows_item, width = "1in", height = "1in")
 
     def update(self):
         "Update the canvas and the scrollregion"
@@ -2903,8 +2897,14 @@ class TopLevel(tk.Frame):
                 #     log.write(ftree)
                 n = eval(ftree)
                 comments = self.extractComments(code)
-                n.setComments(comments)
                 print(comments)
+                # n.setComments(comments)
+                for lineno, text in comments.items():
+                    (sb, i) = n.findRow(lineno)
+                    row = sb.rows[i]
+                    print("Found {0} at {1}".format(lineno, row.lineno))
+                    if lineno == row.lineno:
+                        row.comment = text[1:]
 
                 global scrollable
                 if self.program != None:
