@@ -7,7 +7,7 @@ import tempfile
 import subprocess
 import sys
 import io
-import keyword
+import keyword as kw
 import tkinter as tk
 import tkinter as ttk
 from tkinter import messagebox
@@ -774,7 +774,7 @@ class DefForm(Form):
 
     def cb(self):
         name = self.entry.get()
-        if name in keyword.kwlist:
+        if name in kw.kwlist:
             messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
@@ -784,7 +784,7 @@ class DefForm(Form):
         args = [ ]
         for arg in self.args:
             a = arg.get()
-            if a in keyword.kwlist:
+            if a in kw.kwlist:
                 messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             if not a.isidentifier():
                 messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
@@ -825,7 +825,7 @@ class ClassForm(Form):
 
     def cb(self):
         name = self.entry.get()
-        if name in keyword.kwlist:
+        if name in kw.kwlist:
             messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
@@ -1139,7 +1139,7 @@ class NameForm(Form):
 
     def cb(self):
         v = self.entry.get()
-        if v in keyword.kwlist:
+        if v in kw.kwlist:
             messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(v))
         elif not v.isidentifier():
             messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
