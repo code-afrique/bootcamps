@@ -3115,7 +3115,7 @@ class TopLevel(tk.Frame):
                     print("===== Fix program first =====")
                 else:
                     print("===== Start running =====")
-                    subprocess.call(['python', path])
+                    subprocess.call(['python3', path])
                     print("===== Done =====")
         finally:
             os.remove(path)
