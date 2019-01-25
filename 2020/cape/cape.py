@@ -2194,7 +2194,7 @@ class RowBlock(Block):
         self.parent = parent
         self.level = level
         self.row = row
-        self.comment = None
+        self.comment = tk.StringVar()
 
         menu = tk.Button(self, text="-", width=3, command=self.listcmd)
         menu.grid(row=0, column=0, sticky=tk.W)
@@ -2204,9 +2204,8 @@ class RowBlock(Block):
             self.what = node.what.toBlock(self, level, self)
         self.what.grid(row=0, column=1, sticky=tk.W)
         if node != None and node.comment != None:
-            self.comment = tk.StringVar()
             self.comment.set(node.comment)
-            tk.Label(self, textvariable=self.comment, fg="blue").grid(row=0, column=2, sticky=tk.N+tk.W)
+            tk.Button(self, textvariable=self.comment, fg="brown", command=self.listcmd).grid(row=0, column=2, sticky=tk.N+tk.W)
 
     def setComment(self, comment):
         self.comment.set(comment)
@@ -2251,7 +2250,7 @@ class RowBlock(Block):
         s = f.getvalue()
 
         # insert the comment, if any, after the first line
-        if '\n' in s and self.comment != None:
+        if '\n' in s and self.comment.get() != "":
             i = s.index('\n')
             s = s[:i] + '\t' + self.comment.get() + s[i:]
 
@@ -2743,13 +2742,16 @@ class Scrollable(Block):
     def __init__(self, frame, width=16):
         super().__init__(None)   
         self.canvas = tk.Canvas(frame, width=750, height=475)
-        sb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
+        ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
+        xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
 
-        sb.pack(side=tk.LEFT, fill=tk.Y, expand=False)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        ysb.grid(row=0, column=0, sticky=tk.N+tk.S)
+        self.canvas.grid(row=0, column=1)
+        xsb.grid(row=1, column=1, sticky=tk.W+tk.E)
 
-        sb.config(command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=sb.set)
+        ysb.config(command=self.canvas.yview)
+        xsb.config(command=self.canvas.xview)
+        self.canvas.configure(yscrollcommand=ysb.set,xscrollcommand=xsb.set)
 
         self.canvas.bind('<Configure>', self.__fill_canvas)
 
@@ -2760,10 +2762,11 @@ class Scrollable(Block):
         self.windows_item = self.canvas.create_window(0,0, window=self, anchor=tk.NW)
 
     def __fill_canvas(self, event):
-        "Enlarge the windows item to the canvas width"
+        "Enlarge the windows item to the canvas size"
 
         canvas_width = event.width
-        self.canvas.itemconfig(self.windows_item, width = canvas_width)        
+        canvas_heigth = event.heigth
+        self.canvas.itemconfig(self.windows_item, width = canvas_width, height = canvas_height)        
 
     def update(self):
         "Update the canvas and the scrollregion"
