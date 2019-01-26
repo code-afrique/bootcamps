@@ -220,16 +220,6 @@ class SubscriptNode(Node):
     def toBlock(self, frame, level, block):
         return SubscriptBlock(frame, self)
 
-class SliceNode(Node):
-    def __init__(self, array, start, finish):
-        super().__init__()
-        self.array = array
-        self.start = start
-        self.finish = finish
-
-    def toBlock(self, frame, level, block):
-        return SliceBlock(frame, self)
-
 class FuncNode(Node):
     def __init__(self, func, args):
         super().__init__()
@@ -626,13 +616,6 @@ class ExpressionForm(Form):
         tk.Button(frame, text="x[y]", command=self.exprSubscript).grid(row=row, column=2, sticky=tk.W)
         row += 1
         if not lvalue:
-            tk.Button(frame, text="x[y:z]", command=self.exprSliceYY).grid(row=row, column=0, sticky=tk.W)
-            tk.Button(frame, text="x[y:]", command=self.exprSliceYN).grid(row=row, column=1, sticky=tk.W)
-            row += 1
-            tk.Button(frame, text="x[:z]", command=self.exprSliceNY).grid(row=row, column=0, sticky=tk.W)
-            tk.Button(frame, text="x[:]", command=self.exprSliceNN).grid(row=row, column=1, sticky=tk.W)
-            row += 1
-
             tk.Button(frame, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
             tk.Button(frame, text="string", command=self.exprString).grid(row=row, column=1, sticky=tk.W)
             row += 1
@@ -692,18 +675,6 @@ class ExpressionForm(Form):
     def exprSubscript(self):
         self.block.exprSubscript()
 
-    def exprSliceYY(self):
-        self.block.exprSlice(True, True)
-
-    def exprSliceYN(self):
-        self.block.exprSlice(True, False)
-
-    def exprSliceNY(self):
-        self.block.exprSlice(False, True)
-
-    def exprSliceNN(self):
-        self.block.exprSlice(False, False)
-
     def exprList(self):
         self.block.exprList()
 
@@ -745,8 +716,6 @@ class ExpressionForm(Form):
                 self.block.exprFunc()
             elif ev.char == '[':
                 self.block.exprList()
-            elif ev.char == ':':
-                self.block.exprSlice(True, True)
             elif ev.char == '=':
                 self.block.exprAssign("==")
             elif ev.char == '!':
@@ -1033,20 +1002,25 @@ class SubscriptForm(Form):
             tk.Message(self, width=350, font='Helvetica 16 bold', text="'slice' expression").grid(columnspan=2)
             tk.Message(self, width=350, font='Helvetica 14', text="A slice expression is of the form x[lower:upper] or x[lower:upper:step], where 'x' is a list or a string, 'lower' some expression to index into the list or string, 'upper' some expression that signifies the end of the slice, and 'step' the size of the steps that should be taken.  If 'lower' is absent, 0 is assumed.  If 'upper' is absent, the end of the list or string is assumed.  If 'step' is absent, 1 is assumed").grid(row=1,columnspan=2)
             if block.lower == None:
-                tk.Button(self, text="add lower", command=self.addLower).grid()
+                tk.Button(self, text="add lower", command=self.addLower).grid(columnspan=2)
             if block.upper == None:
-                tk.Button(self, text="add upper", command=self.addUpper).grid()
+                tk.Button(self, text="add upper", command=self.addUpper).grid(columnspan=2)
             if block.step == None:
-                tk.Button(self, text="add step", command=self.addStep).grid()
+                tk.Button(self, text="add step", command=self.addStep).grid(columnspan=2)
 
         else:
             tk.Message(self, width=350, font='Helvetica 16 bold', text="'index' expression").grid(columnspan=2)
             tk.Message(self, width=350, font='Helvetica 14', text="An index expression is of the form x[y], where x is a list or a string and y some expression to index into the list or string").grid(row=1,columnspan=2)
+            tk.Button(self, text="turn index into a 'slice'", command=self.makeSlice).grid(columnspan=2)
 
         copy = tk.Button(self, text="copy", command=self.copy)
         copy.grid(row=100, column=0)
         delb = tk.Button(self, text="delete", command=self.delete)
         delb.grid(row=100, column=1)
+
+    def makeSlice(self):
+        self.block.isSlice = True
+        self.addUpper()
 
     def addLower(self):
         self.block.lower = ExpressionBlock(self.block, None, False)
@@ -1072,20 +1046,6 @@ class AttrForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'reference' expression").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A reference expression is of the form x.y, where x is an expression that expresses an object and y the name of a field in the object.").grid(row=1,columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
-        copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
-        delb.grid(row=2, column=1)
-
-class SliceForm(Form):
-    def __init__(self, parent, block):
-        super().__init__(parent)
-        self.isExpression = True
-        self.isStatement = False
-        self.parent = parent
-        self.block = block
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="'slice' expression").grid(columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="A slice expression is of the form x[y:z], where x is a list or a string, y some expression to index into the list or string, and z some expression that signifies the end of the slice.  If y is absent, 0 is assumed.  If z is absent, the end of the list or string is assumed.").grid(row=1,columnspan=2)
         copy = tk.Button(self, text="copy", command=self.copy)
         copy.grid(row=2, column=0)
         delb = tk.Button(self, text="delete", command=self.delete)
@@ -1485,6 +1445,8 @@ class SubscriptBlock(Block):
                     self.step = None
                 else:
                     self.step = ExpressionBlock(self, step, False)
+            else:
+                self.upper = self.step = None
         self.updateGrid()
 
     def cb(self):
@@ -1530,48 +1492,6 @@ class SubscriptBlock(Block):
             None if self.lower == None else self.lower.toNode(),
             None if self.upper == None else self.upper.toNode(),
             None if self.step == None else self.step.toNode()))
-
-class SliceBlock(Block):
-    def __init__(self, parent, node):
-        super().__init__(parent)
-        self.isExpression = True
-        self.isStatement = False
-        self.parent = parent
-        if node == None:
-            self.array = ExpressionBlock(self, None, False)
-        else:
-            self.array = ExpressionBlock(self, node.array, False)
-        self.array.grid(row=0, column=0)
-        tk.Button(self, text='[', command=self.cb).grid(row=0, column=1)
-        if node == None:
-            self.start = ExpressionBlock(self, None, False)
-        else:
-            self.start = ExpressionBlock(self, node.start, False)
-        self.start.grid(row=0, column=2)
-        tk.Button(self, text=':', command=self.cb).grid(row=0, column=3)
-        if node == None:
-            self.finish = ExpressionBlock(self, None, False)
-        else:
-            self.finish = ExpressionBlock(self, node.finish, False)
-        self.finish.grid(row=0, column=4)
-        tk.Button(self, text=']', command=self.cb).grid(row=0, column=5)
-
-    def cb(self):
-        self.setBlock(self)
-
-    def genForm(self):
-        self.setForm(SliceForm(confarea, self))
-
-    def print(self,fd):
-        self.array.print(fd)
-        print("[", end="", file=fd)
-        self.start.print(fd)
-        print(":", end="", file=fd)
-        self.finish.print(fd)
-        print("]", end="", file=fd)
-
-    def toNode(self):
-        return SliceNode(self.array.toNode(), self.start.toNode(), self.finish.toNode())
 
 class AttrBlock(Block):
     def __init__(self, parent, node):
@@ -1993,17 +1913,6 @@ class ExpressionBlock(Block):
     def exprSubscript(self):
         self.what.grid_forget()
         self.what = SubscriptBlock(self, None)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.array)
-        self.needsSaving()
-
-    def exprSlice(self, left, right):
-        self.what.grid_forget()
-        array = ExpressionNode(None)
-        start = ExpressionNode(None if left else NilNode())
-        finish = ExpressionNode(None if right else NilNode())
-        self.what = SliceBlock(self, SliceNode(array, start, finish))
         self.what.grid()
         self.init = True
         self.setBlock(self.what.array)
@@ -3025,12 +2934,18 @@ class Scrollable(Block):
         self.canvas.configure(yscrollcommand=ysb.set)
 
         self.canvas.bind('<Configure>', self.__fill_canvas)
+        # self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         # base class initialization
         tk.Frame.__init__(self, frame)
 
         # assign this obj (the inner frame) to the windows item of the canvas
         self.windows_item = self.canvas.create_window(0, 0, window=self.stuff, anchor=tk.NW)
+
+    """
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(-1*(event.delta/120), "units")
+    """
 
     def __fill_canvas(self, event):
         "Enlarge the windows item to the canvas width"
@@ -3216,9 +3131,10 @@ class TopLevel(tk.Frame):
 
         f = io.StringIO("")
         self.program.print(f)
-        curForm.settext(f.getvalue())
-        curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
-        curForm.update()
+        if not printError:
+            curForm.settext(f.getvalue())
+            curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
+            curForm.update()
 
     def quit(self):
         global saved
