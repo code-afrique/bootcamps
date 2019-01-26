@@ -1,7 +1,3 @@
-import keyword as kw
-import tkinter as tk
-from tkinter import messagebox
-
 class Form(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -777,18 +773,6 @@ class ConstantForm(Form):
         copy.grid(row=2, column=0)
         delb = tk.Button(self, text="delete", command=self.delete)
         delb.grid(row=2, column=1)
-
-class NilForm(Form):
-    def __init__(self, parent, block):
-        super().__init__(parent)
-        self.isExpression = False
-        self.isStatement = False
-        self.parent = parent
-        self.block = block
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="empty index").grid(columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="An empty index is used in a slice to indicate the beginning or end of a slice.  You can delete it if you want to set the beginning or end.").grid(row=1,columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delete)
-        delb.grid(row=2, columnspan=2)
 
 class FuncForm(Form):
     def __init__(self, parent, block):
