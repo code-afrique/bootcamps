@@ -218,7 +218,8 @@ class SubscriptNode(Node):
         self.slice = slice
 
     def toBlock(self, frame, level, block):
-        return SubscriptBlock(frame, self)
+        isSlice, lower, upper, step = self.slice
+        return SubscriptBlock(frame, self, isSlice)
 
 class FuncNode(Node):
     def __init__(self, func, args):
@@ -613,7 +614,7 @@ class ExpressionForm(Form):
         row += 1
         tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
         tk.Button(frame, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
-        tk.Button(frame, text="x[y]", command=self.exprSubscript).grid(row=row, column=2, sticky=tk.W)
+        tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
         row += 1
         if not lvalue:
             tk.Button(frame, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
@@ -625,7 +626,9 @@ class ExpressionForm(Form):
             row += 1
             tk.Button(frame, text="[...]", command=self.exprList).grid(row=row, sticky=tk.W)
             tk.Button(frame, text="(...)", command=self.exprTuple).grid(row=row, column=1, sticky=tk.W)
-            tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=2, sticky=tk.W)
+            row += 1
+            tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(frame, text="x[y:z]", command=self.exprSlice).grid(row=row, column=1, sticky=tk.W)
             row += 1
 
             tk.Label(frame, text="").grid(row=row)
@@ -672,8 +675,11 @@ class ExpressionForm(Form):
     def exprAttr(self):
         self.block.exprAttr()
 
-    def exprSubscript(self):
-        self.block.exprSubscript()
+    def exprIndex(self):
+        self.block.exprSubscript(False)
+
+    def exprSlice(self):
+        self.block.exprSubscript(True)
 
     def exprList(self):
         self.block.exprList()
@@ -1411,11 +1417,12 @@ class StringBlock(Block):
         return StringNode(self.string.get())
 
 class SubscriptBlock(Block):
-    def __init__(self, parent, node):
+    def __init__(self, parent, node, isSlice):
         super().__init__(parent)
         self.isExpression = True
         self.isStatement = False
         self.parent = parent
+        self.isSlice = isSlice
         if node == None:
             self.array = ExpressionBlock(self, None, False)
         else:
@@ -1427,16 +1434,19 @@ class SubscriptBlock(Block):
         self.eol = tk.Button(self, text=']', command=self.cb)
 
         if node == None:
-            self.isSlice = False
-            self.lower = ExpressionBlock(self, None, False)
-            self.upper = self.step = None
-        else:
-            self.isSlice, lower, upper, step = node.slice
-            if lower == None:
+            if isSlice:
                 self.lower = None
             else:
-                self.lower = ExpressionBlock(self, lower, False)
+                self.lower = ExpressionBlock(self, None, False)
+            self.upper = self.step = None
+        else:
+            isSlice, lower, upper, step = node.slice
+            assert isSlice == self.isSlice
             if self.isSlice:
+                if lower == None:
+                    self.lower = None
+                else:
+                    self.lower = ExpressionBlock(self, lower, False)
                 if upper == None:
                     self.upper = None
                 else:
@@ -1446,6 +1456,7 @@ class SubscriptBlock(Block):
                 else:
                     self.step = ExpressionBlock(self, step, False)
             else:
+                self.lower = ExpressionBlock(self, lower, False)
                 self.upper = self.step = None
         self.updateGrid()
 
@@ -1910,9 +1921,9 @@ class ExpressionBlock(Block):
         self.setBlock(self.what)
         self.needsSaving()
 
-    def exprSubscript(self):
+    def exprSubscript(self, isSlice):
         self.what.grid_forget()
-        self.what = SubscriptBlock(self, None)
+        self.what = SubscriptBlock(self, None, isSlice)
         self.what.grid()
         self.init = True
         self.setBlock(self.what.array)
