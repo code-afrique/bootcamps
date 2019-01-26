@@ -111,7 +111,7 @@ class TopLevel(tk.Frame):
         self.progarea.grid_propagate(0)
 
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
-        self.program = SeqBlock(self.shared.scrollable.stuff, shared, None, 0)
+        self.program = SeqBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
 
@@ -168,7 +168,7 @@ class TopLevel(tk.Frame):
 
                 if self.program != None:
                     self.program.grid_forget()
-                self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, n, 0)
+                self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, n)
                 self.program.grid(sticky=tk.W)
                 self.shared.scrollable.scrollUpdate()
 

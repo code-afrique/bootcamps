@@ -15,8 +15,8 @@ class PassNode(Node):
     def __init__(self):
         super().__init__()
 
-    def toBlock(self, frame, level, block):
-        return block.newPassBlock(frame, self, level, block)
+    def toBlock(self, frame, block):
+        return block.newPassBlock(frame, self, block)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -26,8 +26,8 @@ class EmptyNode(Node):
     def __init__(self):
         super().__init__()
 
-    def toBlock(self, frame, level, block):
-        return block.newEmptyBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newEmptyBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -64,8 +64,8 @@ class DefNode(Node):
         self.body = body
         self.minimized = minimized
 
-    def toBlock(self, frame, level, block):
-        return block.newDefBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newDefBlock(frame, self)
 
     def findRow(self, lineno):
         return self.body.findRow(lineno)
@@ -87,8 +87,8 @@ class ClassNode(Node):
         self.body = body
         self.minimized = minimized
 
-    def toBlock(self, frame, level, block):
-        return block.newClassBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newClassBlock(frame, self)
 
     def findRow(self, lineno):
         return self.body.findRow(lineno)
@@ -110,8 +110,8 @@ class IfNode(Node):
         self.bodies = bodies
         self.minimizeds = minimizeds
 
-    def toBlock(self, frame, level, block):
-        return block.newIfBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newIfBlock(frame, self)
 
     def findRow(self, lineno):
         for b in self.bodies:
@@ -144,8 +144,8 @@ class WhileNode(Node):
         self.minimized = minimized
         self.minimized2 = minimized2
 
-    def toBlock(self, frame, level, block):
-        return block.newWhileBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newWhileBlock(frame, self)
 
     def findRow(self, lineno):
         loc = self.body.findRow(lineno)
@@ -175,8 +175,8 @@ class ForNode(Node):
         self.minimized = minimized
         self.minimized2 = minimized2
 
-    def toBlock(self, frame, level, block):
-        return block.newForBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newForBlock(frame, self)
 
     def findRow(self, lineno):
         loc = self.body.findRow(lineno)
@@ -202,8 +202,8 @@ class ReturnNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
-        return block.newReturnBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newReturnBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -215,8 +215,8 @@ class BreakNode(Node):
     def __init__(self):
         super().__init__()
 
-    def toBlock(self, frame, level, block):
-        return block.newBreakBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newBreakBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -226,8 +226,8 @@ class ContinueNode(Node):
     def __init__(self):
         super().__init__()
 
-    def toBlock(self, frame, level, block):
-        return block.newContinueBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newContinueBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -238,8 +238,8 @@ class ImportNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
-        return block.newImportBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newImportBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -252,8 +252,8 @@ class GlobalNode(Node):
         super().__init__()
         self.names = names
 
-    def toBlock(self, frame, level, block):
-        return block.newGlobalBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newGlobalBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -270,8 +270,8 @@ class AssignNode(Node):
         self.targets = targets
         self.value = value
 
-    def toBlock(self, frame, level, block):
-        return block.newAssignBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newAssignBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -288,8 +288,8 @@ class AugassignNode(Node):
         self.right = right
         self.op = op
 
-    def toBlock(self, frame, level, block):
-        return block.newAugassignBlock(frame, self, level, self.op)
+    def toBlock(self, frame, block):
+        return block.newAugassignBlock(frame, self, self.op)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -305,7 +305,7 @@ class BinaryopNode(Node):
         self.right = right
         self.op = op
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newBinaryopBlock(frame, self, self.op)
 
     def print(self, fd, level):
@@ -321,7 +321,7 @@ class UnaryopNode(Node):
         self.right = right
         self.op = op
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newUnaryopBlock(frame, self, self.op)
 
     def print(self, fd, level):
@@ -336,7 +336,7 @@ class SubscriptNode(Node):
         self.array = array
         self.slice = slice
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         isSlice, lower, upper, step = self.slice
         return block.newSubscriptBlock(frame, self, isSlice)
 
@@ -361,7 +361,7 @@ class FuncNode(Node):
         self.func = func
         self.args = args
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newFuncBlock(frame, self)
 
     def print(self, fd, level):
@@ -378,7 +378,7 @@ class ListNode(Node):
         super().__init__()
         self.entries = entries
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newListBlock(frame, self)
 
     def print(self, fd, level):
@@ -394,7 +394,7 @@ class TupleNode(Node):
         super().__init__()
         self.entries = entries
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newTupleBlock(frame, self)
 
     def print(self, fd, level):
@@ -411,7 +411,7 @@ class AttrNode(Node):
         self.array = array
         self.ref = ref
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newAttrBlock(frame, self)
 
     def print(self, fd, level):
@@ -424,8 +424,8 @@ class EvalNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
-        return block.newEvalBlock(frame, self, level)
+    def toBlock(self, frame, block):
+        return block.newEvalBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -437,7 +437,7 @@ class NumberNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newNumberBlock(frame, self.what)
 
     def print(self, fd, level):
@@ -448,7 +448,7 @@ class ConstantNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newConstantBlock(frame, self.what)
 
     def print(self, fd, level):
@@ -459,7 +459,7 @@ class NameNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newNameBlock(frame, self.what)
 
     def print(self, fd, level):
@@ -470,7 +470,7 @@ class StringNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newStringBlock(frame, self.what)
 
     def print(self, fd, level):
@@ -489,7 +489,7 @@ class ExpressionNode(Node):
         super().__init__()
         self.what = what
 
-    def toBlock(self, frame, level, block):
+    def toBlock(self, frame, block):
         return block.newExpressionBlock(frame, self.what, False)
 
     def print(self, fd, level):
@@ -503,8 +503,8 @@ class SeqNode(Node):
         super().__init__()
         self.rows = rows
 
-    def toBlock(self, frame, level, block):
-        return block.newSeqBlock(frame, self.rows, level)
+    def toBlock(self, frame, block):
+        return block.newSeqBlock(frame, self.rows)
 
     def findRow(self, lineno):
         for i in range(len(self.rows)):
