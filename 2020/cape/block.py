@@ -503,9 +503,12 @@ class FuncBlock(Block):
         self.eol = tk.Button(self, text=")", width=0, command=self.cb)
 
         self.args = [ ]
+        self.keywords = [ ]
         if node != None:
             for arg in node.args:
                 self.addArg(arg)
+            for kw in node.keywords:
+                self.addKeyword(kw)
         self.gridUpdate()
 
     def genForm(self):
@@ -523,16 +526,45 @@ class FuncBlock(Block):
         self.gridUpdate()
         self.needsSaving()
 
+    def addKeyword(self, kw):
+        (key, val) = kw
+        if val == None:
+            arg = ExpressionBlock(self, self.shared, None, False)
+        else:
+            arg = ExpressionBlock(self, self.shared, val, False)
+        self.keywords.append((key, arg))
+        self.gridUpdate()
+        self.needsSaving()
+
     def gridUpdate(self):
-        for i in range(len(self.args)):
-            if i != 0:
-                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=2*i+2)
-            self.args[i].grid(row=0, column=2*i+3)
-        self.eol.grid(row=0, column=2*len(self.args)+3)
+        first = True
+        column = 2
+        for arg in self.args:
+            if first:
+                first = False
+            else:
+                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+            arg.grid(row=0, column=column)
+            column += 1
+        for (k, v) in self.keywords:
+            if first:
+                first = False
+            else:
+                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+            tk.Button(self, text=k, width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text='=', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            v.grid(row=0, column=column)
+            column += 1
+        self.eol.grid(row=0, column=column)
 
     def toNode(self):
         return FuncNode(self.func.toNode(),
-                        [ arg.toNode() for arg in self.args ])
+                        [ arg.toNode() for arg in self.args ],
+                        [ (k, v.toNode()) for (k, v) in self.keywords ])
 
 class ListBlock(Block):
     def __init__(self, parent, shared, node):

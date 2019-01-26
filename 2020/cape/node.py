@@ -376,10 +376,11 @@ class SubscriptNode(Node):
         print("]", end="", file=fd)
 
 class FuncNode(Node):
-    def __init__(self, func, args):
+    def __init__(self, func, args, keywords):
         super().__init__()
         self.func = func
         self.args = args
+        self.keywords = keywords
 
     def toBlock(self, frame, block):
         return block.newFuncBlock(frame, self)
@@ -387,10 +388,21 @@ class FuncNode(Node):
     def print(self, fd, level):
         self.func.print(fd, 0)
         print("(", end="", file=fd)
-        for i in range(len(self.args)):
-            if i != 0:
+        first = True
+        for arg in self.args:
+            if first:
+                first = False
+            else:
                 print(", ", end="", file=fd)
-            self.args[i].print(fd, 0)
+            arg.print(fd, 0)
+        for kw in self.keywords:
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
+            (arg, val) = kw
+            print("{}=".format(arg), end="", file=fd)
+            val.print(fd, 0)
         print(")", end="", file=fd)
 
 class ListNode(Node):
