@@ -3282,7 +3282,7 @@ def Compare(lineno, col_offset, left, ops, comparators):
 def Is():
     return "is"
 
-def Is():
+def IsNot():
     return "is not"
 
 def Eq():
