@@ -5,9 +5,8 @@ import sys
 import io
 import keyword as kw
 import tkinter as tk
-from tkinter import messagebox
-from tkinter.filedialog import asksaveasfilename
-from tkinter.filedialog import askopenfilename
+import tkinter.messagebox
+import tkinter.filedialog
 import tokenize
 
 import pparse
@@ -471,19 +470,19 @@ class DefForm(Form):
     def cb(self):
         name = self.entry.get()
         if name in kw.kwlist:
-            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
-            messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
             return
 
         args = [ ]
         for arg in self.args:
             a = arg.get()
             if a in kw.kwlist:
-                messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+                tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             if not a.isidentifier():
-                messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
+                tk.messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
                 return
             args.append(a)
         self.block.defUpdate(name, args)
@@ -522,10 +521,10 @@ class ClassForm(Form):
     def cb(self):
         name = self.entry.get()
         if name in kw.kwlist:
-            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
-            messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
             return
 
         self.block.classUpdate(name)
@@ -883,9 +882,9 @@ class NameForm(Form):
     def cb(self):
         v = self.entry.get()
         if v in kw.kwlist:
-            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(v))
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(v))
         elif not v.isidentifier():
-            messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
         else:
             self.block.setName(v)
 
@@ -917,7 +916,7 @@ class NumberForm(Form):
             float(self.entry.get())
             self.block.setValue(self.entry.get())
         except ValueError:
-            messagebox.showinfo("Format Error", "'{}' is not a valid number".format(self.entry.get()))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid number".format(self.entry.get()))
 
     def keyEnter(self, ev):
         self.cb()
@@ -1298,7 +1297,7 @@ class NameBlock(Block):
             global printError
             if not printError:
                 self.setBlock(self)
-                messagebox.showinfo("Print Error", "Fix bad variable name")
+                tk.messagebox.showinfo("Print Error", "Fix bad variable name")
                 printError = True
 
     def toNode(self):
@@ -1337,7 +1336,7 @@ class NumberBlock(Block):
             global printError
             if not printError:
                 self.setBlock(self)
-                messagebox.showinfo("Print Error", "Fix bad number")
+                tk.messagebox.showinfo("Print Error", "Fix bad number")
                 printError = True
 
     def toNode(self):
@@ -1683,7 +1682,7 @@ class ClassBlock(Block):
         if not v.isidentifier():
             if not printError:
                 self.setBlock(self)
-                messagebox.showinfo("Print Error", "Fix bad method name")
+                tk.messagebox.showinfo("Print Error", "Fix bad method name")
                 printError = True
         for i in range(len(self.bases)):
             if i != 0:
@@ -1986,7 +1985,7 @@ class ExpressionBlock(Block):
             global printError
             if not printError:
                 self.setBlock(self)
-                messagebox.showinfo("Print Error", "Fix uninitialized expression")
+                tk.messagebox.showinfo("Print Error", "Fix uninitialized expression")
                 printError = True
 
     def toNode(self):
@@ -2592,7 +2591,7 @@ class DefBlock(Block):
         if not v.isidentifier():
             if not printError:
                 self.setBlock(self)
-                messagebox.showinfo("Print Error", "Fix bad method name")
+                tk.messagebox.showinfo("Print Error", "Fix bad method name")
                 printError = True
         for i in range(len(self.args)):
             if i != 0:
@@ -2601,7 +2600,7 @@ class DefBlock(Block):
             if not self.args[i].isidentifier():
                 if not printError:
                     self.setBlock(self)
-                    messagebox.showinfo("Print Error", "Fix bad argument name")
+                    tk.messagebox.showinfo("Print Error", "Fix bad argument name")
                     printError = True
         print("):", file=fd)
         self.body.print(fd)
@@ -3061,11 +3060,11 @@ class TopLevel(tk.Frame):
         global saved
 
         if not saved:
-            messagebox.showinfo("Warning", "You must save the program first")
+            tk.messagebox.showinfo("Warning", "You must save the program first")
             saved = True
             return
 
-        filename = askopenfilename(defaultextension='.py',
+        filename = tk.filedialog.askopenfilename(defaultextension='.py',
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
@@ -3096,11 +3095,11 @@ class TopLevel(tk.Frame):
     def save(self):
         node = self.program.toNode()
         if self.curFile == None:
-            filename = asksaveasfilename(defaultextension='.py',
+            filename = tk.filedialog.asksaveasfilename(defaultextension='.py',
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         else:
-            filename = asksaveasfilename(initialdir=self.curDir, initialfile=self.curFile, defaultextension='.py',
+            filename = tk.filedialog.asksaveasfilename(initialdir=self.curDir, initialfile=self.curFile, defaultextension='.py',
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
@@ -3162,7 +3161,7 @@ class TopLevel(tk.Frame):
         if saved:
             sys.exit(0)
         else:
-            messagebox.showinfo("Warning", "You must save the program first")
+            tk.messagebox.showinfo("Warning", "You must save the program first")
             saved = True
 
 ########################################################################
