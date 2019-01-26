@@ -211,14 +211,14 @@ class UnaryopNode(Node):
     def toBlock(self, frame, level, block):
         return UnaryopBlock(frame, self, self.op)
 
-class IndexNode(Node):
-    def __init__(self, array, index):
+class SubscriptNode(Node):
+    def __init__(self, array, slice):
         super().__init__()
         self.array = array
-        self.index = index
+        self.slice = slice
 
     def toBlock(self, frame, level, block):
-        return IndexBlock(frame, self)
+        return SubscriptBlock(frame, self)
 
 class SliceNode(Node):
     def __init__(self, array, start, finish):
@@ -623,7 +623,7 @@ class ExpressionForm(Form):
         row += 1
         tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
         tk.Button(frame, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
-        tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
+        tk.Button(frame, text="x[y]", command=self.exprSubscript).grid(row=row, column=2, sticky=tk.W)
         row += 1
         if not lvalue:
             tk.Button(frame, text="x[y:z]", command=self.exprSliceYY).grid(row=row, column=0, sticky=tk.W)
@@ -689,8 +689,8 @@ class ExpressionForm(Form):
     def exprAttr(self):
         self.block.exprAttr()
 
-    def exprIndex(self):
-        self.block.exprIndex()
+    def exprSubscript(self):
+        self.block.exprSubscript()
 
     def exprSliceYY(self):
         self.block.exprSlice(True, True)
@@ -735,7 +735,7 @@ class ExpressionForm(Form):
         elif ev.char == '.':
             self.block.exprAttr()
         elif ev.char == ']':
-            self.block.exprIndex()
+            self.block.exprSubscript()
         elif not self.lvalue:
             if ev.char.isdigit():
                 self.block.exprNumber(ev.char)
@@ -1021,7 +1021,7 @@ class TupleForm(Form):
         self.block.addEntry(None)
         self.block.setBlock(self.block.entries[-1])
 
-class IndexForm(Form):
+class SubscriptForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)
         self.isExpression = True
@@ -1422,7 +1422,7 @@ class StringBlock(Block):
     def toNode(self):
         return StringNode(self.string.get())
 
-class IndexBlock(Block):
+class SubscriptBlock(Block):
     def __init__(self, parent, node):
         super().__init__(parent)
         self.isExpression = True
@@ -1435,26 +1435,69 @@ class IndexBlock(Block):
         self.array.grid(row=0, column=0)
         tk.Button(self, text='[', command=self.cb).grid(row=0, column=1)
         if node == None:
-            self.index = ExpressionBlock(self, None, False)
+            index = ExpressionBlock(self, None, False)
+            index.grid(row=0, column=2)
+            self.isSlice = False
+            self.lower = ExpressionBlock(self, None, False)
+            self.upper = self.step = None
         else:
-            self.index = ExpressionBlock(self, node.index, False)
-        self.index.grid(row=0, column=2)
-        tk.Button(self, text=']', command=self.cb).grid(row=0, column=3)
+            self.isSlice, lower, upper, step = node.slice
+
+            column = 2
+            if lower == None:
+                self.lower = None
+            else:
+                self.lower = ExpressionBlock(self, lower, False)
+                self.lower.grid(row=0, column=column)
+                column += 1
+
+            if self.isSlice:
+                tk.Button(self, text=':', command=self.cb).grid(row=0, column=column)
+                column += 1
+
+                if upper == None:
+                    self.upper = None
+                else:
+                    self.upper = ExpressionBlock(self, upper, False)
+                    self.upper.grid(row=0, column=column)
+                    column += 1
+
+                if step == None:
+                    self.step = None
+                else:
+                    tk.Button(self, text=':', command=self.cb).grid(row=0, column=column)
+                    column += 1
+                    self.step = ExpressionBlock(self, step, False)
+                    self.step.grid(row=0, column=column)
+                    column += 1
+
+        tk.Button(self, text=']', command=self.cb).grid(row=0, column=column)
 
     def cb(self):
         self.setBlock(self)
 
     def genForm(self):
-        self.setForm(IndexForm(confarea, self))
+        self.setForm(SubscriptForm(confarea, self))
 
     def print(self, fd):
         self.array.print(fd)
         print("[", end="", file=fd)
-        self.index.print(fd)
+        if self.lower != None:
+            self.lower.print(fd)
+        if self.isSlice:
+            print(":", end="", file=fd)
+            if self.upper != None:
+                self.upper.print(fd)
+            if self.step != None:
+                print(":", end="", file=fd)
+                self.step.print(fd)
         print("]", end="", file=fd)
 
     def toNode(self):
-        return IndexNode(self.array.toNode(), self.index.toNode())
+        return SubscriptNode(self.array.toNode(), (self.isSlice,
+            None if self.lower == None else self.lower.toNode(),
+            None if self.upper == None else self.upper.toNode(),
+            None if self.step == None else self.step.toNode()))
 
 class SliceBlock(Block):
     def __init__(self, parent, node):
@@ -1915,9 +1958,9 @@ class ExpressionBlock(Block):
         self.setBlock(self.what)
         self.needsSaving()
 
-    def exprIndex(self):
+    def exprSubscript(self):
         self.what.grid_forget()
-        self.what = IndexBlock(self, None)
+        self.what = SubscriptBlock(self, None)
         self.what.grid()
         self.init = True
         self.setBlock(self.what.array)
@@ -2931,8 +2974,8 @@ class Scrollable(Block):
     def __init__(self, frame, width=16):
         super().__init__(None)
         self.canvas = tk.Canvas(frame, width=725, height=475)
-        self.canvas.isWithinDef = False		# ???
-        self.canvas.isWithinLoop = False	# ???
+        self.canvas.isWithinDef = False     # ???
+        self.canvas.isWithinLoop = False    # ???
         ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
         xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
         self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
@@ -3181,10 +3224,13 @@ def Name(lineno, col_offset, id, ctx):
     return ExpressionNode(NameNode(id))
 
 def Subscript(lineno, col_offset, value, slice, ctx):
-    return ExpressionNode(IndexNode(value, slice))
+    return ExpressionNode(SubscriptNode(value, slice))
 
 def Index(value):
-    return value
+    return (False, value, None, None)
+
+def Slice(lower, upper, step):
+    return (True, lower, upper, step)
 
 def Num(lineno, col_offset, n):
     return ExpressionNode(NumberNode(n))
