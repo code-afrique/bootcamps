@@ -640,7 +640,7 @@ class ExpressionForm(Form):
             ops = tk.OptionMenu(frame, self.binaryop,
                 "+", "-", "*", "/", "//", "%", "**",
                 "==", "!=", "<", "<=", ">", ">=",
-                "and", "or", "in", "not in")
+                "and", "or", "in", "not in", "is")
             ops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
@@ -3065,8 +3065,6 @@ class TopLevel(tk.Frame):
                 #     log.write(ftree)
                 n = eval(ftree)
                 comments = self.extractComments(code)
-                print(comments)
-                # n.setComments(comments)
                 for lineno, text in comments.items():
                     (sb, i) = n.findRow(lineno)
                     row = sb.rows[i]
@@ -3221,6 +3219,9 @@ def Compare(lineno, col_offset, left, ops, comparators):
     assert len(comparators) == 1
     return ExpressionNode(BinaryopNode(left, comparators[0], ops[0]))
 
+def Is():
+    return "is"
+
 def Eq():
     return "=="
 
@@ -3347,6 +3348,50 @@ def In():
 def NotIn():
     return "not in"
 
+######
+
+def Try(lineno, col_offset, body, handlers, orelse, finalbody):
+    return RowNode(PassNode(), lineno)
+
+def ExceptHandler(lineno, col_offset, type, name, body):
+    return RowNode(PassNode(), lineno)
+
+def IfExp(lineno, col_offset, test, body, orelse):
+    return ExpressionNode(ConstantNode("IFELSE"))
+
+def Assert(lineno, col_offset, test, msg):
+    return RowNode(PassNode(), lineno)
+
+def ListComp(lineno, col_offset, elt, generators):
+    return ExpressionNode(ConstantNode("COMPREHENSION"))
+
+def GeneratorExp(lineno, col_offset, elt, generators):
+    return ExpressionNode(ConstantNode("GENERATOR"))
+
+def comprehension(target, iter, ifs, is_async=0):
+    return None
+
+def Delete(lineno, col_offset, targets):
+    return RowNode(PassNode(), lineno)
+
+def Del():
+    return None
+
+def Lambda(lineno, col_offset, args, body):
+    return ExpressionNode(ConstantNode("LAMBDA"))
+
+def Dict(lineno, col_offset, keys, values):
+    return ExpressionNode(ConstantNode("DICT"))
+
+def With(lineno, col_offset, items, body):
+    return RowNode(PassNode(), lineno)
+
+def withitem(context_expr, optional_vars):
+    return None
+
+def Yield(lineno, col_offset, value):
+    return RowNode(PassNode(), lineno)
+
 ########################################################################
 # This code borrowed from https://github.com/asottile/astpretty
 
@@ -3363,10 +3408,8 @@ else:  # pragma: no cover (with typed-ast)
     expr_context += (ast27.expr_context, ast3.expr_context)
     typed_support = True
 
-
 def _is_sub_node(node):
     return isinstance(node, AST) and not isinstance(node, expr_context)
-
 
 def _is_leaf(node):
     for field in node._fields:
@@ -3380,13 +3423,11 @@ def _is_leaf(node):
     else:
         return True
 
-
 def _fields(n, show_offsets=True):
     if show_offsets and hasattr(n, 'lineno') and hasattr(n, 'col_offset'):
         return ('lineno', 'col_offset') + n._fields
     else:
         return n._fields
-
 
 def _leaf(node, show_offsets=True):
     if isinstance(node, AST):
