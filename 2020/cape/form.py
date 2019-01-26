@@ -1,3 +1,6 @@
+import keyword as kw
+import tkinter as tk
+
 class Form(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -451,19 +454,19 @@ class DefForm(Form):
     def cb(self):
         name = self.entry.get()
         if name in kw.kwlist:
-            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
-            messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
             return
 
         args = [ ]
         for arg in self.args:
             a = arg.get()
             if a in kw.kwlist:
-                messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+                tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             if not a.isidentifier():
-                messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
+                tk.messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
                 return
             args.append(a)
         self.block.defUpdate(name, args)
@@ -502,10 +505,10 @@ class ClassForm(Form):
     def cb(self):
         name = self.entry.get()
         if name in kw.kwlist:
-            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
-            messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
             return
 
         self.block.classUpdate(name)
@@ -704,19 +707,13 @@ class SubscriptForm(Form):
         self.addUpper()
 
     def addLower(self):
-        self.block.lower = ExpressionBlock(self.block, None, False)
-        self.block.updateGrid()
-        self.block.setBlock(self.block.lower)
+        self.block.addLower()
 
     def addUpper(self):
-        self.block.upper = ExpressionBlock(self.block, None, False)
-        self.block.updateGrid()
-        self.block.setBlock(self.block.upper)
+        self.block.addUpper()
 
     def addStep(self):
-        self.block.step = ExpressionBlock(self.block, None, False)
-        self.block.updateGrid()
-        self.block.setBlock(self.block.step)
+        self.block.addStep()
 
 class AttrForm(Form):
     def __init__(self, parent, block):
@@ -863,9 +860,9 @@ class NameForm(Form):
     def cb(self):
         v = self.entry.get()
         if v in kw.kwlist:
-            messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(v))
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(v))
         elif not v.isidentifier():
-            messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
         else:
             self.block.setName(v)
 
@@ -897,7 +894,7 @@ class NumberForm(Form):
             float(self.entry.get())
             self.block.setValue(self.entry.get())
         except ValueError:
-            messagebox.showinfo("Format Error", "'{}' is not a valid number".format(self.entry.get()))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid number".format(self.entry.get()))
 
     def keyEnter(self, ev):
         self.cb()
