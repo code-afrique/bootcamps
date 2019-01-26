@@ -3413,45 +3413,59 @@ def NotIn():
 ######
 
 def Try(lineno, col_offset, body, handlers, orelse, finalbody):
+    assert False, "'try' not yet implemented"
     return RowNode(PassNode(), lineno)
 
 def ExceptHandler(lineno, col_offset, type, name, body):
+    assert False, "'try' not yet implemented"
     return RowNode(PassNode(), lineno)
 
 def IfExp(lineno, col_offset, test, body, orelse):
+    assert False, "'if else' not yet implemented"
     return ExpressionNode(ConstantNode("IFELSE"))
 
 def Assert(lineno, col_offset, test, msg):
+    assert False, "'assert' not yet implemented"
     return RowNode(PassNode(), lineno)
 
 def ListComp(lineno, col_offset, elt, generators):
+    assert False, "comprehensions not yet implemented"
     return ExpressionNode(ConstantNode("COMPREHENSION"))
 
 def GeneratorExp(lineno, col_offset, elt, generators):
+    assert False, "comprehensions not yet implemented"
     return ExpressionNode(ConstantNode("GENERATOR"))
 
 def comprehension(target, iter, ifs, is_async=0):
+    assert False, "comprehensions not yet implemented"
     return None
 
 def Delete(lineno, col_offset, targets):
+    assert False, "'delete' not yet implemented"
     return RowNode(PassNode(), lineno)
 
 def Del():
+    assert False, "'delete' not yet implemented"
     return None
 
 def Lambda(lineno, col_offset, args, body):
+    assert False, "'lambda' not yet implemented"
     return ExpressionNode(ConstantNode("LAMBDA"))
 
 def Dict(lineno, col_offset, keys, values):
+    assert False, "dictionaries not yet implemented"
     return ExpressionNode(ConstantNode("DICT"))
 
 def With(lineno, col_offset, items, body):
+    assert False, "'with' not yet implemented"
     return RowNode(PassNode(), lineno)
 
 def withitem(context_expr, optional_vars):
+    assert False, "'with' not yet implemented"
     return None
 
 def Yield(lineno, col_offset, value):
+    assert False, "'yield' not yet implemented"
     return RowNode(PassNode(), lineno)
 
 ########################################################################
