@@ -18,290 +18,6 @@ from node import *
     A method definion contains a header and a list
 """
 
-class EmptyNode(Node):
-    def __init__(self):
-        super().__init__()
-
-    def toBlock(self, frame, level, block):
-        return EmptyBlock(frame, self, level)
-
-class RowNode(Node):
-    def __init__(self, what, lineno):
-        super().__init__()
-        self.what = what
-        self.lineno = lineno
-        self.comment = None
-
-    def findRow(self, lineno):
-        return self.what.findRow(lineno)
-
-class DefNode(Node):
-    def __init__(self, name, args, body, minimized):
-        super().__init__()
-        self.name = name
-        self.args = args
-        self.body = body
-        self.minimized = minimized
-
-    def toBlock(self, frame, level, block):
-        return DefBlock(frame, self, level)
-
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
-
-class ClassNode(Node):
-    def __init__(self, name, bases, body, minimized):
-        super().__init__()
-        self.name = name
-        self.bases = bases
-        self.body = body
-        self.minimized = minimized
-
-    def toBlock(self, frame, level, block):
-        return ClassBlock(frame, self, level)
-
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
-
-class IfNode(Node):
-    def __init__(self, conds, bodies, minimizeds):
-        super().__init__()
-        self.conds = conds
-        self.bodies = bodies
-        self.minimizeds = minimizeds
-
-    def toBlock(self, frame, level, block):
-        return IfBlock(frame, self, level)
-
-    def findRow(self, lineno):
-        for b in self.bodies:
-            loc = b.findRow(lineno)
-            if loc != None:
-                return loc
-        return None
-
-class WhileNode(Node):
-    def __init__(self, cond, body, orelse, minimized, minimized2):
-        super().__init__()
-        self.cond = cond
-        self.body = body
-        self.orelse = orelse
-        self.minimized = minimized
-        self.minimized2 = minimized2
-
-    def toBlock(self, frame, level, block):
-        return WhileBlock(frame, self, level)
-
-    def findRow(self, lineno):
-        loc = self.body.findRow(lineno)
-        if loc == None and self.orelse != None:
-            loc = self.orelse.findRow(lineno)
-        return loc
-
-class ForNode(Node):
-    def __init__(self, var, expr, body, orelse, minimized, minimized2):
-        super().__init__()
-        self.var = var
-        self.expr = expr
-        self.body = body
-        self.orelse = orelse
-        self.minimized = minimized
-        self.minimized2 = minimized2
-
-    def toBlock(self, frame, level, block):
-        return ForBlock(frame, self, level)
-
-    def findRow(self, lineno):
-        loc = self.body.findRow(lineno)
-        if loc == None and self.orelse != None:
-            loc = self.orelse.findRow(lineno)
-        return loc
-
-class ReturnNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return ReturnBlock(frame, self, level)
-
-class BreakNode(Node):
-    def __init__(self):
-        super().__init__()
-
-    def toBlock(self, frame, level, block):
-        return BreakBlock(frame, self, level)
-
-class ContinueNode(Node):
-    def __init__(self):
-        super().__init__()
-
-    def toBlock(self, frame, level, block):
-        return ContinueBlock(frame, self, level)
-
-class ImportNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return ImportBlock(frame, self, level)
-
-class GlobalNode(Node):
-    def __init__(self, names):
-        super().__init__()
-        self.names = names
-
-    def toBlock(self, frame, level, block):
-        return GlobalBlock(frame, self, level)
-
-class AssignNode(Node):
-    def __init__(self, targets, value):
-        super().__init__()
-        self.targets = targets
-        self.value = value
-
-    def toBlock(self, frame, level, block):
-        return AssignBlock(frame, self, level)
-
-class AugassignNode(Node):
-    def __init__(self, left, right, op):
-        super().__init__()
-        self.left = left
-        self.right = right
-        self.op = op
-
-    def toBlock(self, frame, level, block):
-        return AugassignBlock(frame, self, level, self.op)
-
-class BinaryopNode(Node):
-    def __init__(self, left, right, op):
-        super().__init__()
-        self.left = left
-        self.right = right
-        self.op = op
-
-    def toBlock(self, frame, level, block):
-        return BinaryopBlock(frame, self, self.op)
-
-class UnaryopNode(Node):
-    def __init__(self, right, op):
-        super().__init__()
-        self.right = right
-        self.op = op
-
-    def toBlock(self, frame, level, block):
-        return UnaryopBlock(frame, self, self.op)
-
-class SubscriptNode(Node):
-    def __init__(self, array, slice):
-        super().__init__()
-        self.array = array
-        self.slice = slice
-
-    def toBlock(self, frame, level, block):
-        isSlice, lower, upper, step = self.slice
-        return SubscriptBlock(frame, self, isSlice)
-
-class FuncNode(Node):
-    def __init__(self, func, args):
-        super().__init__()
-        self.func = func
-        self.args = args
-
-    def toBlock(self, frame, level, block):
-        return FuncBlock(frame, self)
-
-class ListNode(Node):
-    def __init__(self, entries):
-        super().__init__()
-        self.entries = entries
-
-    def toBlock(self, frame, level, block):
-        return ListBlock(frame, self)
-
-class TupleNode(Node):
-    def __init__(self, entries):
-        super().__init__()
-        self.entries = entries
-
-    def toBlock(self, frame, level, block):
-        return TupleBlock(frame, self)
-
-class AttrNode(Node):
-    def __init__(self, array, ref):
-        super().__init__()
-        self.array = array
-        self.ref = ref
-
-    def toBlock(self, frame, level, block):
-        return AttrBlock(frame, self)
-
-class EvalNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return EvalBlock(frame, self, level)
-
-class NumberNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return NumberBlock(frame, self.what)
-
-class ConstantNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return ConstantBlock(frame, self.what)
-
-class NameNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return NameBlock(frame, self.what)
-
-class StringNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return StringBlock(frame, self.what)
-
-class ExpressionNode(Node):
-    def __init__(self, what):
-        super().__init__()
-        self.what = what
-
-    def toBlock(self, frame, level, block):
-        return ExpressionBlock(frame, self.what, False)
-
-class SeqNode(Node):
-    def __init__(self, rows):
-        super().__init__()
-        self.rows = rows
-
-    def toBlock(self, frame, level, block):
-        return SeqBlock(frame, self.rows, level)
-
-    def findRow(self, lineno):
-        for i in range(len(self.rows)):
-            if self.rows[i].lineno >= lineno:
-                return (self, i)
-            r = self.rows[i].findRow(lineno)
-            if r != None:
-                return r
-        return None
-
 class Block(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
@@ -351,6 +67,87 @@ class Block(tk.Frame):
 
     def newPassBlock(self, parent, node, level, rowblk):
         return PassBlock(parent, node, level, rowblk)
+
+    def newEmptyBlock(self, parent, node, level):
+        return EmptyBlock(parent, node, level)
+
+    def newDefBlock(self, parent, node, level):
+        return DefBlock(parent, node, level)
+
+    def newClassBlock(self, parent, node, level):
+        return ClassBlock(parent, node, level)
+
+    def newIfBlock(self, parent, node, level):
+        return IfBlock(parent, node, level)
+        
+    def newWhileBlock(self, parent, node, level):
+        return WhileBlock(parent, node, level)
+
+    def newForBlock(self, parent, node, level):
+        return ForBlock(parent, node, level)
+
+    def newReturnBlock(self, parent, node, level):
+        return ReturnBlock(parent, node, level)
+
+    def newBreakBlock(self, parent, node, level):
+        return BreakBlock(parent, node, level)
+
+    def newContinueBlock(self, parent, node, level):
+        return ContinueBlock(parent, node, level)
+
+    def newImportBlock(self, parent, node, level):
+        return ImportBlock(parent, node, level)
+
+    def newGlobalBlock(self, parent, node, level):
+        return GlobalBlock(parent, node, level)
+
+    def newAssignBlock(self, parent, node, level):
+        return AssignBlock(parent, node, level)
+
+    def newAugassignBlock(self, parent, node, level, op):
+        return AugassignBlock(parent, node, level, op)
+
+    def newBinaryopBlock(self, parent, node, op):
+        return BinaryopBlock(parent, node, op)
+
+    def newUnaryopBlock(self, parent, node, op):
+        return UnaryopBlock(parent, node, op)
+
+    def newSubscriptBlock(self, parent, node, isSlice):
+        return SubscriptBlock(parent, node, isSlice)
+
+    def newFuncBlock(self, parent, node):
+        return FuncBlock(parent, node)
+
+    def newListBlock(self, parent, node):
+        return ListBlock(parent, node)
+
+    def newTupleBlock(self, parent, node):
+        return TupleBlock(parent, node)
+
+    def newAttrBlock(self, parent, node):
+        return AttrBlock(parent, node)
+
+    def newEvalBlock(self, parent, node, level):
+        return EvalBlock(parent, node, level)
+
+    def newNumberBlock(self, parent, what):
+        return NumberBlock(parent, what)
+
+    def newConstantBlock(self, parent, what):
+        return ConstantBlock(parent, what)
+
+    def newNameBlock(self, parent, what):
+        return NameBlock(parent, what)
+
+    def newStringBlock(self, parent, what):
+        return StringBlock(parent, what)
+
+    def newExpressionBlock(self, parent, what, lvalue):
+        return ExpressionBlock(parent, what, lvalue)
+
+    def newSeqBlock(self, parent, rows, level):
+        return SeqBlock(parent, rows, level)
 
 class NameBlock(Block):
     def __init__(self, parent, vname):
