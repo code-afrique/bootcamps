@@ -297,7 +297,7 @@ class ExpressionForm(Form):
             tk.Button(frame, text="(...)", command=self.exprTuple).grid(row=row, column=1, sticky=tk.W)
             tk.Button(frame, text="(...)", command=self.exprDict).grid(row=row, column=2, sticky=tk.W)
             row += 1
-            tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(frame, text="f()", command=self.exprCall).grid(row=row, column=0, sticky=tk.W)
             tk.Button(frame, text="x[y:z]", command=self.exprSlice).grid(row=row, column=1, sticky=tk.W)
             tk.Button(frame, text="x if c else y", command=self.exprIfelse).grid(row=row, column=2, sticky=tk.W)
             row += 1
@@ -367,8 +367,8 @@ class ExpressionForm(Form):
     def exprBinaryop(self):
         self.block.exprBinaryop(self.binaryop.get())
 
-    def exprFunc(self):
-        self.block.exprFunc()
+    def exprCall(self):
+        self.block.exprCall()
 
     def exprIfelse(self):
         self.block.exprIfelse()
@@ -393,7 +393,7 @@ class ExpressionForm(Form):
             elif ev.char == '"' or ev.char == "'":
                 self.block.exprString()
             elif ev.char == '(':
-                self.block.exprFunc()
+                self.block.exprCall()
             elif ev.char == '[':
                 self.block.exprList()
             elif ev.char == '=':
@@ -759,7 +759,7 @@ class ConstantForm(Form):
         delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
-class FuncForm(Form):
+class CallForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent, block)
         self.isExpression = True

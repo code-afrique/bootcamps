@@ -375,7 +375,7 @@ class SubscriptNode(Node):
                 step.print(fd, 0)
         print("]", end="", file=fd)
 
-class FuncNode(Node):
+class CallNode(Node):
     def __init__(self, func, args, keywords):
         super().__init__()
         self.func = func
@@ -383,7 +383,7 @@ class FuncNode(Node):
         self.keywords = keywords
 
     def toBlock(self, frame, block):
-        return block.newFuncBlock(frame, self)
+        return block.newCallBlock(frame, self)
 
     def print(self, fd, level):
         self.func.print(fd, 0)
@@ -395,12 +395,11 @@ class FuncNode(Node):
             else:
                 print(", ", end="", file=fd)
             arg.print(fd, 0)
-        for kw in self.keywords:
+        for (arg, val) in self.keywords:
             if first:
                 first = False
             else:
                 print(", ", end="", file=fd)
-            (arg, val) = kw
             print("{}=".format(arg), end="", file=fd)
             val.print(fd, 0)
         print(")", end="", file=fd)

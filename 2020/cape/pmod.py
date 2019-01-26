@@ -102,7 +102,7 @@ def Pass(lineno, col_offset):
     return RowNode(PassNode(), lineno)
 
 def Call(lineno, col_offset, func, args, keywords, starargs=None, kwargs=None):
-    return ExpressionNode(FuncNode(func, args, keywords))
+    return ExpressionNode(CallNode(func, args, keywords))
 
 def Load():
     return None

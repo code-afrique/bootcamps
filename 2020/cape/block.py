@@ -101,8 +101,8 @@ class Block(tk.Frame):
     def newSubscriptBlock(self, parent, node, isSlice):
         return SubscriptBlock(parent, self.shared, node, isSlice)
 
-    def newFuncBlock(self, parent, node):
-        return FuncBlock(parent, self.shared, node)
+    def newCallBlock(self, parent, node):
+        return CallBlock(parent, self.shared, node)
 
     def newIfelseBlock(self, parent, node):
         return IfelseBlock(parent, self.shared, node)
@@ -489,7 +489,7 @@ class ClassBlock(Block):
                 self.shared.cvtError = True
         return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode(), self.minimized)
 
-class FuncBlock(Block):
+class CallBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
 
@@ -512,7 +512,7 @@ class FuncBlock(Block):
         self.gridUpdate()
 
     def genForm(self):
-        self.setForm(FuncForm(self.shared.confarea, self))
+        self.setForm(CallForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -562,7 +562,7 @@ class FuncBlock(Block):
         self.eol.grid(row=0, column=column)
 
     def toNode(self):
-        return FuncNode(self.func.toNode(),
+        return CallNode(self.func.toNode(),
                         [ arg.toNode() for arg in self.args ],
                         [ (k, v.toNode()) for (k, v) in self.keywords ])
 
@@ -810,9 +810,9 @@ class ExpressionBlock(Block):
         self.setBlock(self.what.left)
         self.needsSaving()
 
-    def exprFunc(self):
+    def exprCall(self):
         self.what.grid_forget()
-        self.what = FuncBlock(self, self.shared, None)
+        self.what = CallBlock(self, self.shared, None)
         self.what.grid()
         self.init = True
         self.setBlock(self.what.func)
