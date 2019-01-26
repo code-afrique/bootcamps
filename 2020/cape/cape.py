@@ -2790,7 +2790,7 @@ class WhileBlock(Block):
         tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
         self.hdr2.grid(row=2, column=0, sticky=tk.W)
         self.orelse.grid(row=3, column=0, sticky=tk.W)
-        self.setBlock(self.orelse)
+        self.setBlock(self.orelse.rows[0].what)
         self.needsSaving()
 
     def removeElse(self):
@@ -2891,7 +2891,7 @@ class ForBlock(Block):
         tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
         self.hdr2.grid(row=2, column=0, sticky=tk.W)
         self.orelse.grid(row=3, column=0, sticky=tk.W)
-        self.setBlock(self.orelse)
+        self.setBlock(self.orelse.rows[0].what)
         self.needsSaving()
 
     def removeElse(self):
