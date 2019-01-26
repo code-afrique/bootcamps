@@ -2,21 +2,19 @@ import keyword as kw
 import tkinter as tk
 
 class Form(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, block):
         super().__init__(parent)
+        self.parent = parent
+        self.block = block
         self.isExpression = False
         self.isStatement = False
         self.catchKeys()
 
-    def copy(self):
-        global exprBuffer
-        exprBuffer = self.block.toNode()
-        print("expression copied")
+    def copyExpr(self):
+        self.block.copyExpr()
 
-    def delete(self):
-        self.copy()
-        self.block.parent.delete()
-        print("expression deleted")
+    def delExpr(self):
+        self.block.delExpr()
 
     def copyStmt(self):
         self.block.parent.copyStmt()
@@ -35,31 +33,27 @@ class Form(tk.Frame):
             if self.isStatement:
                 self.copyStmt()
             elif self.isExpression:
-                self.copy()
+                self.copyExpr()
         elif ev.char == '\177':
             if self.isStatement:
                 self.delStmt()
             elif self.isExpression:
-                self.delete()
+                self.delExpr()
 
 class HelpForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Help").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements.  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to minimize or maximize their bodies.").grid(sticky=tk.W)
         tk.Message(self, width=350, font='Helvetica 14', text="Use 'Import' and 'Export' to load and save Python source files.  The 'Code' button renders a Python 3 program that you can send to a Python interpreter.  Or more easily, you can select 'Run'.").grid(sticky=tk.W)
 
 class TextForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
 
         self.lineno = tk.Text(self, width=4, height=30, relief=tk.SUNKEN, wrap=tk.NONE, tabs=('0.2i', tk.RIGHT))
         self.text = tk.Text(self, width=48, height=30, relief=tk.SUNKEN, wrap=tk.NONE)
@@ -91,11 +85,9 @@ class TextForm(Form):
 
 class RowForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Select one of the actions below").grid(row=0, columnspan=3)
         tk.Button(self, text="Add a new statement below",
                         command=self.addStmt).grid(row=1, columnspan=3)
@@ -163,11 +155,9 @@ class RowForm(Form):
 
 class PassForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = False
-        self.parent = parent
-        self.block = block
 
         self.bind("<Key>", self.key)
         self.focus_set()
@@ -276,11 +266,9 @@ class PassForm(Form):
 
 class ExpressionForm(Form):
     def __init__(self, parent, block, lvalue):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         self.lvalue = lvalue
 
         frame = tk.Frame(self)
@@ -419,11 +407,9 @@ class ExpressionForm(Form):
 
 class DefForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Set method information").grid(row=0, columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A method has a name, a list of names of arguments, and a 'body'.  With this form, you can edit the method name and arguments.").grid(row=1, columnspan=2)
         tk.Label(self, text="Method name: ").grid(row=2, sticky=tk.W)
@@ -476,11 +462,9 @@ class DefForm(Form):
 
 class ClassForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Set class information").grid(row=0, columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A method has a name, a list of bases, and a 'body'.  With this form, you can edit the method name and bases.").grid(row=1, columnspan=2)
         tk.Label(self, text="Class name: ").grid(row=2, sticky=tk.W)
@@ -493,9 +477,9 @@ class ClassForm(Form):
 
         ma = tk.Button(self, text="+ Add a new base class", command=self.addBaseClass)
         ma.grid(row=3, column=0, columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=4, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=4, column=1)
 
     def addBaseClass(self):
@@ -518,11 +502,9 @@ class ClassForm(Form):
 
 class IfForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'if' statement").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="An 'if' statement has an 'if' clause, zero or more 'elif' clauses, and optionally an 'else' clause'.").grid(row=1, columnspan=2)
         if len(block.conds) == len(block.bodies):
@@ -544,11 +526,9 @@ class IfForm(Form):
 
 class ForForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'for' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
         if block.orelse == None:
@@ -565,11 +545,9 @@ class ForForm(Form):
 
 class WhileForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'while' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.").grid(row=1)
         if block.orelse == None:
@@ -586,68 +564,56 @@ class WhileForm(Form):
 
 class ReturnForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
 
 class BreakForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'break' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'break' statement' terminates the loop that it is in.").grid(row=1)
 
 class ContinueForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'continue' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'continue statement' jumps to the next iteration of the loop it is in").grid(row=1)
 
 class GlobalForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'global' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'global' statement' lists names of variables that are global in scope.").grid(row=1)
 
 class ImportForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'import' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="An 'import' statement' includes a module.").grid(row=1)
 
 class ListForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'list' expression").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A 'list' is simply a sequence of expressions").grid(row=1,columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the list", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=3, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=3, column=1)
 
     def addEntry(self):
@@ -656,18 +622,16 @@ class ListForm(Form):
 
 class TupleForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'tuple' expression").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A 'tuple' is simply a sequence of expressions").grid(row=1,columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the tuple", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=3, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=3, column=1)
 
     def addEntry(self):
@@ -676,11 +640,9 @@ class TupleForm(Form):
 
 class SubscriptForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
 
         if block.isSlice:
             tk.Message(self, width=350, font='Helvetica 16 bold', text="'slice' expression").grid(columnspan=2)
@@ -697,9 +659,9 @@ class SubscriptForm(Form):
             tk.Message(self, width=350, font='Helvetica 14', text="An index expression is of the form x[y], where x is a list or a string and y some expression to index into the list or string").grid(row=1,columnspan=2)
             tk.Button(self, text="turn index into a 'slice'", command=self.makeSlice).grid(columnspan=2)
 
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=100, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=100, column=1)
 
     def makeSlice(self):
@@ -717,74 +679,64 @@ class SubscriptForm(Form):
 
 class AttrForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'reference' expression").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A reference expression is of the form x.y, where x is an expression that expresses an object and y the name of a field in the object.").grid(row=1,columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
 class BinaryopForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="binary operation").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A binary operation is an operation with two operands.").grid(row=1,columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
 class UnaryopForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="unary operation").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A unary operation is an operation with a single operand.").grid(row=1,columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
 class ConstantForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Constant").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="Python supports three constants: False, True, and None.").grid(row=1,columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
 class FuncForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="function calll").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A function call is of the form f(list of arguments).  Here 'f' can be an expression in its own right.").grid(row=1, columnspan=2)
         ma = tk.Button(self, text="+ Add a new argument", command=self.addArg)
         ma.grid(row=2, column=0, columnspan=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=3, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=3, column=1)
 
     def addArg(self):
@@ -793,31 +745,25 @@ class FuncForm(Form):
 
 class AssignForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'assignment'").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="An 'assignment' operation is used to update the variable on the left of assignment operation symbol using the value that is on the right.").grid(row=1)
 
 class AugassignForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'augmented assignment'").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="An 'augmented assignment' operation is of the form a <op>= b, and is equivalent to a = a <op> b.").grid(row=1)
 
 class StringForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Set the contents of the string (no need for escaping)").grid(row=0, columnspan=2)
         tk.Label(self, text="String: ").grid(row=1)
         self.entry = tk.Entry(self)
@@ -826,9 +772,9 @@ class StringForm(Form):
         self.entry.grid(row=1, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=1, column=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
     def cb(self):
@@ -839,11 +785,9 @@ class StringForm(Form):
 
 class NameForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Set the name").grid(row=0, columnspan=2)
         tk.Label(self, text="Name: ").grid(row=1)
         self.entry = tk.Entry(self)
@@ -852,9 +796,9 @@ class NameForm(Form):
         self.entry.grid(row=1, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=1, column=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
     def cb(self):
@@ -871,11 +815,9 @@ class NameForm(Form):
 
 class NumberForm(Form):
     def __init__(self, parent, block):
-        super().__init__(parent)
+        super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        self.parent = parent
-        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Set the number (integer or float)").grid(row=0, columnspan=2)
         tk.Label(self, text="Number: ").grid(row=1)
         self.entry = tk.Entry(self)
@@ -884,9 +826,9 @@ class NumberForm(Form):
         self.entry.grid(row=1, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=1, column=2)
-        copy = tk.Button(self, text="copy", command=self.copy)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
         copy.grid(row=2, column=0)
-        delb = tk.Button(self, text="delete", command=self.delete)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
     def cb(self):
