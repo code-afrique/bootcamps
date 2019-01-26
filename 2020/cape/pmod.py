@@ -157,6 +157,9 @@ def ImportFrom(lineno, col_offset, module, names, level):
 def Global(lineno, col_offset, names):
     return RowNode(GlobalNode(names), lineno)
 
+def Dict(lineno, col_offset, keys, values):
+    return ExpressionNode(DictNode(keys, values))
+
 def Add():
     return "+"
 
@@ -237,9 +240,6 @@ def Del():
 def Lambda(lineno, col_offset, args, body):
     assert False, "'lambda' not yet implemented"
     return ExpressionNode(ConstantNode("LAMBDA"))
-
-def Dict(lineno, col_offset, keys, values):
-    return ExpressionNode(DictNode(keys, values))
 
 def With(lineno, col_offset, items, body):
     assert False, "'with' not yet implemented"
