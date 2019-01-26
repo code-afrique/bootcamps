@@ -277,9 +277,9 @@ class ExpressionForm(Form):
         frame.grid()
 
         row = 0
-        tk.Message(frame, width=350, font='Helvetica 16 bold', text="Select an expression type").grid(row=row, columnspan=2)
+        tk.Message(frame, width=350, font='Helvetica 16 bold', text="Select an expression type").grid(row=row, column=0, columnspan=3)
         row += 1
-        tk.Message(frame, width=350, font='Helvetica 14', text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, columnspan=2)
+        tk.Message(frame, width=350, font='Helvetica 14', text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, column=0, columnspan=3)
         row += 1
         tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
         tk.Button(frame, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
@@ -299,6 +299,7 @@ class ExpressionForm(Form):
             row += 1
             tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=0, sticky=tk.W)
             tk.Button(frame, text="x[y:z]", command=self.exprSlice).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(frame, text="x if c else y", command=self.exprIfelse).grid(row=row, column=2, sticky=tk.W)
             row += 1
 
             tk.Label(frame, text="").grid(row=row)
@@ -321,8 +322,8 @@ class ExpressionForm(Form):
             ops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
-        tk.Message(frame, width=350, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted using the '<ctrl>v' key or by clicking on the following button:").grid(row=100, columnspan=2)
-        tk.Button(self, text="paste", command=self.exprPaste).grid(row=101, columnspan=2)
+        tk.Message(frame, width=350, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted using the '<ctrl>v' key or by clicking on the following button:").grid(row=100, columnspan=3)
+        tk.Button(self, text="paste", command=self.exprPaste).grid(row=101, columnspan=3)
 
     def exprNumber(self):
         self.block.exprNumber("")
@@ -368,6 +369,9 @@ class ExpressionForm(Form):
 
     def exprFunc(self):
         self.block.exprFunc()
+
+    def exprIfelse(self):
+        self.block.exprIfelse()
 
     def exprPaste(self):
         self.block.exprPaste()
@@ -573,6 +577,14 @@ class ReturnForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
+
+class IfelseForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'if else' expression").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="An 'if else' expression is of the form 'x if c else y'.  It evaluates to x if c hold, otherwise to y.").grid(row=1)
 
 class BreakForm(Form):
     def __init__(self, parent, block):

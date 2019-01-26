@@ -160,6 +160,9 @@ def Global(lineno, col_offset, names):
 def Dict(lineno, col_offset, keys, values):
     return ExpressionNode(DictNode(keys, values))
 
+def IfExp(lineno, col_offset, test, body, orelse):
+    return ExpressionNode(IfelseNode(test, body, orelse))
+
 def Add():
     return "+"
 
@@ -208,10 +211,6 @@ def Try(lineno, col_offset, body, handlers, orelse, finalbody):
 def ExceptHandler(lineno, col_offset, type, name, body):
     assert False, "'try' not yet implemented"
     return RowNode(PassNode(), lineno)
-
-def IfExp(lineno, col_offset, test, body, orelse):
-    assert False, "'if else' not yet implemented"
-    return ExpressionNode(ConstantNode("IFELSE"))
 
 def Assert(lineno, col_offset, test, msg):
     assert False, "'assert' not yet implemented"

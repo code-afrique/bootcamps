@@ -9,8 +9,6 @@ class Block(tk.Frame):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
         self.parent = parent
         self.shared = shared
-        self.isExpression = False
-        self.isStatement = False
         self.isWithinDef = False if parent == None else parent.isWithinDef
         self.isWithinLoop = False if parent == None else parent.isWithinLoop
 
@@ -106,6 +104,9 @@ class Block(tk.Frame):
     def newFuncBlock(self, parent, node):
         return FuncBlock(parent, self.shared, node)
 
+    def newIfelseBlock(self, parent, node):
+        return IfelseBlock(parent, self.shared, node)
+
     def newListBlock(self, parent, node):
         return ListBlock(parent, self.shared, node)
 
@@ -142,8 +143,6 @@ class Block(tk.Frame):
 class NameBlock(Block):
     def __init__(self, parent, shared, vname):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.vname = tk.StringVar()
         self.btn = tk.Button(self, textvariable=self.vname, fg="blue", width=0, command=self.cb)
         self.vname.set(vname)
@@ -174,8 +173,6 @@ class NameBlock(Block):
 class NumberBlock(Block):
     def __init__(self, parent, shared, value):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.value = tk.StringVar()
         self.value.set(value)
         self.btn = tk.Button(self, textvariable=self.value, fg="blue", width=0, command=self.cb)
@@ -208,8 +205,6 @@ class NumberBlock(Block):
 class ConstantBlock(Block):
     def __init__(self, parent, shared, value):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.value = tk.StringVar()
         self.value.set(value)
         self.btn = tk.Button(self, textvariable=self.value, fg="purple", width=0, command=self.cb)
@@ -227,8 +222,6 @@ class ConstantBlock(Block):
 class StringBlock(Block):
     def __init__(self, parent, shared, value):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.string = tk.StringVar()
         tk.Label(self, text='"').grid(row=0, column=0)
         self.btn = tk.Button(self, textvariable=self.string, fg="green", width=0, command=self.cb)
@@ -256,8 +249,6 @@ class StringBlock(Block):
 class SubscriptBlock(Block):
     def __init__(self, parent, shared, node, isSlice):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.isSlice = isSlice
         if node == None:
             self.array = ExpressionBlock(self, shared, None, False)
@@ -344,8 +335,6 @@ class SubscriptBlock(Block):
 class AttrBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         if node == None:
             self.array = ExpressionBlock(self, shared, None, False)
         else:
@@ -370,8 +359,6 @@ class AttrBlock(Block):
 class UnaryopBlock(Block):
     def __init__(self, parent, shared, node, op):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.op = op
 
         left = tk.Button(self, text=op, fg="purple", width=0, command=self.cb)
@@ -395,8 +382,6 @@ class UnaryopBlock(Block):
 class BinaryopBlock(Block):
     def __init__(self, parent, shared, node, op):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.op = op
 
         if node == None:
@@ -424,8 +409,6 @@ class BinaryopBlock(Block):
 class ClassBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         self.cname = tk.StringVar()
 
         if node == None:
@@ -509,8 +492,6 @@ class ClassBlock(Block):
 class FuncBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
 
         if node == None:
             self.func = ExpressionBlock(self, shared, None, False)
@@ -556,8 +537,6 @@ class FuncBlock(Block):
 class ListBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
 
         tk.Button(self, text="[", width=0, command=self.cb).grid(row=0, column=0)
         self.eol = tk.Button(self, text="]", width=0, command=self.cb)
@@ -596,8 +575,6 @@ class ListBlock(Block):
 class DictBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
         self.keys = [ ]
         self.values = [ ]
 
@@ -651,8 +628,6 @@ class DictBlock(Block):
 class TupleBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = True
-        self.isStatement = False
 
         tk.Button(self, text="(", width=0, command=self.cb).grid(row=0, column=0)
         self.eol = tk.Button(self, text=")", width=0, command=self.cb)
@@ -691,8 +666,6 @@ class TupleBlock(Block):
 class ExpressionBlock(Block):
     def __init__(self, parent, shared, node, lvalue):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = False
         self.lvalue = lvalue
         if node == None or node.what == None:
             self.what = tk.Button(self, text="?", width=0, command=self.cb)
@@ -813,6 +786,14 @@ class ExpressionBlock(Block):
         self.setBlock(self.what.func)
         self.needsSaving()
 
+    def exprIfelse(self):
+        self.what.grid_forget()
+        self.what = IfelseBlock(self, self.shared, None)
+        self.what.grid()
+        self.init = True
+        self.setBlock(self.what.ifTrue)
+        self.needsSaving()
+
     def exprPaste(self):
         if self.shared.exprBuffer != None:
             self.what.grid_forget()
@@ -833,8 +814,6 @@ class ExpressionBlock(Block):
 class AssignBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
 
         if node == None:
             self.targets = [ExpressionBlock(self, shared, None, True)]
@@ -860,11 +839,37 @@ class AssignBlock(Block):
     def toNode(self):
         return AssignNode([ t.toNode() for t in self.targets ], self.value.toNode())
 
+class IfelseBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+
+        if node == None:
+            self.cond = ExpressionBlock(self, shared, None, True)
+            self.ifTrue = ExpressionBlock(self, shared, None, False)
+            self.ifFalse = ExpressionBlock(self, shared, None, False)
+        else:
+            self.cond = ExpressionBlock(self, shared, node.cond, True)
+            self.ifTrue = ExpressionBlock(self, shared, node.ifTrue, False)
+            self.ifFalse = ExpressionBlock(self, shared, node.ifFalse, False)
+
+        self.ifTrue.grid(row=0, column=0)
+        tk.Button(self, text='if', fg="purple", command=self.cb).grid(row=0, column=1)
+        self.cond.grid(row=0, column=2)
+        tk.Button(self, text='else', fg="purple", command=self.cb).grid(row=0, column=3)
+        self.ifFalse.grid(row=0, column=4)
+
+    def genForm(self):
+        self.setForm(IfelseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return IfelseNode(self.cond.toNode(), self.ifTrue.toNode(), self.ifFalse.toNode())
+
 class AugassignBlock(Block):
     def __init__(self, parent, shared, node, op):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         self.op = op
         if node == None:
             self.left = ExpressionBlock(self, shared, None, True)
@@ -890,8 +895,6 @@ class AugassignBlock(Block):
 class PassBlock(Block):
     def __init__(self, parent, shared, node, rowblk):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         self.rowblk = rowblk
         btn = tk.Button(self, text="pass", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
@@ -1001,8 +1004,6 @@ class PassBlock(Block):
 class EmptyBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         # btn = tk.Button(self, text="", fg="red", width=0, command=self.cb)
         # btn.grid(row=0, column=0)
 
@@ -1020,8 +1021,6 @@ class EmptyBlock(Block):
 class EvalBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         if node == None:
             self.expr = ExpressionBlock(self, shared, None, False)
         else:
@@ -1034,8 +1033,6 @@ class EvalBlock(Block):
 class ReturnBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         tk.Button(self, text="return", fg="red", command=self.cb).grid(row=0, column=0)
         if node == None:
             self.expr = ExpressionBlock(self, shared, None, False)
@@ -1055,8 +1052,6 @@ class ReturnBlock(Block):
 class BreakBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         tk.Button(self, text="break", fg="red", command=self.cb).grid(row=0, column=0)
 
     def genForm(self):
@@ -1071,8 +1066,6 @@ class BreakBlock(Block):
 class ContinueBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         tk.Button(self, text="continue", fg="red", command=self.cb).grid(row=0, column=0)
 
     def genForm(self):
@@ -1087,8 +1080,6 @@ class ContinueBlock(Block):
 class GlobalBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         tk.Button(self, text="global", fg="red", command=self.cb).grid(row=0, column=0)
         if node == None:
             self.vars = [NameBlock(self, shared, "")]
@@ -1115,8 +1106,6 @@ class GlobalBlock(Block):
 class ImportBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         tk.Button(self, text="import", fg="red", command=self.cb).grid(row=0, column=0)
         if node == None:
             self.module = NameBlock(self, shared, "")
@@ -1136,8 +1125,6 @@ class ImportBlock(Block):
 class RowBlock(Block):
     def __init__(self, parent, shared, node, row):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = False
         self.row = row
         self.comment = tk.StringVar()
 
@@ -1200,8 +1187,6 @@ class RowBlock(Block):
 class SeqBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = False
         self.rows = []
         if node == None:
             self.insert(0)
@@ -1256,8 +1241,6 @@ class SeqBlock(Block):
 class DefBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
         self.isWithinDef = True
         self.mname = tk.StringVar()
 
@@ -1338,8 +1321,6 @@ class IfBlock(Block):
     """
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
 
         if node == None:
             self.hdrs = [Block(self, shared)]
@@ -1439,8 +1420,6 @@ class IfBlock(Block):
 class WhileBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
 
         hdr = Block(self, self.shared)
         tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
@@ -1523,9 +1502,6 @@ class WhileBlock(Block):
 class ForBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.isExpression = False
-        self.isStatement = True
-
         hdr = Block(self, shared)
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.isWithinLoop = True

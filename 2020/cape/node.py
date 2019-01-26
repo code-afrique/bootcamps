@@ -264,6 +264,25 @@ class GlobalNode(Node):
             self.vars[i].print(fd, 0)
         print("", file=fd)
 
+class IfelseNode(Node):
+    def __init__(self, cond, ifTrue, ifFalse):
+        super().__init__()
+        self.cond = cond
+        self.ifTrue = ifTrue
+        self.ifFalse = ifFalse
+
+    def toBlock(self, frame, block):
+        return block.newIfelseBlock(frame, self)
+
+    def print(self, fd, level):
+        print("(", end="", file=fd)
+        self.ifTrue.print(fd, 0)
+        print(" if ", end="", file=fd)
+        self.cond.print(fd, 0)
+        print(" else ", end="", file=fd)
+        self.ifFalse.print(fd, 0)
+        print(")", end="", file=fd)
+
 class AssignNode(Node):
     def __init__(self, targets, value):
         super().__init__()
