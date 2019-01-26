@@ -15,13 +15,6 @@ from form import *
 from node import *
 from block import *
 
-"""
-    A row contains a statement with a menu button and a comment
-    A list is a sequence of rows
-    A method definion contains a header and a list
-"""
-
-
 class Scrollable(tk.Frame):
     """
        Make a frame scrollable with a scrollbar
@@ -251,5 +244,4 @@ if __name__ == '__main__':
     tl = TopLevel(root, shared)
     tl.grid()
     tl.grid_propagate(0)
-
     root.mainloop()
