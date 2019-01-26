@@ -2725,10 +2725,10 @@ class WhileBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
-        self.isWithinLoop = True
 
         hdr = Block(self)
         tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        self.isWithinLoop = True
         if node == None:
             self.cond = ExpressionBlock(hdr, None, False)
             self.body = SeqBlock(self, None, level + 1)
@@ -2746,6 +2746,7 @@ class WhileBlock(Block):
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
+        self.isWithinLoop = False
 
         if self.orelse == None:
             self.hdr2 = None
@@ -2789,7 +2790,7 @@ class WhileBlock(Block):
         tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
         self.hdr2.grid(row=2, column=0, sticky=tk.W)
         self.orelse.grid(row=3, column=0, sticky=tk.W)
-        self.setBlock(self.orelse.what)
+        self.setBlock(self.orelse)
         self.needsSaving()
 
     def removeElse(self):
@@ -2821,10 +2822,10 @@ class ForBlock(Block):
         self.isStatement = True
         self.parent = parent
         self.level = level
-        self.isWithinLoop = True
 
         hdr = Block(self)
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        self.isWithinLoop = True
         if node == None:
             self.var = NameBlock(hdr, "")
             self.expr = ExpressionBlock(hdr, None, False)
@@ -2846,6 +2847,7 @@ class ForBlock(Block):
 
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body.grid(row=1, column=0, sticky=tk.W)
+        self.isWithinLoop = False
 
         if self.orelse == None:
             self.hdr2 = None
@@ -2889,7 +2891,7 @@ class ForBlock(Block):
         tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
         self.hdr2.grid(row=2, column=0, sticky=tk.W)
         self.orelse.grid(row=3, column=0, sticky=tk.W)
-        self.setBlock(self.orelse.what)
+        self.setBlock(self.orelse)
         self.needsSaving()
 
     def removeElse(self):
