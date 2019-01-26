@@ -10,15 +10,9 @@ import tokenize
 
 import pparse
 import pmod
+import shared
 from form import *
 from node import *
-
-class Shared():
-    def __init__(self):
-        self.curForm = None
-        self.curBlock = None
-        self.stmtBuffer = None
-        self.exprBuffer = None
 
 """
     A row contains a statement with a menu button and a comment
@@ -40,8 +34,7 @@ class Block(tk.Frame):
             print("    ", end="", file=fd)
 
     def scrollUpdate(self):
-        global scrollable
-        scrollable.scrollUpdate()
+        self.shared.scrollable.scrollUpdate()
 
     def setForm(self, f):
         if self.shared.curForm != None:
@@ -67,8 +60,7 @@ class Block(tk.Frame):
         self.scrollUpdate()
 
     def needsSaving(self):
-        global saved
-        saved = False
+        self.shared.saved = False
 
     def copyExpr(self):
         self.shared.exprBuffer = self.toNode()
@@ -175,7 +167,7 @@ class NameBlock(Block):
         self.btn.grid(row=0, column=0)
 
     def genForm(self):
-        f = NameForm(confarea, self)
+        f = NameForm(self.shared.confarea, self)
         self.setForm(f)
         f.entry.focus()
 
@@ -191,11 +183,10 @@ class NameBlock(Block):
         v = self.vname.get()
         print(v, end="", file=fd)
         if not v.isidentifier():
-            global printError
-            if not printError:
+            if not self.shared.printError:
                 self.setBlock(self)
                 tk.messagebox.showinfo("Print Error", "Fix bad variable name")
-                printError = True
+                self.shared.printError = True
 
     def toNode(self):
         return NameNode(self.vname.get())
@@ -212,7 +203,7 @@ class NumberBlock(Block):
         self.btn.grid(row=0, column=0)
 
     def genForm(self):
-        f = NumberForm(confarea, self)
+        f = NumberForm(self.shared.confarea, self)
         self.setForm(f)
         f.entry.focus()
 
@@ -230,11 +221,10 @@ class NumberBlock(Block):
         try:
             float(v)
         except ValueError:
-            global printError
-            if not printError:
+            if not self.shared.printError:
                 self.setBlock(self)
                 tk.messagebox.showinfo("Print Error", "Fix bad number")
-                printError = True
+                self.shared.printError = True
 
     def toNode(self):
         return NumberNode(self.value.get())
@@ -251,7 +241,7 @@ class ConstantBlock(Block):
         self.btn.grid(row=0, column=0)
 
     def genForm(self):
-        self.setForm(ConstantForm(confarea, self))
+        self.setForm(ConstantForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -277,7 +267,7 @@ class StringBlock(Block):
         tk.Label(self, text='"').grid(row=0, column=2)
 
     def genForm(self):
-        f = StringForm(confarea, self)
+        f = StringForm(self.shared.confarea, self)
         self.setForm(f)
         f.entry.focus()
 
@@ -351,7 +341,7 @@ class SubscriptBlock(Block):
         self.setBlock(self)
 
     def genForm(self):
-        self.setForm(SubscriptForm(confarea, self))
+        self.setForm(SubscriptForm(self.shared.confarea, self))
 
     def updateGrid(self):
         column = 2
@@ -428,7 +418,7 @@ class AttrBlock(Block):
         self.setBlock(self)
 
     def genForm(self):
-        self.setForm(AttrForm(confarea, self))
+        self.setForm(AttrForm(self.shared.confarea, self))
 
     def print(self, fd):
         self.array.print(fd)
@@ -456,7 +446,7 @@ class UnaryopBlock(Block):
         self.right.grid(row=0, column=1)
 
     def genForm(self):
-        self.setForm(UnaryopForm(confarea, self))
+        self.setForm(UnaryopForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -492,7 +482,7 @@ class BinaryopBlock(Block):
         self.right.grid(row=0, column=2)
 
     def genForm(self):
-        self.setForm(BinaryopForm(confarea, self))
+        self.setForm(BinaryopForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -546,7 +536,7 @@ class ClassBlock(Block):
             self.body.grid(row=1, column=0, sticky=tk.W)
 
     def genForm(self):
-        self.setForm(ClassForm(confarea, self))
+        self.setForm(ClassForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -586,16 +576,14 @@ class ClassBlock(Block):
         self.colon.grid(row=0, column=column+1)
 
     def print(self, fd):
-        global printError
-
         self.printIndent(fd)
         v = self.cname.get()
         print("class {}(".format(v), end="", file=fd)
         if not v.isidentifier():
-            if not printError:
+            if not self.shared.printError:
                 self.setBlock(self)
                 tk.messagebox.showinfo("Print Error", "Fix bad method name")
-                printError = True
+                self.shared.printError = True
         for i in range(len(self.bases)):
             if i != 0:
                 print(", ", end="", file=fd)
@@ -629,7 +617,7 @@ class FuncBlock(Block):
         self.gridUpdate()
 
     def genForm(self):
-        self.setForm(FuncForm(confarea, self))
+        self.setForm(FuncForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -680,7 +668,7 @@ class ListBlock(Block):
         self.gridUpdate()
 
     def genForm(self):
-        self.setForm(ListForm(confarea, self))
+        self.setForm(ListForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -729,7 +717,7 @@ class TupleBlock(Block):
         self.gridUpdate()
 
     def genForm(self):
-        self.setForm(TupleForm(confarea, self))
+        self.setForm(TupleForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -785,7 +773,7 @@ class ExpressionBlock(Block):
         self.needsSaving()
 
     def genForm(self):
-        f = ExpressionForm(confarea, self, self.lvalue)
+        f = ExpressionForm(self.shared.confarea, self, self.lvalue)
         self.setForm(f)
 
     def cb(self):
@@ -893,11 +881,10 @@ class ExpressionBlock(Block):
             self.what.print(fd)
         else:
             print("?", end="", file=fd)
-            global printError
-            if not printError:
+            if not self.shared.printError:
                 self.setBlock(self)
                 tk.messagebox.showinfo("Print Error", "Fix uninitialized expression")
-                printError = True
+                self.shared.printError = True
 
     def toNode(self):
         return ExpressionNode(self.what.toNode() if self.init else None)
@@ -926,7 +913,7 @@ class AssignBlock(Block):
         self.value.grid(row=0, column=column)
 
     def genForm(self):
-        self.setForm(AssignForm(confarea, self))
+        self.setForm(AssignForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -963,7 +950,7 @@ class AugassignBlock(Block):
         self.right.grid(row=0, column=2)
 
     def genForm(self):
-        self.setForm(AugassignForm(confarea, self))
+        self.setForm(AugassignForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -990,7 +977,7 @@ class PassBlock(Block):
         btn.grid(row=0, column=0)
 
     def genForm(self):
-        f = PassForm(confarea, self)
+        f = PassForm(self.shared.confarea, self)
         self.setForm(f)
 
     def cb(self):
@@ -1106,7 +1093,7 @@ class EmptyBlock(Block):
         # btn.grid(row=0, column=0)
 
     def genForm(self):
-        # f = EmptyForm(confarea, self)
+        # f = EmptyForm(self.shared.confarea, self)
         # self.setForm(f)
         pass
 
@@ -1156,7 +1143,7 @@ class ReturnBlock(Block):
         self.expr.grid(row=0, column=1)
 
     def genForm(self):
-        self.setForm(ReturnForm(confarea, self))
+        self.setForm(ReturnForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1180,7 +1167,7 @@ class BreakBlock(Block):
         tk.Button(self, text="break", fg="red", command=self.cb).grid(row=0, column=0)
 
     def genForm(self):
-        self.setForm(BreakForm(confarea, self))
+        self.setForm(BreakForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1202,7 +1189,7 @@ class ContinueBlock(Block):
         tk.Button(self, text="continue", fg="red", command=self.cb).grid(row=0, column=0)
 
     def genForm(self):
-        self.setForm(ContinueForm(confarea, self))
+        self.setForm(ContinueForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1236,7 +1223,7 @@ class GlobalBlock(Block):
             column += 1
 
     def genForm(self):
-        self.setForm(GlobalForm(confarea, self))
+        self.setForm(GlobalForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1268,7 +1255,7 @@ class ImportBlock(Block):
         self.module.grid(row=0, column=1)
 
     def genForm(self):
-        self.setForm(ImportForm(confarea, self))
+        self.setForm(ImportForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1310,7 +1297,7 @@ class RowBlock(Block):
             self.comment.set("#" + comment)
 
     def genForm(self):
-        f = RowForm(confarea, self)
+        f = RowForm(self.shared.confarea, self)
         self.setForm(f)
 
     def addStmt(self):
@@ -1467,7 +1454,7 @@ class DefBlock(Block):
         self.hdr.grid(row=0, column=0, sticky=tk.W)
 
     def genForm(self):
-        f = DefForm(confarea, self)
+        f = DefForm(self.shared.confarea, self)
         self.setForm(f)
         f.entry.focus()
 
@@ -1492,25 +1479,23 @@ class DefBlock(Block):
         self.needsSaving()
 
     def print(self, fd):
-        global printError
-
         self.printIndent(fd)
         v = self.mname.get()
         print("def {}(".format(v), end="", file=fd)
         if not v.isidentifier():
-            if not printError:
+            if not self.shared.printError:
                 self.setBlock(self)
                 tk.messagebox.showinfo("Print Error", "Fix bad method name")
-                printError = True
+                self.shared.printError = True
         for i in range(len(self.args)):
             if i != 0:
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
             if not self.args[i].isidentifier():
-                if not printError:
+                if not self.shared.printError:
                     self.setBlock(self)
                     tk.messagebox.showinfo("Print Error", "Fix bad argument name")
-                    printError = True
+                    self.shared.printError = True
         print("):", file=fd)
         self.body.print(fd)
 
@@ -1560,7 +1545,7 @@ class IfBlock(Block):
         self.gridUpdate()
 
     def genForm(self):
-        self.setForm(IfForm(confarea, self))
+        self.setForm(IfForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1678,7 +1663,7 @@ class WhileBlock(Block):
             self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
-        self.setForm(WhileForm(confarea, self))
+        self.setForm(WhileForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1779,7 +1764,7 @@ class ForBlock(Block):
             self.orelse.grid(row=3, column=0, sticky=tk.W)
 
     def genForm(self):
-        self.setForm(ForForm(confarea, self))
+        self.setForm(ForForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1922,11 +1907,10 @@ class TopLevel(tk.Frame):
         frame.grid_propagate(0)
         # frame.configure(bd=2, highlightbackground="purple", highlightcolor="purple", highlightthickness=2)
 
-        global confarea
-        # confarea = tk.Frame(frame, width=400, height=475, bd=10, highlightbackground="green", highlightcolor="green", highlightthickness=3)
-        confarea = tk.Frame(frame, width=400, height=475)
-        # confarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
-        confarea.grid_propagate(0)
+        # self.shared.confarea = tk.Frame(frame, width=400, height=475, bd=10, highlightbackground="green", highlightcolor="green", highlightthickness=3)
+        self.shared.confarea = tk.Frame(frame, width=400, height=475)
+        # self.shared.confarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
+        self.shared.confarea.grid_propagate(0)
 
         # self.progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
         self.progarea = tk.Frame(frame, width=750, height=500)
@@ -1934,24 +1918,22 @@ class TopLevel(tk.Frame):
         # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         self.progarea.grid_propagate(0)
 
-        global scrollable
-        scrollable = Scrollable(self.progarea, shared, width=16)
-        self.program = SeqBlock(scrollable.stuff, shared, None, 0)
+        self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
+        self.program = SeqBlock(self.shared.scrollable.stuff, shared, None, 0)
         self.program.grid(sticky=tk.W)
-        scrollable.scrollUpdate()
+        self.shared.scrollable.scrollUpdate()
 
-        # confarea.place(x=0, y=0)
+        # self.shared.confarea.place(x=0, y=0)
         # self.progarea.place(x=400, y=0)
-        # confarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
+        # self.shared.confarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
         # self.progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
-        confarea.grid(row=0, column=0, sticky=tk.N)
+        self.shared.confarea.grid(row=0, column=0, sticky=tk.N)
         self.progarea.grid(row=0, column=1, sticky=tk.NW)
 
         self.help()
 
     def print(self):
-        global printError
-        printError = False
+        self.shared.printError = False
 
         print("'=== START OF PROGRAM ==='")
         self.program.print(sys.stdout)
@@ -1967,11 +1949,9 @@ class TopLevel(tk.Frame):
         return comments
 
     def load(self):
-        global saved
-
-        if not saved:
+        if not self.shared.saved:
             tk.messagebox.showinfo("Warning", "You must save the program first")
-            saved = True
+            self.shared.saved = True
             return
 
         filename = tk.filedialog.askopenfilename(defaultextension='.py',
@@ -1993,14 +1973,13 @@ class TopLevel(tk.Frame):
                         sb.rows.insert(i, row)
                     row.comment = text[1:]
 
-                global scrollable
                 if self.program != None:
                     self.program.grid_forget()
-                self.program = SeqBlock(scrollable.stuff, self.shared, n, 0)
+                self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, n, 0)
                 self.program.grid(sticky=tk.W)
-                scrollable.scrollUpdate()
+                self.shared.scrollable.scrollUpdate()
 
-                saved = True
+                self.shared.saved = True
 
     def save(self):
         node = self.program.toNode()
@@ -2018,19 +1997,17 @@ class TopLevel(tk.Frame):
             with open(filename, "w") as fd:
                 self.program.print(fd)
                 print("saved")
-                global saved
-                saved = True
+                self.shared.saved = True
 
     def run(self):
-        global printError
-        printError = False
+        self.shared.printError = False
 
         fd, path = tempfile.mkstemp()
         try:
             with os.fdopen(fd, 'w') as tmp:
                 self.program.print(tmp)
                 tmp.close()
-                if printError:
+                if self.shared.printError:
                     print("===== Fix program first =====")
                 else:
                     print("===== Start running =====")
@@ -2041,45 +2018,37 @@ class TopLevel(tk.Frame):
             os.remove(path)
 
     def help(self):
-        global confarea
-
         if self.shared.curForm != None:
             self.shared.curForm.grid_forget()
-        self.shared.curForm = HelpForm(confarea, self)
+        self.shared.curForm = HelpForm(self.shared.confarea, self)
         self.shared.curForm.grid(row=0, column=0, sticky=tk.E)
         self.shared.curForm.update()
 
     def text(self):
-        global confarea
-
         if self.shared.curForm != None:
             self.shared.curForm.grid_forget()
-        self.shared.curForm = TextForm(confarea, self)
+        self.shared.curForm = TextForm(self.shared.confarea, self)
 
-        global printError
-        printError = False
-
+        self.shared.printError = False
         f = io.StringIO("")
         self.program.print(f)
-        if not printError:
+        if not self.shared.printError:
             self.shared.curForm.settext(f.getvalue())
             self.shared.curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
             self.shared.curForm.update()
 
     def quit(self):
-        global saved
-        if saved:
+        if self.shared.saved:
             sys.exit(0)
         else:
             tk.messagebox.showinfo("Warning", "You must save the program first")
-            saved = True
+            self.shared.saved = True
 
 if __name__ == '__main__':
     root = tk.Tk()
     root.title("Code Afrique Python Editor")
     root.geometry("1250x550")
-    saved = True
-    shared = Shared()
+    shared = shared.Shared()
     tl = TopLevel(root, shared)
     tl.grid()
     tl.grid_propagate(0)
