@@ -102,6 +102,7 @@ def Pass(lineno, col_offset):
     return RowNode(PassNode(), lineno)
 
 def Call(lineno, col_offset, func, args, keywords, starargs=None, kwargs=None):
+    assert len(keywords) == 0
     return ExpressionNode(FuncNode(func, args))
 
 def Load():

@@ -418,7 +418,7 @@ class ClassBlock(Block):
             self.minimized = node.minimized
 
         self.hdr = Block(self, shared)
-        self.btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
+        self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
         self.name = tk.Button(self.hdr, textvariable=self.cname, fg="blue", command=self.cb)
         self.name.grid(row=0, column=1)
@@ -487,7 +487,7 @@ class ClassBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad method name")
                 self.shared.cvtError = True
-        return ClassNode(v, self.bases, self.body.toNode(), self.minimized)
+        return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode(), self.minimized)
 
 class FuncBlock(Block):
     def __init__(self, parent, shared, node):

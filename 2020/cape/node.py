@@ -71,6 +71,7 @@ class DefNode(Node):
         return self.body.findRow(lineno)
 
     def print(self, fd, level):
+        self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
         for i in range(len(self.args)):
             if i != 0:
@@ -244,7 +245,7 @@ class ImportNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("import ", end="", file=fd)
-        self.module.print(fd, 0)
+        self.what.print(fd, 0)
         print("", file=fd)
 
 class GlobalNode(Node):
@@ -514,7 +515,9 @@ class StringNode(Node):
     def print(self, fd, level):
         print('"', end="", file=fd)
         for c in self.what:
-            if c == '"':
+            if c == '\\':
+                print('\\\\', end="", file=fd)
+            elif c == '"':
                 print('\\"', end="", file=fd)
             elif c == '\n':
                 print('\\n', end="", file=fd)
