@@ -640,7 +640,7 @@ class ExpressionForm(Form):
             ops = tk.OptionMenu(frame, self.binaryop,
                 "+", "-", "*", "/", "//", "%", "**",
                 "==", "!=", "<", "<=", ">", ">=",
-                "and", "or", "in", "not in", "is")
+                "and", "or", "in", "not in", "is", "is not")
             ops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
@@ -3116,6 +3116,7 @@ class TopLevel(tk.Frame):
                     print("===== Fix program first =====")
                 else:
                     print("===== Start running =====")
+                    # subprocess.Popen(['python3', path])
                     subprocess.call(['python3', path])
                     print("===== Done =====")
         finally:
