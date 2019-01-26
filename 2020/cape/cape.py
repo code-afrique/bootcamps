@@ -182,7 +182,7 @@ class GlobalNode(Node):
     def toBlock(self, frame, level, block):
         return GlobalBlock(frame, self, level)
 
-class AssignNode(Node):
+class AugassignNode(Node):
     def __init__(self, left, right, op):
         super().__init__()
         self.left = left
@@ -190,7 +190,7 @@ class AssignNode(Node):
         self.op = op
 
     def toBlock(self, frame, level, block):
-        return AssignBlock(frame, self, level, self.op)
+        return AugassignBlock(frame, self, level, self.op)
 
 class BinaryopNode(Node):
     def __init__(self, left, right, op):
@@ -499,7 +499,7 @@ class PassForm(Form):
         tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=row)
         row += 1
 
-        tk.Button(self, text="assignment", width=0, command=self.stmtAssign).grid(row=row)
+        tk.Button(self, text="assignment", width=0, command=self.stmtAugassign).grid(row=row)
         self.assignop = tk.StringVar(self)
         self.assignop.set("=")
         assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
@@ -534,8 +534,8 @@ class PassForm(Form):
     def stmtDef(self):
         self.block.stmtDef()
 
-    def stmtAssign(self):
-        self.block.stmtAssign(self.assignop.get())
+    def stmtAugassign(self):
+        self.block.stmtAugassign(self.assignop.get())
 
     def stmtEval(self):
         self.block.stmtEval()
@@ -587,7 +587,7 @@ class PassForm(Form):
         elif ev.char == 'c':
             self.stmtClass()
         elif ev.char == '=':
-            self.stmtAssign()
+            self.stmtAugassign()
         elif ev.char == '?':
             self.stmtEval()
         elif ev.char == '\r':
@@ -687,9 +687,6 @@ class ExpressionForm(Form):
     def exprTuple(self):
         self.block.exprTuple()
 
-    def exprAssign(self):
-        self.block.exprAssign(self.assignop.get())
-
     def exprUnaryop(self):
         self.block.exprUnaryop(self.unaryop.get())
 
@@ -723,9 +720,9 @@ class ExpressionForm(Form):
             elif ev.char == '[':
                 self.block.exprList()
             elif ev.char == '=':
-                self.block.exprAssign("==")
+                self.block.exprBinaryop("==")
             elif ev.char == '!':
-                self.block.exprAssign("!=")
+                self.block.exprBinaryop("!=")
             elif ev.char in "+-*/%<>":
                 self.block.exprBinaryop(ev.char)
             elif ev.char == "&":
@@ -1131,7 +1128,7 @@ class FuncForm(Form):
         self.block.addArg(None)
         self.block.setBlock(self.block.args[-1])
 
-class AssignForm(Form):
+class AugassignForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)
         self.isExpression = True
@@ -1953,14 +1950,6 @@ class ExpressionBlock(Block):
         self.setBlock(self.what)
         self.needsSaving()
 
-    def exprAssign(self, op):
-        self.what.grid_forget()
-        self.what = AssignBlock(self, None, 0, op)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.left)
-        self.needsSaving()
-
     def exprUnaryop(self, op):
         self.what.grid_forget()
         self.what = UnaryopBlock(self, None, op)
@@ -2030,7 +2019,7 @@ class NilBlock(Block):
     def toNode(self):
         return NilNode()
 
-class AssignBlock(Block):
+class AugassignBlock(Block):
     def __init__(self, parent, node, level, op):
         super().__init__(parent)
         self.isExpression = False
@@ -2051,7 +2040,7 @@ class AssignBlock(Block):
         self.right.grid(row=0, column=2)
 
     def genForm(self):
-        self.setForm(AssignForm(confarea, self))
+        self.setForm(AugassignForm(confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -2064,7 +2053,7 @@ class AssignBlock(Block):
         print("", file=fd)
 
     def toNode(self):
-        return AssignNode(self.left.toNode(), self.right.toNode(), self.op)
+        return AugassignNode(self.left.toNode(), self.right.toNode(), self.op)
 
 class PassBlock(Block):
     def __init__(self, parent, node, level, rowblk):
@@ -2098,9 +2087,9 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what)
         self.needsSaving()
 
-    def stmtAssign(self, op):
+    def stmtAugassign(self, op):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = AssignBlock(self.rowblk, None, self.level, op)
+        self.rowblk.what = AugassignBlock(self.rowblk, None, self.level, op)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.left)
         self.needsSaving()
@@ -3175,10 +3164,10 @@ def args(lineno, col_offset, arg, annotation):
 
 def Assign(lineno, col_offset, targets, value):
     assert len(targets) == 1
-    return RowNode(AssignNode(targets[0], value, "="), lineno)
+    return RowNode(AugassignNode(targets[0], value, "="), lineno)
 
 def AugAssign(lineno, col_offset, target, op, value):
-    return RowNode(AssignNode(target, value, op + '='), lineno)
+    return RowNode(AugassignNode(target, value, op + '='), lineno)
 
 def Name(lineno, col_offset, id, ctx):
     return ExpressionNode(NameNode(id))
