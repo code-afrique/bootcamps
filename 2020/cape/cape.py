@@ -175,9 +175,9 @@ class ImportNode(Node):
         return ImportBlock(frame, self, level)
 
 class GlobalNode(Node):
-    def __init__(self, what):
+    def __init__(self, names):
         super().__init__()
-        self.what = what
+        self.names = names
 
     def toBlock(self, frame, level, block):
         return GlobalBlock(frame, self, level)
@@ -2360,10 +2360,17 @@ class GlobalBlock(Block):
         self.level = level
         tk.Button(self, text="global", fg="red", command=self.cb).grid(row=0, column=0)
         if node == None:
-            self.var = NameBlock(self, "")
+            self.vars = [NameBlock(self, "")]
         else:
-            self.var = NameBlock(self, node.what)
-        self.var.grid(row=0, column=1)
+            self.vars = [NameBlock(self, n) for n in node.names]
+
+        column = 1
+        for i in range(len(self.vars)):
+            if i > 0:
+                tk.Button(self, text=",", command=self.cb).grid(row=0, column=column)
+                column += 1
+            self.vars[i].grid(row=0, column=column)
+            column += 1
 
     def genForm(self):
         self.setForm(GlobalForm(confarea, self))
@@ -2374,7 +2381,10 @@ class GlobalBlock(Block):
     def print(self, fd):
         self.printIndent(fd)
         print("global ", end="", file=fd)
-        self.var.print(fd)
+        for i in range(len(self.vars)):
+            if i > 0:
+                print(", ", end="", file=fd)
+            self.vars[i].print(fd)
         print("", file=fd)
 
     def toNode(self):
@@ -3359,8 +3369,7 @@ def ImportFrom(lineno, col_offset, module, names, level):
     return RowNode(ImportNode(names[0]), lineno)
 
 def Global(lineno, col_offset, names):
-    assert len(names) == 1
-    return RowNode(GlobalNode(names[0]), lineno)
+    return RowNode(GlobalNode(names), lineno)
 
 def Add():
     return "+"
