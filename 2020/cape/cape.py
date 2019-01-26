@@ -29,7 +29,7 @@ class Scrollable(tk.Frame):
         self.canvas.isWithinLoop = False    # ???
         ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
         xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
-        self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+        # self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
 
         self.stuff = Block(self.canvas, shared)
         self.stuff.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)

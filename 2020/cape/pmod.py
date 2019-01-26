@@ -239,8 +239,7 @@ def Lambda(lineno, col_offset, args, body):
     return ExpressionNode(ConstantNode("LAMBDA"))
 
 def Dict(lineno, col_offset, keys, values):
-    assert False, "dictionaries not yet implemented"
-    return ExpressionNode(ConstantNode("DICT"))
+    return ExpressionNode(DictNode(keys, values))
 
 def With(lineno, col_offset, items, body):
     assert False, "'with' not yet implemented"

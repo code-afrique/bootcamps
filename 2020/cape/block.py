@@ -109,6 +109,9 @@ class Block(tk.Frame):
     def newListBlock(self, parent, node):
         return ListBlock(parent, self.shared, node)
 
+    def newDictBlock(self, parent, node):
+        return DictBlock(parent, self.shared, node)
+
     def newTupleBlock(self, parent, node):
         return TupleBlock(parent, self.shared, node)
 
@@ -590,6 +593,61 @@ class ListBlock(Block):
     def toNode(self):
         return ListNode([ entry.toNode() for entry in self.entries ])
 
+class DictBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.isExpression = True
+        self.isStatement = False
+        self.keys = [ ]
+        self.values = [ ]
+
+        tk.Button(self, text="{", width=0, command=self.cb).grid(row=0, column=0)
+        self.eol = tk.Button(self, text="}", width=0, command=self.cb)
+
+        if node != None:
+            for i in range(len(node.keys)):
+                self.addEntry(node.keys[i], node.values[i])
+        self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(DictForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addEntry(self, key, value):
+        if key == None:
+            k = ExpressionBlock(self, self.shared, None, False)
+        else:
+            k = ExpressionBlock(self, self.shared, key, False)
+        self.keys.append(k)
+
+        if value == None:
+            v = ExpressionBlock(self, self.shared, None, False)
+        else:
+            v = ExpressionBlock(self, self.shared, value, False)
+        self.values.append(v)
+
+        self.gridUpdate()
+        self.needsSaving()
+
+    def gridUpdate(self):
+        column = 1
+        for i in range(len(self.keys)):
+            if i != 0:
+                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+            self.keys[i].grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text=":", width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            self.values[i].grid(row=0, column=column)
+            column += 1
+        self.eol.grid(row=0, column=column)
+
+    def toNode(self):
+        return DictNode([ k.toNode() for k in self.keys ], [ v.toNode() for v in self.values ])
+
 class TupleBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
@@ -718,6 +776,14 @@ class ExpressionBlock(Block):
     def exprTuple(self):
         self.what.grid_forget()
         self.what = TupleBlock(self, self.shared, None)
+        self.what.grid()
+        self.init = True
+        self.setBlock(self.what)
+        self.needsSaving()
+
+    def exprDict(self):
+        self.what.grid_forget()
+        self.what = DictBlock(self, self.shared, None)
         self.what.grid()
         self.init = True
         self.setBlock(self.what)

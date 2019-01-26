@@ -295,6 +295,7 @@ class ExpressionForm(Form):
             row += 1
             tk.Button(frame, text="[...]", command=self.exprList).grid(row=row, sticky=tk.W)
             tk.Button(frame, text="(...)", command=self.exprTuple).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(frame, text="(...)", command=self.exprDict).grid(row=row, column=2, sticky=tk.W)
             row += 1
             tk.Button(frame, text="f()", command=self.exprFunc).grid(row=row, column=0, sticky=tk.W)
             tk.Button(frame, text="x[y:z]", command=self.exprSlice).grid(row=row, column=1, sticky=tk.W)
@@ -355,6 +356,9 @@ class ExpressionForm(Form):
 
     def exprTuple(self):
         self.block.exprTuple()
+
+    def exprDict(self):
+        self.block.exprDict()
 
     def exprUnaryop(self):
         self.block.exprUnaryop(self.unaryop.get())
@@ -619,6 +623,24 @@ class ListForm(Form):
     def addEntry(self):
         self.block.addEntry(None)
         self.block.setBlock(self.block.entries[-1])
+
+class DictForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = True
+        self.isStatement = False
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'dict' expression").grid(columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="A dictionary is a map of keys to values").grid(row=1,columnspan=2)
+        ma = tk.Button(self, text="+ Add a new mapping to the dictionary", command=self.addEntry)
+        ma.grid(row=2, column=0, columnspan=2)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
+        copy.grid(row=3, column=0)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
+        delb.grid(row=3, column=1)
+
+    def addEntry(self):
+        self.block.addEntry(None, None)
+        self.block.setBlock(self.block.keys[-1])
 
 class TupleForm(Form):
     def __init__(self, parent, block):

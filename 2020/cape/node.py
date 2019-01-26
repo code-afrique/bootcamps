@@ -389,6 +389,25 @@ class ListNode(Node):
             self.entries[i].print(fd, 0)
         print("]", end="", file=fd)
 
+class DictNode(Node):
+    def __init__(self, keys, values):
+        super().__init__()
+        self.keys = keys
+        self.values = values
+
+    def toBlock(self, frame, block):
+        return block.newDictBlock(frame, self)
+
+    def print(self, fd, level):
+        print("{", end="", file=fd)
+        for i in range(len(self.keys)):
+            if i != 0:
+                print(", ", end="", file=fd)
+            self.keys[i].print(fd, 0)
+            print(": ", end="", file=fd)
+            self.values[i].print(fd, 0)
+        print("}", end="", file=fd)
+
 class TupleNode(Node):
     def __init__(self, entries):
         super().__init__()
