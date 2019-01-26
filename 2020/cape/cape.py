@@ -1002,7 +1002,7 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = AssignBlock(self.rowblk, None, self.level) if op == '=' else AugassignBlock(self.rowblk, None, self.level, op)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.left)
+        self.setBlock(self.rowblk.what.targets[0])
         self.needsSaving()
 
     def stmtEval(self):
