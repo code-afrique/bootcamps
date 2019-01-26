@@ -2,10 +2,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+# The following code essentially borrowed from https://github.com/asottile/astpretty
+
 import ast
 import contextlib
-
-# The following code essentially borrowed from https://github.com/asottile/astpretty
 
 AST = (ast.AST,)
 expr_context = (ast.expr_context,)

@@ -10,26 +10,13 @@ import tokenize
 
 import pparse
 from form import *
+from node import *
 
 """
     A row contains a statement with a menu button and a comment
     A list is a sequence of rows
     A method definion contains a header and a list
 """
-
-class Node():
-    def toBlock(self, frame):
-        return None
-
-    def findRow(self, lineno):
-        return None
-
-class PassNode(Node):
-    def __init__(self):
-        super().__init__()
-
-    def toBlock(self, frame, level, block):
-        return PassBlock(frame, self, level, block)
 
 class EmptyNode(Node):
     def __init__(self):
@@ -361,6 +348,9 @@ class Block(tk.Frame):
     def needsSaving(self):
         global saved
         saved = False
+
+    def newPassBlock(self, parent, node, level, rowblk):
+        return PassBlock(parent, node, level, rowblk)
 
 class NameBlock(Block):
     def __init__(self, parent, vname):
