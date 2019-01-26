@@ -182,6 +182,15 @@ class GlobalNode(Node):
     def toBlock(self, frame, level, block):
         return GlobalBlock(frame, self, level)
 
+class AssignNode(Node):
+    def __init__(self, targets, value):
+        super().__init__()
+        self.targets = targets
+        self.value = value
+
+    def toBlock(self, frame, level, block):
+        return AssignBlock(frame, self, level)
+
 class AugassignNode(Node):
     def __init__(self, left, right, op):
         super().__init__()
@@ -587,7 +596,7 @@ class PassForm(Form):
         elif ev.char == 'c':
             self.stmtClass()
         elif ev.char == '=':
-            self.stmtAugassign()
+            self.stmtAugassign('=')
         elif ev.char == '?':
             self.stmtEval()
         elif ev.char == '\r':
@@ -1128,7 +1137,7 @@ class FuncForm(Form):
         self.block.addArg(None)
         self.block.setBlock(self.block.args[-1])
 
-class AugassignForm(Form):
+class AssignForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent)
         self.isExpression = True
@@ -1137,6 +1146,16 @@ class AugassignForm(Form):
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'assignment'").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="An 'assignment' operation is used to update the variable on the left of assignment operation symbol using the value that is on the right.").grid(row=1)
+
+class AugassignForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent)
+        self.isExpression = True
+        self.isStatement = False
+        self.parent = parent
+        self.block = block
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'augmented assignment'").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="An 'augmented assignment' operation is of the form a <op>= b, and is equivalent to a = a <op> b.").grid(row=1)
 
 class StringForm(Form):
     def __init__(self, parent, block):
@@ -2019,6 +2038,46 @@ class NilBlock(Block):
     def toNode(self):
         return NilNode()
 
+class AssignBlock(Block):
+    def __init__(self, parent, node, level):
+        super().__init__(parent)
+        self.isExpression = False
+        self.isStatement = True
+        self.parent = parent
+        self.level = level
+
+        if node == None:
+            self.targets = [ExpressionBlock(self, None, True)]
+            self.value = ExpressionBlock(self, None, False)
+        else:
+            self.targets = [ExpressionBlock(self, t, True) for t in node.targets]
+            self.value = ExpressionBlock(self, node.value, False)
+
+        column = 0
+        for t in self.targets:
+            t.grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text='=', fg="purple", command=self.cb).grid(row=0, column=column)
+            column += 1
+        self.value.grid(row=0, column=column)
+
+    def genForm(self):
+        self.setForm(AssignForm(confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def print(self, fd):
+        self.printIndent(fd)
+        for t in self.targets:
+            t.print(fd)
+            print(" = ", end="", file=fd)
+        self.value.print(fd)
+        print("", file=fd)
+
+    def toNode(self):
+        return AssignNode([ t.toNode() for t in self.targets ], self.value.toNode())
+
 class AugassignBlock(Block):
     def __init__(self, parent, node, level, op):
         super().__init__(parent)
@@ -2089,7 +2148,7 @@ class PassBlock(Block):
 
     def stmtAugassign(self, op):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = AugassignBlock(self.rowblk, None, self.level, op)
+        self.rowblk.what = AssignBlock(self.rowblk, None, self.level) if op == '=' else AugassignBlock(self.rowblk, None, self.level, op)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.left)
         self.needsSaving()
@@ -3163,8 +3222,7 @@ def args(lineno, col_offset, arg, annotation):
     return arg
 
 def Assign(lineno, col_offset, targets, value):
-    assert len(targets) == 1
-    return RowNode(AugassignNode(targets[0], value, "="), lineno)
+    return RowNode(AssignNode(targets, value), lineno)
 
 def AugAssign(lineno, col_offset, target, op, value):
     return RowNode(AugassignNode(target, value, op + '='), lineno)
