@@ -2063,10 +2063,6 @@ class TopLevel(tk.Frame):
             tk.messagebox.showinfo("Warning", "You must save the program first")
             saved = True
 
-########################################################################
-
-########################################################################
-
 if __name__ == '__main__':
     root = tk.Tk()
     root.title("Code Afrique Python Editor")

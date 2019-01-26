@@ -7,6 +7,8 @@ from __future__ import unicode_literals
 import ast
 import contextlib
 
+__all__ = ['pparse']
+
 AST = (ast.AST,)
 expr_context = (ast.expr_context,)
 

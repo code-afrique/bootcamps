@@ -1,5 +1,7 @@
 from node import *
 
+__all__ = ['nodeEval']
+
 def Module(body):
     return SeqNode(body)
 
