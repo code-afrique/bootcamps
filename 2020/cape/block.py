@@ -13,10 +13,6 @@ class Block(tk.Frame):
         self.isWithinDef = False if parent == None else parent.isWithinDef
         self.isWithinLoop = False if parent == None else parent.isWithinLoop
 
-    def printIndent(self, fd):
-        for i in range(self.level):
-            print("    ", end="", file=fd)
-
     def scrollUpdate(self):
         self.shared.scrollable.scrollUpdate()
 
@@ -163,17 +159,14 @@ class NameBlock(Block):
         self.btn.config(width=0)
         self.needsSaving()
 
-    def print(self, fd):
-        v = self.vname.get()
-        print(v, end="", file=fd)
-        if not v.isidentifier():
-            if not self.shared.printError:
-                self.setBlock(self)
-                tk.messagebox.showinfo("Print Error", "Fix bad variable name")
-                self.shared.printError = True
-
     def toNode(self):
-        return NameNode(self.vname.get())
+        v = self.vname.get()
+        if not v.isidentifier():
+            if not self.shared.cvtError:
+                self.setBlock(self)
+                tk.messagebox.showinfo("Convert Error", "Fix bad variable name")
+                self.shared.cvtError = True
+        return NameNode(v)
 
 class NumberBlock(Block):
     def __init__(self, parent, shared, value):
@@ -199,19 +192,16 @@ class NumberBlock(Block):
         self.btn.config(width=0)
         self.needsSaving()
 
-    def print(self, fd):
+    def toNode(self):
         v = self.value.get()
-        print(v, end="", file=fd)
         try:
             float(v)
         except ValueError:
-            if not self.shared.printError:
+            if not self.shared.cvtError:
                 self.setBlock(self)
-                tk.messagebox.showinfo("Print Error", "Fix bad number")
-                self.shared.printError = True
-
-    def toNode(self):
-        return NumberNode(self.value.get())
+                tk.messagebox.showinfo("Convert Error", "Fix bad number")
+                self.shared.cvtError = True
+        return NumberNode(v)
 
 class ConstantBlock(Block):
     def __init__(self, parent, shared, value):
@@ -229,9 +219,6 @@ class ConstantBlock(Block):
 
     def cb(self):
         self.setBlock(self)
-
-    def print(self, fd):
-        print(self.value.get(), end="", file=fd)
 
     def toNode(self):
         return ConstantNode(self.value.get())
@@ -262,17 +249,6 @@ class StringBlock(Block):
         self.string.set(s)
         self.btn.config(width=0)
         self.needsSaving()
-
-    def print(self, fd):
-        print('"', end="", file=fd)
-        for c in self.string.get():
-            if c == '"':
-                print('\\"', end="", file=fd)
-            elif c == '\n':
-                print('\\n', end="", file=fd)
-            else:
-                print(c, end="", file=fd)
-        print('"', end="", file=fd)
 
     def toNode(self):
         return StringNode(self.string.get())
@@ -360,20 +336,6 @@ class SubscriptBlock(Block):
         self.updateGrid()
         self.setBlock(self.step)
 
-    def print(self, fd):
-        self.array.print(fd)
-        print("[", end="", file=fd)
-        if self.lower != None:
-            self.lower.print(fd)
-        if self.isSlice:
-            print(":", end="", file=fd)
-            if self.upper != None:
-                self.upper.print(fd)
-            if self.step != None:
-                print(":", end="", file=fd)
-                self.step.print(fd)
-        print("]", end="", file=fd)
-
     def toNode(self):
         return SubscriptNode(self.array.toNode(), (self.isSlice,
             None if self.lower == None else self.lower.toNode(),
@@ -404,11 +366,6 @@ class AttrBlock(Block):
     def genForm(self):
         self.setForm(AttrForm(self.shared.confarea, self))
 
-    def print(self, fd):
-        self.array.print(fd)
-        print(".", end="", file=fd)
-        self.ref.print(fd)
-
     def toNode(self):
         return AttrNode(self.array.toNode(), self.ref.toNode())
 
@@ -434,12 +391,6 @@ class UnaryopBlock(Block):
 
     def cb(self):
         self.setBlock(self)
-
-    def print(self, fd):
-        print(self.op, end="", file=fd)
-        print("(", end="", file=fd)
-        self.right.print(fd)
-        print(")", end="", file=fd)
 
     def toNode(self):
         return UnaryopNode(self.right.toNode(), self.op)
@@ -470,13 +421,6 @@ class BinaryopBlock(Block):
 
     def cb(self):
         self.setBlock(self)
-
-    def print(self, fd):
-        print("(", end="", file=fd)
-        self.left.print(fd)
-        print(" {} ".format(self.op), end="", file=fd)
-        self.right.print(fd)
-        print(")", end="", file=fd)
 
     def toNode(self):
         return BinaryopNode(self.left.toNode(), self.right.toNode(), self.op)
@@ -559,24 +503,14 @@ class ClassBlock(Block):
         self.eol.grid(row=0, column=column)
         self.colon.grid(row=0, column=column+1)
 
-    def print(self, fd):
-        self.printIndent(fd)
-        v = self.cname.get()
-        print("class {}(".format(v), end="", file=fd)
-        if not v.isidentifier():
-            if not self.shared.printError:
-                self.setBlock(self)
-                tk.messagebox.showinfo("Print Error", "Fix bad method name")
-                self.shared.printError = True
-        for i in range(len(self.bases)):
-            if i != 0:
-                print(", ", end="", file=fd)
-            self.bases[i].print(fd)
-        print("):", file=fd)
-        self.body.print(fd)
-
     def toNode(self):
-        return ClassNode(self.cname.get(), self.bases, self.body.toNode(), self.minimized)
+        v = self.cname.get()
+        if not v.isidentifier():
+            if not self.shared.cvtError:
+                self.setBlock(self)
+                tk.messagebox.showinfo("Convert Error", "Fix bad method name")
+                self.shared.cvtError = True
+        return ClassNode(v, self.bases, self.body.toNode(), self.minimized)
 
 class FuncBlock(Block):
     def __init__(self, parent, shared, node):
@@ -622,15 +556,6 @@ class FuncBlock(Block):
             self.args[i].grid(row=0, column=2*i+3)
         self.eol.grid(row=0, column=2*len(self.args)+3)
 
-    def print(self, fd):
-        self.func.print(fd)
-        print("(", end="", file=fd)
-        for i in range(len(self.args)):
-            if i != 0:
-                print(", ", end="", file=fd)
-            self.args[i].print(fd)
-        print(")", end="", file=fd)
-
     def toNode(self):
         return FuncNode(self.func.toNode(),
                         [ arg.toNode() for arg in self.args ])
@@ -673,14 +598,6 @@ class ListBlock(Block):
             self.entries[i].grid(row=0, column=2*i+2)
         self.eol.grid(row=0, column=2*len(self.entries)+2)
 
-    def print(self, fd):
-        print("[", end="", file=fd)
-        for i in range(len(self.entries)):
-            if i != 0:
-                print(", ", end="", file=fd)
-            self.entries[i].print(fd)
-        print("]", end="", file=fd)
-
     def toNode(self):
         return ListNode([ entry.toNode() for entry in self.entries ])
 
@@ -721,14 +638,6 @@ class TupleBlock(Block):
                 tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=2*i+1)
             self.entries[i].grid(row=0, column=2*i+2)
         self.eol.grid(row=0, column=2*len(self.entries)+2)
-
-    def print(self, fd):
-        print("(", end="", file=fd)
-        for i in range(len(self.entries)):
-            if i != 0:
-                print(", ", end="", file=fd)
-            self.entries[i].print(fd)
-        print(")", end="", file=fd)
 
     def toNode(self):
         return TupleNode([ entry.toNode() for entry in self.entries ])
@@ -860,17 +769,12 @@ class ExpressionBlock(Block):
             self.setBlock(self.what)
             self.needsSaving()
 
-    def print(self, fd):
-        if self.init:
-            self.what.print(fd)
-        else:
-            print("?", end="", file=fd)
-            if not self.shared.printError:
-                self.setBlock(self)
-                tk.messagebox.showinfo("Print Error", "Fix uninitialized expression")
-                self.shared.printError = True
-
     def toNode(self):
+        if not self.init:
+            if not self.shared.cvtError:
+                self.setBlock(self)
+                tk.messagebox.showinfo("Convert Error", "Fix uninitialized expression")
+                self.shared.cvtError = True
         return ExpressionNode(self.what.toNode() if self.init else None)
 
 class AssignBlock(Block):
@@ -902,14 +806,6 @@ class AssignBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def print(self, fd):
-        self.printIndent(fd)
-        for t in self.targets:
-            t.print(fd)
-            print(" = ", end="", file=fd)
-        self.value.print(fd)
-        print("", file=fd)
-
     def toNode(self):
         return AssignNode([ t.toNode() for t in self.targets ], self.value.toNode())
 
@@ -938,13 +834,6 @@ class AugassignBlock(Block):
 
     def cb(self):
         self.setBlock(self)
-
-    def print(self, fd):
-        self.printIndent(fd)
-        self.left.print(fd)
-        print(" {} ".format(self.op), end="", file=fd)
-        self.right.print(fd)
-        print("", file=fd)
 
     def toNode(self):
         return AugassignNode(self.left.toNode(), self.right.toNode(), self.op)
@@ -1059,10 +948,6 @@ class PassBlock(Block):
             self.setBlock(self.rowblk.what)
         self.needsSaving()
 
-    def print(self, fd):
-        self.printIndent(fd)
-        print("pass", file=fd)
-
     def toNode(self):
         return PassNode()
 
@@ -1084,10 +969,6 @@ class EmptyBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def print(self, fd):
-        self.printIndent(fd)
-        print("", file=fd)
-
     def toNode(self):
         return EmptyNode()
 
@@ -1103,11 +984,6 @@ class EvalBlock(Block):
         else:
             self.expr = ExpressionBlock(self, shared, node.what, False)
         self.expr.grid()
-
-    def print(self, fd):
-        self.printIndent(fd)
-        self.expr.print(fd)
-        print("", file=fd)
 
     def toNode(self):
         return EvalNode(self.expr.toNode())
@@ -1132,12 +1008,6 @@ class ReturnBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def print(self, fd):
-        self.printIndent(fd)
-        print("return ", end="", file=fd)
-        self.expr.print(fd)
-        print("", file=fd)
-
     def toNode(self):
         return ReturnNode(self.expr.toNode())
 
@@ -1156,10 +1026,6 @@ class BreakBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def print(self, fd):
-        self.printIndent(fd)
-        print("break", file=fd)
-
     def toNode(self):
         return BreakNode()
 
@@ -1177,10 +1043,6 @@ class ContinueBlock(Block):
 
     def cb(self):
         self.setBlock(self)
-
-    def print(self, fd):
-        self.printIndent(fd)
-        print("continue", file=fd)
 
     def toNode(self):
         return ContinueNode()
@@ -1212,15 +1074,6 @@ class GlobalBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def print(self, fd):
-        self.printIndent(fd)
-        print("global ", end="", file=fd)
-        for i in range(len(self.vars)):
-            if i > 0:
-                print(", ", end="", file=fd)
-            self.vars[i].print(fd)
-        print("", file=fd)
-
     def toNode(self):
         return GlobalNode(self.var.toNode())
 
@@ -1243,12 +1096,6 @@ class ImportBlock(Block):
 
     def cb(self):
         self.setBlock(self)
-
-    def print(self, fd):
-        self.printIndent(fd)
-        print("import ", end="", file=fd)
-        self.module.print(fd)
-        print("", file=fd)
 
     def toNode(self):
         return ImportNode(self.module.toNode())
@@ -1312,21 +1159,12 @@ class RowBlock(Block):
     def listcmd(self):
         self.setBlock(self)
 
-    def print(self, fd):
-        # first print into a string buffer
-        f = io.StringIO("")
-        self.what.print(f)
-        s = f.getvalue()
-
-        # insert the comment, if any, after the first line
-        if '\n' in s and self.comment.get() != "":
-            i = s.index('\n')
-            s = s[:i] + ('' if isinstance(self.what, EmptyBlock) else '\t') + self.comment.get() + s[i:]
-
-        print(s, file=fd, end="")
-
     def toNode(self):
-        return RowNode(self.what.toNode(), 0)
+        r = RowNode(self.what.toNode(), 0)
+        c = self.comment.get()
+        if c != "":
+            r.comment = c
+        return r
 
 class SeqBlock(Block):
     def __init__(self, parent, shared, node, level):
@@ -1382,10 +1220,6 @@ class SeqBlock(Block):
         for row in range(len(self.rows)):
             self.rows[row].grid(row=row, column=0, sticky=tk.W)
             self.rows[row].row = row
-
-    def print(self, fd):
-        for r in self.rows:
-            r.print(fd)
 
     def toNode(self):
         return SeqNode([ r.toNode() for r in self.rows ])
@@ -1462,29 +1296,14 @@ class DefBlock(Block):
         self.setHeader()
         self.needsSaving()
 
-    def print(self, fd):
-        self.printIndent(fd)
-        v = self.mname.get()
-        print("def {}(".format(v), end="", file=fd)
-        if not v.isidentifier():
-            if not self.shared.printError:
-                self.setBlock(self)
-                tk.messagebox.showinfo("Print Error", "Fix bad method name")
-                self.shared.printError = True
-        for i in range(len(self.args)):
-            if i != 0:
-                print(", ", end="", file=fd)
-            print(self.args[i], end="", file=fd)
-            if not self.args[i].isidentifier():
-                if not self.shared.printError:
-                    self.setBlock(self)
-                    tk.messagebox.showinfo("Print Error", "Fix bad argument name")
-                    self.shared.printError = True
-        print("):", file=fd)
-        self.body.print(fd)
-
     def toNode(self):
-        return DefNode(self.mname.get(), self.args, self.body.toNode(), self.minimized)
+        v = self.mname.get()
+        if not v.isidentifier():
+            if not self.shared.cvtError:
+                self.setBlock(self)
+                tk.messagebox.showinfo("Convert Error", "Fix bad method name")
+                self.shared.cvtError = True
+        return DefNode(v, self.args, self.body.toNode(), self.minimized)
 
 class IfBlock(Block):
     """
@@ -1589,21 +1408,6 @@ class IfBlock(Block):
                 self.bodies[i].grid(row=2*i+1, column = 0, sticky=tk.W)
         self.scrollUpdate()
 
-    def print(self, fd):
-        for i in range(len(self.bodies)):
-            self.printIndent(fd)
-            if i == 0:
-                print("if ", end="", file=fd)
-                self.conds[i].print(fd)
-                print(":", file=fd)
-            elif i < len(self.conds):
-                print("elif ", end="", file=fd)
-                self.conds[i].print(fd)
-                print(":", file=fd)
-            else:
-                print("else:", file=fd)
-            self.bodies[i].print(fd)
-
     def toNode(self):
         return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.bodies], self.minimizeds)
 
@@ -1689,17 +1493,6 @@ class WhileBlock(Block):
         self.orelse = None
         self.setBlock(self)
         self.needsSaving()
-
-    def print(self, fd):
-        self.printIndent(fd)
-        print("while ", end="", file=fd)
-        self.cond.print(fd)
-        print(":", file=fd)
-        self.body.print(fd)
-        if self.orelse != None:
-            self.printIndent(fd)
-            print("else:", file=fd)
-            self.orelse.print(fd)
 
     def toNode(self):
         return WhileNode(self.cond.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
@@ -1790,19 +1583,6 @@ class ForBlock(Block):
         self.orelse = None
         self.setBlock(self)
         self.needsSaving()
-
-    def print(self, fd):
-        self.printIndent(fd)
-        print("for ", end="", file=fd)
-        self.var.print(fd)
-        print(" in ", end="", file=fd)
-        self.expr.print(fd)
-        print(":", file=fd)
-        self.body.print(fd)
-        if self.orelse != None:
-            self.printIndent(fd)
-            print("else:", file=fd)
-            self.orelse.print(fd)
 
     def toNode(self):
         return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)

@@ -125,11 +125,12 @@ class TopLevel(tk.Frame):
         self.help()
 
     def print(self):
-        self.shared.printError = False
-
-        print("'=== START OF PROGRAM ==='")
-        self.program.print(sys.stdout)
-        print("'=== END OF PROGRAM ==='")
+        self.shared.cvtError = False
+        n = self.program.toNode()
+        if not self.shared.cvtError:
+            print("'=== START OF PROGRAM ==='")
+            n.print(sys.stdout, 0)
+            print("'=== END OF PROGRAM ==='")
 
     def extractComments(self, code):
         comments = {}
@@ -174,40 +175,44 @@ class TopLevel(tk.Frame):
                 self.shared.saved = True
 
     def save(self):
-        node = self.program.toNode()
-        if self.curFile == None:
-            filename = tk.filedialog.asksaveasfilename(defaultextension='.py',
-                                     filetypes=(('Python source files', '*.py'),
-                                                ('All files', '*.*')))
+        self.shared.cvtError = False
+        n = self.program.toNode()
+        if self.shared.cvtError:
+            print("===== Fix program first =====")
         else:
-            filename = tk.filedialog.asksaveasfilename(initialdir=self.curDir, initialfile=self.curFile, defaultextension='.py',
-                                     filetypes=(('Python source files', '*.py'),
-                                                ('All files', '*.*')))
-        if filename:
-            self.curFile = os.path.basename(filename)
-            self.curDir = os.path.dirname(filename)
-            with open(filename, "w") as fd:
-                self.program.print(fd)
-                print("saved")
-                self.shared.saved = True
+            if self.curFile == None:
+                filename = tk.filedialog.asksaveasfilename(defaultextension='.py',
+                                         filetypes=(('Python source files', '*.py'),
+                                                    ('All files', '*.*')))
+            else:
+                filename = tk.filedialog.asksaveasfilename(initialdir=self.curDir, initialfile=self.curFile, defaultextension='.py',
+                                         filetypes=(('Python source files', '*.py'),
+                                                    ('All files', '*.*')))
+            if filename:
+                self.curFile = os.path.basename(filename)
+                self.curDir = os.path.dirname(filename)
+                with open(filename, "w") as fd:
+                    n.print(fd, 0)
+                    print("saved")
+                    self.shared.saved = True
 
     def run(self):
-        self.shared.printError = False
-
-        fd, path = tempfile.mkstemp()
-        try:
-            with os.fdopen(fd, 'w') as tmp:
-                self.program.print(tmp)
-                tmp.close()
-                if self.shared.printError:
-                    print("===== Fix program first =====")
-                else:
+        self.shared.cvtError = False
+        n = self.program.toNode()
+        if self.shared.cvtError:
+            print("===== Fix program first =====")
+        else:
+            fd, path = tempfile.mkstemp()
+            try:
+                with os.fdopen(fd, 'w') as tmp:
+                    n.print(tmp, 0)
+                    tmp.close()
                     print("===== Start running =====")
                     # subprocess.Popen(['python3', path])
                     subprocess.call(['python3', path])
                     print("===== Done =====")
-        finally:
-            os.remove(path)
+            finally:
+                os.remove(path)
 
     def help(self):
         if self.shared.curForm != None:
@@ -221,10 +226,11 @@ class TopLevel(tk.Frame):
             self.shared.curForm.grid_forget()
         self.shared.curForm = TextForm(self.shared.confarea, self)
 
-        self.shared.printError = False
-        f = io.StringIO("")
-        self.program.print(f)
-        if not self.shared.printError:
+        self.shared.cvtError = False
+        n = self.program.toNode()
+        if not self.shared.cvtError:
+            f = io.StringIO("")
+            n.print(f, 0)
             self.shared.curForm.settext(f.getvalue())
             self.shared.curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
             self.shared.curForm.update()

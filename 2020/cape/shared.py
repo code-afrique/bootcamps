@@ -5,5 +5,5 @@ class Shared():
         self.stmtBuffer = None
         self.exprBuffer = None
         self.saved = True
-        self.printError = False
+        self.cvtError = False
         self.confarea = None
