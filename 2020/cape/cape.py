@@ -77,12 +77,39 @@ class TopLevel(tk.Frame):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
         self.parent = parent
         self.shared = shared
-        self.curFile = None
-        self.curDir = None
+        self.curfile = None
         self.program = None
 
-        # self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
+        menu = tk.Menu(parent)
+        parent.config(menu=menu)
 
+        file = tk.Menu(menu)
+        file.add_command(label="New", command=self.new)
+        file.add_command(label="Open", command=self.load)
+        file.add_command(label="Save", command=self.save)
+        file.add_command(label="Save As", command=self.saveAs)
+        file.add_separator()
+        file.add_command(label="Exit", command=self.quit)
+        menu.add_cascade(label="File", menu=file)
+
+        edit = tk.Menu(menu)
+        edit.add_command(label="TO BE IMPLEMENTED")
+        menu.add_cascade(label="Edit", menu=edit)
+
+        actions = tk.Menu(menu)
+        actions.add_command(label="Show code", command=self.text)
+        actions.add_command(label="Run", command=self.run)
+        menu.add_cascade(label="Actions", menu=actions)
+
+        help = tk.Menu(menu)
+        help.add_command(label="Getting Started", command=self.help)
+        menu.add_cascade(label=" Help", menu=help)
+
+        parent.config(menu=menu)
+
+        self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
+
+        """
         # menubar = tk.Frame(self, borderwidth=1, relief=tk.SUNKEN, style="Custom.TFrame")
         menubar = tk.Frame(self)
         tk.Button(menubar, text="Import", command=self.load).grid(row=0, column=0, sticky=tk.W)
@@ -91,8 +118,9 @@ class TopLevel(tk.Frame):
         tk.Button(menubar, text="Run", command=self.run).grid(row=0, column=3, sticky=tk.W)
         tk.Button(menubar, text="Help", command=self.help).grid(row=0, column=4, sticky=tk.W)
         tk.Button(menubar, text="Quit", command=self.quit).grid(row=0, column=5, sticky=tk.W)
-        # menubar.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
+        menubar.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         menubar.grid(row=0, column=0, sticky=tk.W, columnspan=2)
+        """
 
         frame = tk.Frame(self, width=1200, height=500)
         frame.grid(row=1, column=0, sticky=tk.W)
@@ -141,6 +169,20 @@ class TopLevel(tk.Frame):
                 comments[row] = tokenize.untokenize([(toktype, tokval)])
         return comments
 
+    def new(self):
+        if not self.shared.saved:
+            tk.messagebox.showinfo("Warning", "You must save the program first")
+            self.shared.saved = True
+            return
+
+        if self.program != None:
+            self.program.grid_forget()
+        self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, None)
+        self.program.grid(sticky=tk.W)
+        self.shared.scrollable.scrollUpdate()
+
+        self.shared.saved = True
+
     def load(self):
         if not self.shared.saved:
             tk.messagebox.showinfo("Warning", "You must save the program first")
@@ -151,8 +193,7 @@ class TopLevel(tk.Frame):
                                      filetypes=(('Python source files', '*.py'),
                                                 ('All files', '*.*')))
         if filename:
-            self.curFile = os.path.basename(filename)
-            self.curDir = os.path.dirname(filename)
+            self.curfile = filename
             with open(filename, "r") as fd:
                 code = fd.read()
                 tree = pparse.pparse(code)
@@ -175,22 +216,37 @@ class TopLevel(tk.Frame):
                 self.shared.saved = True
 
     def save(self):
+        if self.curfile == None:
+            saveAs()
+        else:
+            self.shared.cvtError = False
+            n = self.program.toNode()
+            if self.shared.cvtError:
+                print("===== Fix program first =====")
+            else:
+                with open(self.curfile, "w") as fd:
+                    n.print(fd, 0)
+                    print("saved")
+                    self.shared.saved = True
+
+    def saveAs(self):
         self.shared.cvtError = False
         n = self.program.toNode()
         if self.shared.cvtError:
             print("===== Fix program first =====")
         else:
-            if self.curFile == None:
+            if self.curfile == None:
                 filename = tk.filedialog.asksaveasfilename(defaultextension='.py',
                                          filetypes=(('Python source files', '*.py'),
                                                     ('All files', '*.*')))
             else:
-                filename = tk.filedialog.asksaveasfilename(initialdir=self.curDir, initialfile=self.curFile, defaultextension='.py',
-                                         filetypes=(('Python source files', '*.py'),
-                                                    ('All files', '*.*')))
+                curName = os.path.basename(self.curfile)
+                curDir = os.path.dirname(self.curfile)
+                filename = tk.filedialog.asksaveasfilename(initialdir=curDir, initialfile=curFile, defaultextension='.py',
+                         filetypes=(('Python source files', '*.py'),
+                                            ('All files', '*.*')))
             if filename:
-                self.curFile = os.path.basename(filename)
-                self.curDir = os.path.dirname(filename)
+                self.curfile = filename
                 with open(filename, "w") as fd:
                     n.print(fd, 0)
                     print("saved")
