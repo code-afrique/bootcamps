@@ -92,6 +92,9 @@ def GtE():
 def Return(lineno, col_offset, value):
     return RowNode(ReturnNode(value), lineno)
 
+def Assert(lineno, col_offset, test, msg):
+    return RowNode(AssertNode(test, msg), lineno)
+
 def Break(lineno, col_offset):
     return RowNode(BreakNode(), lineno)
 
@@ -212,10 +215,6 @@ def ExceptHandler(lineno, col_offset, type, name, body):
     assert False, "'try' not yet implemented"
     return RowNode(PassNode(), lineno)
 
-def Assert(lineno, col_offset, test, msg):
-    assert False, "'assert' not yet implemented"
-    return RowNode(PassNode(), lineno)
-
 def ListComp(lineno, col_offset, elt, generators):
     assert False, "comprehensions not yet implemented"
     return ExpressionNode(ConstantNode("COMPREHENSION"))
@@ -251,6 +250,8 @@ def withitem(context_expr, optional_vars):
 def Yield(lineno, col_offset, value):
     assert False, "'yield' not yet implemented"
     return RowNode(PassNode(), lineno)
+
+#####
 
 def nodeEval(tree):
     return eval(tree)

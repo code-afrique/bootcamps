@@ -578,6 +578,14 @@ class ReturnForm(Form):
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
 
+class AssertForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'assert' statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="An 'assert' statement' checks to see if a condition holds.  If not, it raises an AssertionError exception.").grid(row=1)
+
 class IfelseForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent, block)

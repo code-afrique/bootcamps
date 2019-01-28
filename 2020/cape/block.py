@@ -74,6 +74,9 @@ class Block(tk.Frame):
     def newReturnBlock(self, parent, node):
         return ReturnBlock(parent, self.shared, node)
 
+    def newAssertBlock(self, parent, node):
+        return AssertBlock(parent, self.shared, node)
+
     def newBreakBlock(self, parent, node):
         return BreakBlock(parent, self.shared, node)
 
@@ -1080,6 +1083,30 @@ class ReturnBlock(Block):
 
     def toNode(self):
         return ReturnNode(self.expr.toNode())
+
+class AssertBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        tk.Button(self, text="assert", fg="red", command=self.cb).grid(row=0, column=0)
+        if node == None:
+            self.test = ExpressionBlock(self, shared, None, False)
+            self.msg = None
+        else:
+            self.test = ExpressionBlock(self, shared, node.test, False)
+            self.msg = None if node.msg == None else ExpressionBlock(self, shared, node.msg, False)
+        self.test.grid(row=0, column=1)
+        if self.msg != None:
+            tk.Button(self, text=",", fg="red", command=self.cb).grid(row=0, column=2)
+            self.msg.grid(row=0, column=3)
+
+    def genForm(self):
+        self.setForm(AssertForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return AssertNode(self.expr.toNode())
 
 class BreakBlock(Block):
     def __init__(self, parent, shared, node):

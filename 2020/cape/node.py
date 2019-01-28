@@ -212,6 +212,24 @@ class ReturnNode(Node):
         self.what.print(fd, 0)
         print("", file=fd)
 
+class AssertNode(Node):
+    def __init__(self, test, msg):
+        super().__init__()
+        self.test = test
+        self.msg = msg
+
+    def toBlock(self, frame, block):
+        return block.newAssertBlock(frame, self)
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        print("assert ", end="", file=fd)
+        self.test.print(fd, 0)
+        if self.msg != None:
+            print(", ", end="", file=fd)
+            self.msg.print(fd, 0)
+        print("", file=fd)
+
 class BreakNode(Node):
     def __init__(self):
         super().__init__()
