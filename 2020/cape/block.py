@@ -997,6 +997,13 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.expr)
         self.needsSaving()
 
+    def stmtAssert(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = AssertBlock(self.rowblk, self.shared, None)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.test)
+        self.needsSaving()
+
     def stmtBreak(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = BreakBlock(self.rowblk, self.shared, None)
@@ -1106,7 +1113,7 @@ class AssertBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        return AssertNode(self.expr.toNode())
+        return AssertNode(self.test.toNode(), None if self.msg == None else self.msg.toNode())
 
 class BreakBlock(Block):
     def __init__(self, parent, shared, node):

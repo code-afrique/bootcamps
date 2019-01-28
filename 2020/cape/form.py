@@ -194,6 +194,7 @@ class PassForm(Form):
             tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
         tk.Button(self, text="global statement", width=0, command=self.stmtGlobal).grid()
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
+        tk.Button(self, text="assert statement", width=0, command=self.stmtAssert).grid()
         tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid()
         tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
         tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
@@ -222,6 +223,9 @@ class PassForm(Form):
 
     def stmtReturn(self):
         self.block.stmtReturn()
+
+    def stmtAssert(self):
+        self.block.stmtAssert()
 
     def stmtBreak(self):
         self.block.stmtBreak()
