@@ -152,7 +152,7 @@ class TopLevel(tk.Frame):
 
         self.help()
 
-    def print(self):
+    def xxx(self):
         self.shared.cvtError = False
         n = self.program.toNode()
         if not self.shared.cvtError:

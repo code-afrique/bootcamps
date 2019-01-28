@@ -467,10 +467,13 @@ class TupleNode(Node):
 
     def print(self, fd, level):
         print("(", end="", file=fd)
-        for i in range(len(self.entries)):
+        n = len(self.entries)
+        for i in range(n):
             if i != 0:
                 print(", ", end="", file=fd)
             self.entries[i].print(fd, 0)
+        if n == 1:
+            print(",", end="", file=fd)
         print(")", end="", file=fd)
 
 class AttrNode(Node):

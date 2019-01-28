@@ -692,11 +692,18 @@ class TupleBlock(Block):
         self.needsSaving()
 
     def gridUpdate(self):
-        for i in range(len(self.entries)):
+        column = 1
+        n = len(self.entries)
+        for i in range(n):
             if i != 0:
-                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=2*i+1)
-            self.entries[i].grid(row=0, column=2*i+2)
-        self.eol.grid(row=0, column=2*len(self.entries)+2)
+                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+            self.entries[i].grid(row=0, column=column)
+            column += 1
+        if n == 1:
+            tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+        self.eol.grid(row=0, column=column)
 
     def toNode(self):
         return TupleNode([ entry.toNode() for entry in self.entries ])
