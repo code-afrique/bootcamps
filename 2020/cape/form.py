@@ -195,6 +195,7 @@ class PassForm(Form):
         tk.Button(self, text="global statement", width=0, command=self.stmtGlobal).grid()
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
         tk.Button(self, text="assert statement", width=0, command=self.stmtAssert).grid()
+        tk.Button(self, text="del statement", width=0, command=self.stmtDel).grid()
         tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid()
         tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
         tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
@@ -223,6 +224,9 @@ class PassForm(Form):
 
     def stmtReturn(self):
         self.block.stmtReturn()
+
+    def stmtDel(self):
+        self.block.stmtDel()
 
     def stmtAssert(self):
         self.block.stmtAssert()
@@ -581,6 +585,14 @@ class ReturnForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
+
+class DelForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'del' statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'del' statement' can be used to delete one or more targets.").grid(row=1)
 
 class AssertForm(Form):
     def __init__(self, parent, block):

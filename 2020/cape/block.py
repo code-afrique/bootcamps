@@ -75,6 +75,9 @@ class Block(tk.Frame):
     def newReturnBlock(self, parent, node):
         return ReturnBlock(parent, self.shared, node)
 
+    def newDelBlock(self, parent, node):
+        return DelBlock(parent, self.shared, node)
+
     def newAssertBlock(self, parent, node):
         return AssertBlock(parent, self.shared, node)
 
@@ -1023,6 +1026,13 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.expr)
         self.needsSaving()
 
+    def stmtDel(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = DelBlock(self.rowblk, self.shared, None)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.targets[0])
+        self.needsSaving()
+
     def stmtAssert(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = AssertBlock(self.rowblk, self.shared, None)
@@ -1116,6 +1126,35 @@ class ReturnBlock(Block):
 
     def toNode(self):
         return ReturnNode(self.expr.toNode())
+
+class DelBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        tk.Button(self, text="del", fg="red", command=self.cb).grid(row=0, column=0)
+        if node == None:
+            self.targets = [ExpressionBlock(self, shared, None)]
+        else:
+            self.targets = [ExpressionBlock(self, shared, t) for t in node.targets]
+
+        first = True
+        column = 1
+        for t in self.targets:
+            if first:
+                first = False
+            else:
+                tk.Button(self, text=",", fg="red", command=self.cb).grid(row=0, column=column)
+                column += 1
+            t.grid(row=0, column=column)
+            column += 1
+
+    def genForm(self):
+        self.setForm(ReturnForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return DelNode([t.toNode() for t in self.targets])
 
 class AssertBlock(Block):
     def __init__(self, parent, shared, node):

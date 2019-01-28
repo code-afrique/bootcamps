@@ -92,6 +92,9 @@ def GtE():
 def Return(lineno, col_offset, value):
     return RowNode(ReturnNode(value), lineno)
 
+def Delete(lineno, col_offset, targets):
+    return RowNode(DelNode(targets), lineno)
+
 def Assert(lineno, col_offset, test, msg):
     return RowNode(AssertNode(test, msg), lineno)
 
@@ -226,10 +229,6 @@ def GeneratorExp(lineno, col_offset, elt, generators):
 def comprehension(target, iter, ifs, is_async=0):
     assert False, "comprehensions not yet implemented"
     return None
-
-def Delete(lineno, col_offset, targets):
-    assert False, "'delete' not yet implemented"
-    return RowNode(PassNode(), lineno)
 
 def Del():
     assert False, "'delete' not yet implemented"

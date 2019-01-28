@@ -283,6 +283,23 @@ class GlobalNode(Node):
             self.vars[i].print(fd, 0)
         print("", file=fd)
 
+class DelNode(Node):
+    def __init__(self, targets):
+        super().__init__()
+        self.targets = targets
+
+    def toBlock(self, frame, block):
+        return block.newDelBlock(frame, self)
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        print("del ", end="", file=fd)
+        for i in range(len(self.targets)):
+            if i > 0:
+                print(", ", end="", file=fd)
+            self.targets[i].print(fd, 0)
+        print("", file=fd)
+
 class IfelseNode(Node):
     def __init__(self, cond, ifTrue, ifFalse):
         super().__init__()
