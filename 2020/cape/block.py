@@ -529,6 +529,9 @@ class CallBlock(Block):
         self.gridUpdate()
         self.needsSaving()
 
+    def addNamedArg(self, name):
+        self.addKeyword((name, None))
+
     def addKeyword(self, kw):
         (key, val) = kw
         if val == None:
@@ -943,14 +946,14 @@ class PassBlock(Block):
 
     def stmtEmpty(self):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = EmptyBlock(self.rowblk, self.shared, self.shared, None)
+        self.rowblk.what = EmptyBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk)
         self.needsSaving()
 
     def stmtDef(self):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = DefBlock(self.rowblk, self.shared, self.shared, None)
+        self.rowblk.what = DefBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what)
         self.needsSaving()

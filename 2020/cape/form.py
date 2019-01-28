@@ -776,18 +776,37 @@ class CallForm(Form):
         super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="function calll").grid(columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="A function call is of the form f(list of arguments).  Here 'f' can be an expression in its own right.").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="function calll").grid(columnspan=3)
+        tk.Message(self, width=350, font='Helvetica 14', text="A function call is of the form f(list of arguments).  Here 'f' can be an expression in its own right.").grid(row=1, columnspan=3)
         ma = tk.Button(self, text="+ Add a new argument", command=self.addArg)
-        ma.grid(row=2, column=0, columnspan=2)
+        ma.grid(row=2, column=0, columnspan=3)
+
+        tk.Label(self, text="Add a named argument: ").grid(row=3)
+        self.entry = tk.Entry(self, width=8)
+        self.entry.bind('<Return>', self.keyEnter)
+        self.entry.grid(row=3, column=1)
+        enter = tk.Button(self, text="Enter", command=self.cb)
+        enter.grid(row=3, column=2)
         copy = tk.Button(self, text="copy", command=self.copyExpr)
-        copy.grid(row=3, column=0)
+        copy.grid(row=4, column=0)
         delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=3, column=1)
+        delb.grid(row=4, column=1)
 
     def addArg(self):
         self.block.addArg(None)
         self.block.setBlock(self.block.args[-1])
+
+    def cb(self):
+        v = self.entry.get()
+        if v in kw.kwlist:
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(v))
+        elif not v.isidentifier():
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(v))
+        else:
+            self.block.addNamedArg(v)
+
+    def keyEnter(self, ev):
+        self.cb()
 
 class AssignForm(Form):
     def __init__(self, parent, block):
