@@ -563,7 +563,7 @@ class ExpressionNode(Node):
         self.what = what
 
     def toBlock(self, frame, block):
-        return block.newExpressionBlock(frame, self.what, False)
+        return block.newExpressionBlock(frame, self.what)
 
     def print(self, fd, level):
         # if self.init:

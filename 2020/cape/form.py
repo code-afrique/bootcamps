@@ -269,11 +269,10 @@ class PassForm(Form):
             self.stmtEmpty()
 
 class ExpressionForm(Form):
-    def __init__(self, parent, block, lvalue):
+    def __init__(self, parent, block):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = False
-        self.lvalue = lvalue
 
         frame = tk.Frame(self)
         frame.bind("<Key>", self.key)
@@ -294,7 +293,7 @@ class ExpressionForm(Form):
         tk.Button(frame, text="(..., ...)", command=self.exprTuple).grid(row=row, column=2, sticky=tk.W)
         row += 1
 
-        if not lvalue:
+        if not block.isWithinStore:
             tk.Button(frame, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
             tk.Button(frame, text="string", command=self.exprString).grid(row=row, column=1, sticky=tk.W)
             tk.Button(frame, text="f()", command=self.exprCall).grid(row=row, column=2, sticky=tk.W)
@@ -392,7 +391,7 @@ class ExpressionForm(Form):
             self.block.exprAttr()
         elif ev.char == ']':
             self.block.exprSubscript()
-        elif not self.lvalue:
+        elif not self.block.isWithinStore:
             if ev.char.isdigit():
                 self.block.exprNumber(ev.char)
             elif ev.char == '"' or ev.char == "'":

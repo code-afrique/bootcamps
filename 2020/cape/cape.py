@@ -27,6 +27,7 @@ class Scrollable(tk.Frame):
         self.canvas = tk.Canvas(frame, width=725, height=475)
         self.canvas.isWithinDef = False     # ???
         self.canvas.isWithinLoop = False    # ???
+        self.canvas.isWithinStore = False    # ???
         ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
         xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
         # self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
