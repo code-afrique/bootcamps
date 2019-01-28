@@ -289,21 +289,22 @@ class ExpressionForm(Form):
         tk.Button(frame, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
         tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
         row += 1
+        tk.Button(frame, text="x[y:z]", command=self.exprSlice).grid(row=row, column=0, sticky=tk.W)
+        tk.Button(frame, text="[..., ...]", command=self.exprList).grid(row=row, column=1, sticky=tk.W)
+        tk.Button(frame, text="(..., ...)", command=self.exprTuple).grid(row=row, column=2, sticky=tk.W)
+        row += 1
+
         if not lvalue:
             tk.Button(frame, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
             tk.Button(frame, text="string", command=self.exprString).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(frame, text="f()", command=self.exprCall).grid(row=row, column=2, sticky=tk.W)
             row += 1
             tk.Button(frame, text="False", command=self.exprFalse).grid(row=row, column=0, sticky=tk.W)
             tk.Button(frame, text="True", command=self.exprTrue).grid(row=row, column=1, sticky=tk.W)
             tk.Button(frame, text="None", command=self.exprNone).grid(row=row, column=2, sticky=tk.W)
             row += 1
-            tk.Button(frame, text="[...]", command=self.exprList).grid(row=row, sticky=tk.W)
-            tk.Button(frame, text="(...)", command=self.exprTuple).grid(row=row, column=1, sticky=tk.W)
-            tk.Button(frame, text="(...)", command=self.exprDict).grid(row=row, column=2, sticky=tk.W)
-            row += 1
-            tk.Button(frame, text="f()", command=self.exprCall).grid(row=row, column=0, sticky=tk.W)
-            tk.Button(frame, text="x[y:z]", command=self.exprSlice).grid(row=row, column=1, sticky=tk.W)
-            tk.Button(frame, text="x if c else y", command=self.exprIfelse).grid(row=row, column=2, sticky=tk.W)
+            tk.Button(frame, text="{...: ...}", command=self.exprDict).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(frame, text="x if c else y", command=self.exprIfelse).grid(row=row, column=1, sticky=tk.W)
             row += 1
 
             tk.Label(frame, text="").grid(row=row)
