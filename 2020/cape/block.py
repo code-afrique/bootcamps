@@ -1215,7 +1215,7 @@ class GlobalBlock(Block):
         if node == None:
             self.vars = [NameBlock(self, shared, "")]
         else:
-            self.vars = [NameBlock(self, shared, n) for n in node.names]
+            self.vars = [n.toBlock(self, self) for n in node.names]
 
         column = 1
         for i in range(len(self.vars)):
@@ -1232,7 +1232,7 @@ class GlobalBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        return GlobalNode(self.var.toNode())
+        return GlobalNode([v.toNode() for v in self.vars])
 
 class ImportBlock(Block):
     def __init__(self, parent, shared, node):
@@ -1241,7 +1241,7 @@ class ImportBlock(Block):
         if node == None:
             self.module = NameBlock(self, shared, "")
         else:
-            self.module = NameBlock(self, shared, node.what)
+            self.module = node.what.toBlock(self, self)
         self.module.grid(row=0, column=1)
 
     def genForm(self):

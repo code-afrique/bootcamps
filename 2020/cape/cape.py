@@ -196,9 +196,19 @@ class TopLevel(tk.Frame):
         if filename:
             self.curfile = filename
             with open(filename, "r") as fd:
+                # read and parse the program
                 code = fd.read()
                 tree = pparse.pparse(code)
                 n = pmod.nodeEval(tree)
+
+                # verify that it has been done right
+                f = io.StringIO("")
+                n.print(f, 0)
+                code2 = f.getvalue()
+                tree2 = pparse.pparse(code)
+                if tree != tree2:
+                    print("Parse verification failed; edit at own risk")
+
                 comments = self.extractComments(code)
                 for lineno, text in comments.items():
                     (sb, i) = n.findRow(lineno)

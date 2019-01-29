@@ -277,10 +277,10 @@ class GlobalNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("global ", end="", file=fd)
-        for i in range(len(self.vars)):
+        for i in range(len(self.names)):
             if i > 0:
                 print(", ", end="", file=fd)
-            self.vars[i].print(fd, 0)
+            self.names[i].print(fd, 0)
         print("", file=fd)
 
 class DelNode(Node):

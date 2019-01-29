@@ -154,14 +154,14 @@ def keyword(arg, value):
 
 def Import(lineno, col_offset, names):
     assert len(names) == 1
-    return RowNode(ImportNode(names[0]), lineno)
+    return RowNode(ImportNode(NameNode(names[0])), lineno)
 
 def ImportFrom(lineno, col_offset, module, names, level):
     assert len(names) == 1
-    return RowNode(ImportNode(names[0]), lineno)
+    return RowNode(ImportNode(NameNode(names[0])), lineno)
 
 def Global(lineno, col_offset, names):
-    return RowNode(GlobalNode(names), lineno)
+    return RowNode(GlobalNode([NameNode(n) for n in names]), lineno)
 
 def Dict(lineno, col_offset, keys, values):
     return ExpressionNode(DictNode(keys, values))
