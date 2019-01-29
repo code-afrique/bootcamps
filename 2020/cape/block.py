@@ -1131,6 +1131,7 @@ class DelBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text="del", fg="red", command=self.cb).grid(row=0, column=0)
+        self.isWithinStore = True
         if node == None:
             self.targets = [ExpressionBlock(self, shared, None)]
         else:
