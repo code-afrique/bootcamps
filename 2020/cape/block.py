@@ -1543,21 +1543,40 @@ class TryBlock(Block):
 
         if node == None:
             self.body = SeqBlock(self, shared, None)
+            self.body.grid(row=1, column=0)
             self.handlers = []
             self.orelse = None
             self.finalbody = None
         else:
             self.body = node.body.toBlock(self, self)
-            self.handlers = [(
-                None if type == None else type.toBlock(self, self),
-                None if name == None else name.toBlock(self, self),
-                body.toBlock(self, self)
-            ) for type, name, body in node.handlers]
+            self.body.grid(row=1, column=0)
+            self.handlers = []
+            for type, name, body in node.handlers:
+                hdr = Block(self, shared)
+                self.handlers.append((hdr,
+                    None if type == None else type.toBlock(hdr, self),
+                    None if name == None else name.toBlock(hdr, self),
+                    body.toBlock(self, self)
+                ))
+            row = 2
+            for hdr, type, name, body in self.handlers:
+                tk.Button(hdr, text="except", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+                column = 1
+                if type != None:
+                    type.grid(row=0, column=column)
+                    column += 1
+                    if name != None:
+                        tk.Button(hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
+                        column += 1
+                        name.grid(row=0, column=column)
+                        column += 1
+                tk.Button(hdr, text=":", command=lambda: self.minmax(self.body)).grid(row=0, column=column, sticky=tk.W)
+                hdr.grid(row=row, column=0)
+                row += 1
+                body.grid(row=row, column=0)
+                row += 1
             self.orelse = None
             self.finalbody = None
-
-        # self.gridUpdate()
-        self.body.grid(row=1, column=0)
 
     def genForm(self):
         self.setForm(TryForm(self.shared.confarea, self))
@@ -1584,7 +1603,7 @@ class TryBlock(Block):
         return TryNode(self.body.toNode(), [(
                 None if type == None else type.toNode(),
                 None if name == None else name.toNode(),
-                body.toNode()) for (type, name, body) in self.handlers],
+                body.toNode()) for (hdr, type, name, body) in self.handlers],
             None if self.orelse == None else self.orelse.toNode(),
             None if self.finalbody == None else self.finalbody.toNode())
 
