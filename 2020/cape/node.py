@@ -1,7 +1,7 @@
 import io
 
 class Node():
-    def toBlock(self, frame):
+    def toBlock(self, frame, block):
         return None
 
     def findRow(self, lineno):
@@ -16,7 +16,7 @@ class PassNode(Node):
         super().__init__()
 
     def toBlock(self, frame, block):
-        return block.newPassBlock(frame, self, block)
+        return block.newPassBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)

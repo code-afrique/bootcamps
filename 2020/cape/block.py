@@ -51,8 +51,8 @@ class Block(tk.Frame):
         self.parent.delExpr()
         print("expression deleted")
 
-    def newPassBlock(self, parent, node, rowblk):
-        return PassBlock(parent, self.shared, node, rowblk)
+    def newPassBlock(self, parent, node):
+        return PassBlock(parent, self.shared, node)
 
     def newEmptyBlock(self, parent, node):
         return EmptyBlock(parent, self.shared, node)
@@ -935,9 +935,9 @@ class AugassignBlock(Block):
         return AugassignNode(self.left.toNode(), self.right.toNode(), self.op)
 
 class PassBlock(Block):
-    def __init__(self, parent, shared, node, rowblk):
+    def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.rowblk = rowblk
+        self.rowblk = parent
         btn = tk.Button(self, text="pass", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
 
@@ -1245,7 +1245,7 @@ class RowBlock(Block):
         menu = tk.Button(self, text="-", width=3, command=self.listcmd)
         menu.grid(row=0, column=0, sticky=tk.W)
         if node == None:
-            self.what = PassBlock(self, self.shared, None, self)
+            self.what = PassBlock(self, self.shared, None)
         else:
             self.what = node.what.toBlock(self, self)
         self.what.grid(row=0, column=1, sticky=tk.W)
