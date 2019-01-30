@@ -5,8 +5,8 @@ from form import *
 from node import *
 
 class Block(tk.Frame):
-    def __init__(self, parent, shared):
-        super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
+    def __init__(self, parent, shared, borderwidth=0):
+        super().__init__(parent, borderwidth=borderwidth, relief=tk.SUNKEN)
         self.parent = parent
         self.shared = shared
         self.isWithinDef = False if parent == None else parent.isWithinDef
@@ -705,7 +705,7 @@ class TupleBlock(Block):
 
 class ExpressionBlock(Block):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
+        super().__init__(parent, shared, borderwidth=1)
         if node == None or node.what == None:
             self.what = tk.Button(self, text="?", width=0, command=self.cb)
             self.init = False
@@ -1238,7 +1238,7 @@ class ImportBlock(Block):
 
 class RowBlock(Block):
     def __init__(self, parent, shared, node, row):
-        super().__init__(parent, shared)
+        super().__init__(parent, shared, borderwidth=1)
         self.row = row
         self.comment = tk.StringVar()
 
