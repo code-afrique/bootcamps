@@ -643,7 +643,7 @@ class SeqNode(Node):
         self.rows = rows
 
     def toBlock(self, frame, block):
-        return block.newSeqBlock(frame, self.rows)
+        return block.newSeqBlock(frame, self)
 
     def findRow(self, lineno):
         for i in range(len(self.rows)):

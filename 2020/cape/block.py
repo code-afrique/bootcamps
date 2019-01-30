@@ -434,7 +434,7 @@ class ClassBlock(Block):
         if node == None:
             self.body = SeqBlock(self, shared, None)
         else:
-            self.body = SeqBlock(self, shared, node.body)
+            self.body = node.body.toBlock(self, self)
         if not self.minimized:
             self.body.grid(row=1, column=0, sticky=tk.W)
 
@@ -1370,7 +1370,7 @@ class DefBlock(Block):
         if node == None:
             self.body = SeqBlock(self, shared, None)
         else:
-            self.body = SeqBlock(self, shared, node.body)
+            self.body = node.body.toBlock(self, self)
         if not self.minimized:
             self.body.grid(row=1, column=0, sticky=tk.W)
 
@@ -1444,7 +1444,7 @@ class IfBlock(Block):
             tk.Button(self.hdrs[0], text=":", command=self.cb).grid(row=0, column=2, sticky=tk.W)
             self.bodies = [SeqBlock(self, shared, None)]
         else:
-            self.bodies = [ SeqBlock(self, shared, n) for n in node.bodies ]
+            self.bodies = [ n.toBlock(self, self) for n in node.bodies ]
             self.hdrs = [ ]
             self.minimizeds = node.minimizeds
             self.conds = [ ]
@@ -1546,13 +1546,12 @@ class TryBlock(Block):
             self.orelse = None
             self.finalbody = None
         else:
-            self.body = SeqBlock(self, shared, node.body)
+            self.body = node.body.toBlock(self, self)
             self.handlers = [(
                 None if type == None else type.toBlock(self, self),
                 None if name == None else name.toBlock(self, self),
-                # SeqBlock(self, shared, body)
                 body.toBlock(self, self)
-                ) for type, name, body in node.handlers]
+			) for type, name, body in node.handlers]
             self.orelse = None
             self.finalbody = None
 
@@ -1603,8 +1602,8 @@ class WhileBlock(Block):
             self.minimized2 = False
         else:
             self.cond = ExpressionBlock(hdr, self.shared, node.cond)
-            self.body = SeqBlock(self, self.shared, node.body)
-            self.orelse = None if node.orelse == None else SeqBlock(self, self.shared, node.orelse)
+            self.body = node.body.toBlock(self, self)
+            self.orelse = None if node.orelse == None else node.orelse.toBlock(self, self)
             self.minimized = node.minimized
             self.minimized2 = node.minimized2
         self.cond.grid(row=0, column=1)
@@ -1686,8 +1685,8 @@ class ForBlock(Block):
         else:
             self.var = node.var.toBlock(hdr, self)
             self.expr = ExpressionBlock(hdr, shared, node.expr)
-            self.body = SeqBlock(self, shared, node.body)
-            self.orelse = None if node.orelse == None else SeqBlock(self, shared, node.orelse)
+            self.body = node.body.toBlock(self, self)
+            self.orelse = None if node.orelse == None else node.orelse.toBlock(self, self)
             self.minimized = node.minimized
             self.minimized2 = node.minimized2
         self.var.grid(row=0, column=1)
