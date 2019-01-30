@@ -299,9 +299,10 @@ class ContinueNode(Node):
         print("continue", file=fd)
 
 class ImportNode(Node):
-    def __init__(self, what):
+    def __init__(self, name, asname):
         super().__init__()
-        self.what = what
+        self.name = name
+        self.asname = asname
 
     def toBlock(self, frame, block):
         return block.newImportBlock(frame, self)
@@ -309,7 +310,10 @@ class ImportNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("import ", end="", file=fd)
-        self.what.print(fd, 0)
+        self.name.print(fd, 0)
+        if self.asname != None:
+            print(" as ", end="", file=fd)
+            self.asname.print(fd, 0)
         print("", file=fd)
 
 class GlobalNode(Node):

@@ -158,18 +158,17 @@ def BoolOp(lineno, col_offset, op, values):
     return ExpressionNode(BinaryopNode(values[0], values[1], op))
 
 def alias(name, asname):
-    assert asname == None
-    return name
+    return (name, asname)
 
 def keyword(arg, value):
     return (arg, value)
 
 def Import(lineno, col_offset, names):
-    assert len(names) == 1
-    return RowNode(ImportNode(NameNode(names[0])), lineno)
+    [(name, asname)] = names
+    return RowNode(ImportNode(NameNode(name), None if asname == None else NameNode(asname)), lineno)
 
 def ImportFrom(lineno, col_offset, module, names, level):
-    assert len(names) == 1
+    [(name, asname)] = names
     return RowNode(ImportNode(NameNode(names[0])), lineno)
 
 def Global(lineno, col_offset, names):

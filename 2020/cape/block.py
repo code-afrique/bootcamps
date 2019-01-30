@@ -1230,7 +1230,7 @@ class ImportBlock(Block):
         if node == None:
             self.module = NameBlock(self, shared, NameNode(""))
         else:
-            self.module = node.what.toBlock(self, self)
+            self.module = node.name.toBlock(self, self)
         self.module.grid(row=0, column=1)
 
     def genForm(self):
@@ -1240,7 +1240,7 @@ class ImportBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        return ImportNode(self.module.toNode())
+        return ImportNode(self.module.toNode(), None)
 
 class RowBlock(Block):
     def __init__(self, parent, shared, node, row):
