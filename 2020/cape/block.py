@@ -276,17 +276,17 @@ class SubscriptBlock(Block):
             if lower == None:
                 self.lower = None
             else:
-                self.lower = ExpressionBlock(self, shared, lower)
+                self.lower = lower.toBlock(self, self)
             if upper == None:
                 self.upper = None
             else:
-                self.upper = ExpressionBlock(self, shared, upper)
+                self.upper = upper.toBlock(self, self)
             if step == None:
                 self.step = None
             else:
-                self.step = ExpressionBlock(self, shared, step)
+                self.step = step.toBlock(self, self)
         else:
-            self.lower = ExpressionBlock(self, shared, lower)
+            self.lower = lower.toBlock(self, self)
             self.upper = self.step = None
 
         self.updateGrid()
@@ -344,7 +344,7 @@ class AttrBlock(Block):
         if node == None:
             self.array = ExpressionBlock(self, shared, None)
         else:
-            self.array = ExpressionBlock(self, shared, node.array)
+            self.array = node.array.toBlock(self, self)
         self.array.grid(row=0, column=0)
         tk.Button(self, text='.', command=self.cb).grid(row=0, column=1)
         if node == None:
@@ -366,7 +366,7 @@ class UnaryopBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
 
-        left = tk.Button(self, text=op, fg="purple", width=0, command=self.cb)
+        left = tk.Button(self, text=node.op, fg="purple", width=0, command=self.cb)
         left.grid(row=0, column=0)
 
         self.right = ExpressionBlock(self, shared, node.right)
@@ -706,11 +706,12 @@ class TupleBlock(Block):
 class ExpressionBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        if node == None:
+        if node == None or node.what == None:
             self.what = tk.Button(self, text="?", width=0, command=self.cb)
             self.init = False
         else:
-            self.what = node.toBlock(self, self)
+            assert isinstance(node, ExpressionNode)
+            self.what = node.what.toBlock(self, self)
             self.init = True
         self.what.grid()
 
@@ -861,9 +862,9 @@ class AssignBlock(Block):
             self.value = ExpressionBlock(self, shared, None)
         else:
             self.isWithinStore = True
-            self.targets = [ExpressionBlock(self, shared, t) for t in node.targets]
+            self.targets = [t.toBlock(self, self) for t in node.targets]
             self.isWithinStore = False
-            self.value = ExpressionBlock(self, shared, node.value)
+            self.value = node.value.toBlock(self, self)
 
         column = 0
         for t in self.targets:
@@ -1551,7 +1552,7 @@ class TryBlock(Block):
                 None if type == None else type.toBlock(self, self),
                 None if name == None else name.toBlock(self, self),
                 body.toBlock(self, self)
-			) for type, name, body in node.handlers]
+            ) for type, name, body in node.handlers]
             self.orelse = None
             self.finalbody = None
 
