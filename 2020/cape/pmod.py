@@ -166,13 +166,20 @@ def alias(name, asname):
 def keyword(arg, value):
     return (arg, value)
 
+def attrify(components):
+    if len(components) == 1:
+        return NameNode(components[0])
+    else:
+        return AttrNode(attrify(components[:-1]), NameNode(components[-1]))
+
 def Import(lineno, col_offset, names):
     [(name, asname)] = names
-    return RowNode(ImportNode(NameNode(name), None if asname == None else NameNode(asname)), lineno)
+    components = name.split('.')
+    return RowNode(ImportNode(attrify(components), None if asname == None else NameNode(asname)), lineno)
 
 def ImportFrom(lineno, col_offset, module, names, level):
-    [(name, asname)] = names
-    return RowNode(ImportNode(NameNode(names[0]), None if asname == None else NameNode(asname)), lineno)
+    components = module.split('.')
+    return RowNode(ImportNode(attrify(components), None), lineno)
 
 def Global(lineno, col_offset, names):
     return RowNode(GlobalNode([NameNode(n) for n in names]), lineno)
