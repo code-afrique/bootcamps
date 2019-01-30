@@ -411,9 +411,13 @@ class ClassBlock(Block):
 
         if node == None:
             self.minimized = False
+            self.body = SeqBlock(self, shared, None)
+            self.body_node = self.body.toNode()
         else:
-            self.cname.set(node.name)
             self.minimized = True
+            self.cname.set(node.name)
+            self.body = None
+            self.body_node = node.body
 
         self.hdr = Block(self, shared)
         self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
@@ -431,10 +435,6 @@ class ClassBlock(Block):
                 self.addBaseClass(base)
         self.setHeader()
 
-        if node == None:
-            self.body = SeqBlock(self, shared, None)
-        else:
-            self.body = node.body.toBlock(self, self)
         if not self.minimized:
             self.body.grid(row=1, column=0, sticky=tk.W)
 
@@ -446,11 +446,14 @@ class ClassBlock(Block):
 
     def minmax(self):
         if self.minimized:
+            self.body = self.body_node.toBlock(self, self)
             self.body.grid(row=1, column=0, sticky=tk.W)
             self.update()
             self.minimized = False
         else:
+            self.body_node = self.body.toNode()
             self.body.grid_forget()
+            self.body = None
             self.minimized = True
         self.scrollUpdate()
 
@@ -485,7 +488,10 @@ class ClassBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad method name")
                 self.shared.cvtError = True
-        return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode())
+        if self.minimized:
+            return ClassNode(v, [b.toNode() for b in self.bases], self.body_node)
+        else:
+            return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode())
 
 class CallBlock(Block):
     def __init__(self, parent, shared, node):

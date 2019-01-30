@@ -11,9 +11,9 @@ import tokenize
 import pparse
 import pmod
 import shared
-from form import *
-from node import *
-from block import *
+from form import HelpForm, TextForm
+from node import RowNode, EmptyNode
+from block import Block, SeqBlock
 
 class Scrollable(tk.Frame):
     """
@@ -213,7 +213,7 @@ class TopLevel(tk.Frame):
 
                 if self.program != None:
                     self.program.grid_forget()
-                self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, n)
+                self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
                 self.program.grid(sticky=tk.W)
                 self.shared.scrollable.scrollUpdate()
 

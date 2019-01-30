@@ -222,11 +222,11 @@ def NotIn():
 #####
 
 def ListComp(lineno, col_offset, elt, generators):
-    assert False, "comprehensions not yet implemented"
+    assert False, "list comprehensions not yet implemented"
     return ExpressionNode(ConstantNode("COMPREHENSION"))
 
 def GeneratorExp(lineno, col_offset, elt, generators):
-    assert False, "comprehensions not yet implemented"
+    assert False, "generators not yet implemented"
     return ExpressionNode(ConstantNode("GENERATOR"))
 
 def comprehension(target, iter, ifs, is_async=0):
