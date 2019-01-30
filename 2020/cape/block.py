@@ -1229,8 +1229,10 @@ class ImportBlock(Block):
         tk.Button(self, text="import", fg="red", command=self.cb).grid(row=0, column=0)
         if node == None:
             self.module = NameBlock(self, shared, NameNode(""))
+            self.alias = None
         else:
             self.module = node.name.toBlock(self, self)
+            self.alias = None if node.asname == None else node.asname.toBlock(self, self)
         self.module.grid(row=0, column=1)
 
     def genForm(self):
@@ -1240,7 +1242,7 @@ class ImportBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        return ImportNode(self.module.toNode(), None)
+        return ImportNode(self.module.toNode(), None if self.alias == None else self.alias.toNode())
 
 class RowBlock(Block):
     def __init__(self, parent, shared, node, row):
