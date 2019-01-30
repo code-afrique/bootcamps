@@ -136,6 +136,56 @@ class IfNode(Node):
                 print("else:", file=fd)
             self.bodies[i].print(fd, level + 1)
 
+class TryNode(Node):
+    def __init__(self, body, handlers, orelse, finalbody):
+        super().__init__()
+        self.body = body
+        self.handlers = handlers
+        self.orelse = orelse
+        self.finalbody = finalbody
+
+    def toBlock(self, frame, block):
+        return block.newTryBlock(frame, self)
+
+    def findRow(self, lineno):
+        loc = self.body.findRow(lineno)
+        if loc != None:
+            return loc
+        for type, name, body in self.handers:
+            loc = body.findRow(lineno)
+            if loc != None:
+                return loc
+        loc = self.orelse.findRow(lineno)
+        if loc != None:
+            return loc
+        loc = self.finalbody.findRow(lineno)
+        if loc != None:
+            return loc
+        return None
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        print("try:", file=fd)
+        self.body.print(fd, level + 1)
+        for type, name, body in self.handlers:
+            self.printIndent(fd, level)
+            if type == None:
+                print("except:", file=fd)
+            else:
+                print("except ", end="", file=fd)
+                type.print(fd, 0)
+                if name != None:
+                    print(" as ", end="", file=fd)
+                    name.print(fd, 0)
+                print(":", file=fd)
+            body.print(fd, level + 1)
+        if self.orelse != None:
+            print("else:", file=fd)
+            self.orelse.print(fd, level + 1)
+        if self.finalbody != None:
+            print("finally:", file=fd)
+            self.finalbody.print(fd, level + 1)
+
 class WhileNode(Node):
     def __init__(self, cond, body, orelse, minimized, minimized2):
         super().__init__()
@@ -344,7 +394,7 @@ class AugassignNode(Node):
         self.op = op
 
     def toBlock(self, frame, block):
-        return block.newAugassignBlock(frame, self, self.op)
+        return block.newAugassignBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -361,7 +411,7 @@ class BinaryopNode(Node):
         self.op = op
 
     def toBlock(self, frame, block):
-        return block.newBinaryopBlock(frame, self, self.op)
+        return block.newBinaryopBlock(frame, self)
 
     def print(self, fd, level):
         print("(", end="", file=fd)
@@ -377,7 +427,7 @@ class UnaryopNode(Node):
         self.op = op
 
     def toBlock(self, frame, block):
-        return block.newUnaryopBlock(frame, self, self.op)
+        return block.newUnaryopBlock(frame, self)
 
     def print(self, fd, level):
         print(self.op, end="", file=fd)
@@ -392,8 +442,7 @@ class SubscriptNode(Node):
         self.slice = slice
 
     def toBlock(self, frame, block):
-        isSlice, lower, upper, step = self.slice
-        return block.newSubscriptBlock(frame, self, isSlice)
+        return block.newSubscriptBlock(frame, self)
 
     def print(self, fd, level):
         self.array.print(fd, 0)
@@ -526,7 +575,7 @@ class NumberNode(Node):
         self.what = what
 
     def toBlock(self, frame, block):
-        return block.newNumberBlock(frame, self.what)
+        return block.newNumberBlock(frame, self)
 
     def print(self, fd, level):
         print(self.what, end="", file=fd)
@@ -537,7 +586,7 @@ class ConstantNode(Node):
         self.what = what
 
     def toBlock(self, frame, block):
-        return block.newConstantBlock(frame, self.what)
+        return block.newConstantBlock(frame, self)
 
     def print(self, fd, level):
         print(self.what, end="", file=fd)
@@ -548,7 +597,7 @@ class NameNode(Node):
         self.what = what
 
     def toBlock(self, frame, block):
-        return block.newNameBlock(frame, self.what)
+        return block.newNameBlock(frame, self)
 
     def print(self, fd, level):
         print(self.what, end="", file=fd)
@@ -559,7 +608,7 @@ class StringNode(Node):
         self.what = what
 
     def toBlock(self, frame, block):
-        return block.newStringBlock(frame, self.what)
+        return block.newStringBlock(frame, self)
 
     def print(self, fd, level):
         print('"', end="", file=fd)

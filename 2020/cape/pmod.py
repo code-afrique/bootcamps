@@ -60,6 +60,14 @@ def If(lineno, col_offset, test, body, orelse):
     else:
         return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]), lineno)
 
+def Try(lineno, col_offset, body, handlers, orelse, finalbody):
+    return RowNode(TryNode(SeqNode(body), handlers,
+        None if orelse == [] else SeqNode(orelse),
+        None if finalbody == [] else SeqNode(finalbody)), lineno)
+
+def ExceptHandler(lineno, col_offset, type, name, body):
+    return (type, name, SeqNode(body))
+
 def Compare(lineno, col_offset, left, ops, comparators):
     assert len(ops) == 1
     assert len(comparators) == 1
@@ -114,6 +122,9 @@ def Load():
     return None
 
 def Store():
+    return None
+
+def Del():
     return None
 
 def List(lineno, col_offset, elts, ctx):
@@ -210,14 +221,6 @@ def NotIn():
 
 #####
 
-def Try(lineno, col_offset, body, handlers, orelse, finalbody):
-    assert False, "'try' not yet implemented"
-    return RowNode(PassNode(), lineno)
-
-def ExceptHandler(lineno, col_offset, type, name, body):
-    assert False, "'try' not yet implemented"
-    return RowNode(PassNode(), lineno)
-
 def ListComp(lineno, col_offset, elt, generators):
     assert False, "comprehensions not yet implemented"
     return ExpressionNode(ConstantNode("COMPREHENSION"))
@@ -228,10 +231,6 @@ def GeneratorExp(lineno, col_offset, elt, generators):
 
 def comprehension(target, iter, ifs, is_async=0):
     assert False, "comprehensions not yet implemented"
-    return None
-
-def Del():
-    assert False, "'delete' not yet implemented"
     return None
 
 def Lambda(lineno, col_offset, args, body):

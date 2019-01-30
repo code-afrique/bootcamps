@@ -201,14 +201,7 @@ class TopLevel(tk.Frame):
                 tree = pparse.pparse(code)
                 n = pmod.nodeEval(tree)
 
-                # verify that it has been done right
-                f = io.StringIO("")
-                n.print(f, 0)
-                code2 = f.getvalue()
-                tree2 = pparse.pparse(code)
-                if tree != tree2:
-                    print("Parse verification failed; edit at own risk")
-
+                # extract and insert the comments
                 comments = self.extractComments(code)
                 for lineno, text in comments.items():
                     (sb, i) = n.findRow(lineno)
@@ -223,6 +216,25 @@ class TopLevel(tk.Frame):
                 self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, n)
                 self.program.grid(sticky=tk.W)
                 self.shared.scrollable.scrollUpdate()
+
+                # verify that it has been done right
+                """
+                This doesn't quite work yet because of line numbers and
+                column offsets...
+
+                print("verify")
+                n = self.program.toNode()
+                print("conversion done")
+                f = io.StringIO("")
+                n.print(f, 0)
+                code2 = f.getvalue()
+                print(code2)
+                tree2 = pparse.pparse(code2)
+                print(tree2)
+                if tree != tree2:
+                    print("Parse verification failed; edit at own risk")
+                    print(tree)
+                """
 
                 self.shared.saved = True
 
