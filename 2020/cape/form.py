@@ -581,8 +581,15 @@ class ReturnForm(Form):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
+        self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
-        tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and causes the method to return a value.").grid(row=1)
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and, optionally, causes the method to return a value.").grid(row=1)
+        if block.expr == None:
+            rv = tk.Button(self, text="Return a value", command=self.returnValue)
+            rv.grid()
+
+    def returnValue(self):
+        self.block.returnValue()
 
 class DelForm(Form):
     def __init__(self, parent, block):

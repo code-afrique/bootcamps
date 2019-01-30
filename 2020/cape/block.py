@@ -254,6 +254,7 @@ class StringBlock(Block):
     def setContents(self, s):
         self.string.set(s)
         self.btn.config(width=0)
+        self.scrollUpdate()
         self.needsSaving()
 
     def toNode(self):
@@ -855,7 +856,8 @@ class ExpressionBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix uninitialized expression")
                 self.shared.cvtError = True
-        return ExpressionNode(self.what.toNode() if self.init else None)
+            return None
+        return ExpressionNode(self.what.toNode())
 
 class AssignBlock(Block):
     def __init__(self, parent, shared, node):
@@ -1100,11 +1102,11 @@ class ReturnBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text="return", fg="red", command=self.cb).grid(row=0, column=0)
-        if node == None:
-            self.expr = ExpressionBlock(self, shared, None)
+        if node == None or node.what == None:
+            self.expr = None
         else:
             self.expr = ExpressionBlock(self, shared, node.what)
-        self.expr.grid(row=0, column=1)
+            self.expr.grid(row=0, column=1)
 
     def genForm(self):
         self.setForm(ReturnForm(self.shared.confarea, self))
@@ -1112,8 +1114,12 @@ class ReturnBlock(Block):
     def cb(self):
         self.setBlock(self)
 
+    def returnValue(self):
+        self.expr = ExpressionBlock(self, self.shared, None)
+        self.expr.grid(row=0, column=1)
+
     def toNode(self):
-        return ReturnNode(self.expr.toNode())
+        return ReturnNode(None if self.expr == None else self.expr.toNode())
 
 class DelBlock(Block):
     def __init__(self, parent, shared, node):
@@ -1498,8 +1504,8 @@ class IfBlock(Block):
         self.scrollUpdate()
 
     def addElse(self):
-        self.bodies.append(SeqBlock(self, shared, None))
-        hdr = Block(self, shared)
+        self.bodies.append(SeqBlock(self, self.shared, None))
+        hdr = Block(self, self.shared)
         tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         tk.Button(hdr, text=":", width=0, command=lambda: self.minmax(self.bodies[-1])).grid(row=0, column=1)
         self.hdrs.append(hdr)
