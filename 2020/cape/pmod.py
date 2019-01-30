@@ -158,6 +158,7 @@ def BoolOp(lineno, col_offset, op, values):
     return ExpressionNode(BinaryopNode(values[0], values[1], op))
 
 def alias(name, asname):
+    assert asname == None
     return name
 
 def keyword(arg, value):
