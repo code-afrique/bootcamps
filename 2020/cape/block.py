@@ -1234,6 +1234,9 @@ class ImportBlock(Block):
             self.module = node.name.toBlock(self, self)
             self.alias = None if node.asname == None else node.asname.toBlock(self, self)
         self.module.grid(row=0, column=1)
+        if self.alias != None:
+            tk.Button(self, text=" as ", fg="red", command=self.cb).grid(row=0, column=2)
+            self.alias.grid(row=0, column=3)
 
     def genForm(self):
         self.setForm(ImportForm(self.shared.confarea, self))
