@@ -1301,7 +1301,8 @@ class RowBlock(Block):
         r = RowNode(self.what.toNode(), 0)
         c = self.comment.get()
         if c != "":
-            r.comment = c
+            assert c[0] == '#'
+            r.comment = c[1:]
         return r
 
 class SeqBlock(Block):

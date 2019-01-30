@@ -63,7 +63,7 @@ def _leaf(node, show_offsets=True):
         return repr(node)
 
 
-def pformat(node, indent='    ', show_offsets=True, _indent=0):
+def pformat(node, indent='  ', show_offsets=True, _indent=0):
     if node is None:  # pragma: no cover (py35+ unpacking in literals)
         return repr(node)
     elif isinstance(node, str):  # pragma: no cover (ast27 typed-ast args)
@@ -118,5 +118,5 @@ def pformat(node, indent='    ', show_offsets=True, _indent=0):
         out += indentstr() + ')'
         return out
 
-def pparse(code):
-    return pformat(ast.parse(code))
+def pparse(code, show_offsets=True):
+    return pformat(ast.parse(code), show_offsets=show_offsets)

@@ -52,7 +52,7 @@ class RowNode(Node):
         # insert the comment, if any, after the first line
         if '\n' in s and self.comment != None:
             i = s.index('\n')
-            s = s[:i] + ('' if isinstance(self.what, EmptyNode) else '\t') + self.comment + s[i:]
+            s = s[:i] + ('#' if isinstance(self.what, EmptyNode) else '\t#') + self.comment + s[i:]
 
         print(s, file=fd, end="")
 
@@ -251,9 +251,12 @@ class ReturnNode(Node):
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("return ", end="", file=fd)
-        self.what.print(fd, 0)
-        print("", file=fd)
+        if self.what == None:
+            print("return", file=fd)
+        else:
+            print("return ", end="", file=fd)
+            self.what.print(fd, 0)
+            print("", file=fd)
 
 class AssertNode(Node):
     def __init__(self, test, msg):
@@ -612,6 +615,8 @@ class StringNode(Node):
                 print('\\"', end="", file=fd)
             elif c == '\n':
                 print('\\n', end="", file=fd)
+            elif c == '\r':
+                print('\\r', end="", file=fd)
             else:
                 print(c, end="", file=fd)
         print('"', end="", file=fd)

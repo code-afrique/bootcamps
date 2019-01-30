@@ -198,12 +198,13 @@ class TopLevel(tk.Frame):
             with open(filename, "r") as fd:
                 # read and parse the program
                 code = fd.read()
-                tree = pparse.pparse(code)
+                tree = pparse.pparse(code, show_offsets=True)
                 n = pmod.nodeEval(tree)
 
                 # extract and insert the comments
                 comments = self.extractComments(code)
                 for lineno, text in comments.items():
+                    assert text[0] == '#'
                     (sb, i) = n.findRow(lineno)
                     row = sb.rows[i]
                     if lineno < row.lineno:
@@ -218,23 +219,20 @@ class TopLevel(tk.Frame):
                 self.shared.scrollable.scrollUpdate()
 
                 # verify that it has been done right
-                """
-                This doesn't quite work yet because of line numbers and
-                column offsets...
-
                 print("verify")
-                n = self.program.toNode()
-                print("conversion done")
-                f = io.StringIO("")
-                n.print(f, 0)
-                code2 = f.getvalue()
-                print(code2)
-                tree2 = pparse.pparse(code2)
-                print(tree2)
-                if tree != tree2:
+                tree2 = pparse.pparse(code, show_offsets=False)
+                n3 = self.program.toNode()
+                f3 = io.StringIO("")
+                n3.print(f3, 0)
+                code3 = f3.getvalue()
+                # print(code3)
+                tree3 = pparse.pparse(code3, show_offsets=False)
+                if tree2 != tree3:
                     print("Parse verification failed; edit at own risk")
-                    print(tree)
-                """
+                    with open("tree2", "w") as fd:
+                        fd.write(tree2)
+                    with open("tree3", "w") as fd:
+                        fd.write(tree3)
 
                 self.shared.saved = True
 

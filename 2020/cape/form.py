@@ -111,8 +111,6 @@ class RowForm(Form):
         self.entry = tk.Entry(self)
         self.entry.bind('<Return>', self.keyEnter)
         c = self.block.comment.get()
-        if len(c) > 0 and c[0] == '#':
-            c = c[1:]
         self.entry.insert(tk.END, c)
         self.entry.grid(row=7, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)

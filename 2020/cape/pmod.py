@@ -54,7 +54,7 @@ def If(lineno, col_offset, test, body, orelse):
         assert isinstance(row, RowNode)
         stmt = row.what
         if isinstance(stmt, IfNode):
-            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)]), lineno)
+            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)] + stmt.bodies), lineno)
         else:
             return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)]), lineno)
     else:
