@@ -1543,13 +1543,13 @@ class TryBlock(Block):
 
         if node == None:
             self.body = SeqBlock(self, shared, None)
-            self.body.grid(row=1, column=0)
+            self.body.grid(row=1, column=0, sticky=tk.W)
             self.handlers = []
             self.orelse = None
             self.finalbody = None
         else:
             self.body = node.body.toBlock(self, self)
-            self.body.grid(row=1, column=0)
+            self.body.grid(row=1, column=0, sticky=tk.W)
             self.handlers = []
             for type, name, body in node.handlers:
                 hdr = Block(self, shared)
@@ -1571,9 +1571,9 @@ class TryBlock(Block):
                         name.grid(row=0, column=column)
                         column += 1
                 tk.Button(hdr, text=":", command=lambda: self.minmax(self.body)).grid(row=0, column=column, sticky=tk.W)
-                hdr.grid(row=row, column=0)
+                hdr.grid(row=row, column=0, sticky=tk.W)
                 row += 1
-                body.grid(row=row, column=0)
+                body.grid(row=row, column=0, sticky=tk.W)
                 row += 1
             self.orelse = None
             self.finalbody = None
