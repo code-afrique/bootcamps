@@ -60,6 +60,9 @@ class Block(tk.Frame):
     def newDefBlock(self, parent, node):
         return DefBlock(parent, self.shared, node)
 
+    def newLambdaBlock(self, parent, node):
+        return LambdaBlock(parent, self.shared, node)
+
     def newClassBlock(self, parent, node):
         return ClassBlock(parent, self.shared, node)
 
@@ -122,6 +125,9 @@ class Block(tk.Frame):
 
     def newListBlock(self, parent, node):
         return ListBlock(parent, self.shared, node)
+
+    def newListcompBlock(self, parent, node):
+        return ListcompBlock(parent, self.shared, node)
 
     def newDictBlock(self, parent, node):
         return DictBlock(parent, self.shared, node)
@@ -611,6 +617,44 @@ class ListBlock(Block):
 
     def toNode(self):
         return ListNode([ entry.toNode() for entry in self.entries ])
+
+class ListcompBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+
+        self.node = node
+
+        tk.Button(self, text="[", width=0, command=self.cb).grid(row=0, column=0)
+        self.elt = node.elt.toBlock(self, self)
+        self.elt.grid(row=0, column=1)
+
+        column = 2
+        self.generators = []
+        for target, iter, ifs, is_async in node.generators:
+            tk.Button(self, text=" for ", width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            target.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text=" in ", width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            iter.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            for i in ifs:
+                tk.Button(self, text=" if ", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                i.toBlock(self, self).grid(row=0, column=column)
+                column += 1
+        tk.Button(self, text="]", width=0, command=self.cb).grid(row=0, column=column)
+
+    def genForm(self):
+        self.setForm(ListcompForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        # TODO fake.  Should probably extract from blocks
+        return self.node
 
 class DictBlock(Block):
     def __init__(self, parent, shared, node):
@@ -1120,6 +1164,39 @@ class ReturnBlock(Block):
 
     def toNode(self):
         return ReturnNode(None if self.expr == None else self.expr.toNode())
+
+class LambdaBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+
+        # fake...
+        self.node = node
+
+        tk.Button(self, text="lambda", fg="red", command=self.cb).grid(row=0, column=0)
+
+        first = True
+        column = 1
+        for arg in node.args:
+            if first:
+                first = False
+            else:
+                tk.Button(self, text=",", fg="red", command=self.cb).grid(row=0, column=column)
+                column += 1
+            tk.Button(self, text=arg, fg="red", command=self.cb).grid(row=0, column=column)
+            column += 1
+
+        tk.Button(self, text=":", fg="red", command=self.cb).grid(row=0, column=column)
+        column += 1
+        node.body.toBlock(self, self).grid(row=0, column=column)
+
+    def genForm(self):
+        self.setForm(ReturnForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return self.node
 
 class DelBlock(Block):
     def __init__(self, parent, shared, node):

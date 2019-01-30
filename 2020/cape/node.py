@@ -79,6 +79,28 @@ class DefNode(Node):
         print("):", file=fd)
         self.body.print(fd, level + 1)
 
+class LambdaNode(Node):
+    def __init__(self, args, body):
+        super().__init__()
+        self.args = args
+        self.body = body
+
+    def toBlock(self, frame, block):
+        return block.newLambdaBlock(frame, self)
+
+    def print(self, fd, level):
+        print("(lambda ", end="", file=fd)
+        first = True
+        for arg in self.args:
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
+            print("{}".format(arg), end="", file=fd)
+        print(": ", end="", file=fd)
+        self.body.print(fd, 0)
+        print(")", end="", file=fd)
+
 class ClassNode(Node):
     def __init__(self, name, bases, body):
         super().__init__()
@@ -148,16 +170,18 @@ class TryNode(Node):
         loc = self.body.findRow(lineno)
         if loc != None:
             return loc
-        for type, name, body in self.handers:
+        for type, name, body in self.handlers:
             loc = body.findRow(lineno)
             if loc != None:
                 return loc
-        loc = self.orelse.findRow(lineno)
-        if loc != None:
-            return loc
-        loc = self.finalbody.findRow(lineno)
-        if loc != None:
-            return loc
+        if self.orelse != None:
+            loc = self.orelse.findRow(lineno)
+            if loc != None:
+                return loc
+        if self.finalbody != None:
+            loc = self.finalbody.findRow(lineno)
+            if loc != None:
+                return loc
         return None
 
     def print(self, fd, level):
@@ -502,6 +526,28 @@ class ListNode(Node):
             if i != 0:
                 print(", ", end="", file=fd)
             self.entries[i].print(fd, 0)
+        print("]", end="", file=fd)
+
+class ListcompNode(Node):
+    def __init__(self, elt, generators):
+        super().__init__()
+        self.elt = elt
+        self.generators = generators
+
+    def toBlock(self, frame, block):
+        return block.newListcompBlock(frame, self)
+
+    def print(self, fd, level):
+        print("[", end="", file=fd)
+        self.elt.print(fd, 0)
+        for target, iter, ifs, is_async in self.generators:
+            print(" for ", end="", file=fd)
+            target.print(fd, 0)
+            print(" in ", end="", file=fd)
+            iter.print(fd, 0)
+            for i in ifs:
+                print(" if ", end="", file=fd)
+                i.print(fd, 0)
         print("]", end="", file=fd)
 
 class DictNode(Node):

@@ -5,6 +5,9 @@ __all__ = ['nodeEval']
 def Module(body):
     return SeqNode(body)
 
+def Lambda(lineno, col_offset, args, body):
+    return ExpressionNode(LambdaNode(args, body))
+
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
     return RowNode(DefNode(name, args, SeqNode(body)), lineno)
 
@@ -180,6 +183,9 @@ def Dict(lineno, col_offset, keys, values):
 def IfExp(lineno, col_offset, test, body, orelse):
     return ExpressionNode(IfelseNode(test, body, orelse))
 
+def ListComp(lineno, col_offset, elt, generators):
+    return ExpressionNode(ListcompNode(elt, generators))
+
 def Add():
     return "+"
 
@@ -219,23 +225,14 @@ def In():
 def NotIn():
     return "not in"
 
-#####
+def comprehension(target, iter, ifs, is_async=0):
+    return (target, iter, ifs, is_async)
 
-def ListComp(lineno, col_offset, elt, generators):
-    assert False, "list comprehensions not yet implemented"
-    return ExpressionNode(ConstantNode("COMPREHENSION"))
+#####
 
 def GeneratorExp(lineno, col_offset, elt, generators):
     assert False, "generators not yet implemented"
     return ExpressionNode(ConstantNode("GENERATOR"))
-
-def comprehension(target, iter, ifs, is_async=0):
-    assert False, "comprehensions not yet implemented"
-    return None
-
-def Lambda(lineno, col_offset, args, body):
-    assert False, "'lambda' not yet implemented"
-    return ExpressionNode(ConstantNode("LAMBDA"))
 
 def With(lineno, col_offset, items, body):
     assert False, "'with' not yet implemented"
