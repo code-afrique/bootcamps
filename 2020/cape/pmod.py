@@ -6,10 +6,10 @@ def Module(body):
     return SeqNode(body)
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
-    return RowNode(DefNode(name, args, SeqNode(body), False), lineno)
+    return RowNode(DefNode(name, args, SeqNode(body)), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
-    return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), False), lineno)
+    return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body)), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
     return args
@@ -40,25 +40,25 @@ def Num(lineno, col_offset, n):
 
 def For(lineno, col_offset, target, iter, body, orelse):
     return RowNode(ForNode(target.what, iter, SeqNode(body),
-        None if orelse == [] else SeqNode(orelse), False, False), lineno)
+        None if orelse == [] else SeqNode(orelse)), lineno)
 
 def While(lineno, col_offset, test, body, orelse):
     return RowNode(WhileNode(test, SeqNode(body),
-        None if orelse == [] else SeqNode(orelse), False, False), lineno)
+        None if orelse == [] else SeqNode(orelse)), lineno)
 
 def If(lineno, col_offset, test, body, orelse):
     if orelse == []:
-        return RowNode(IfNode([test], [SeqNode(body)], [False]), lineno)
+        return RowNode(IfNode([test], [SeqNode(body)]), lineno)
     elif len(orelse) == 1:
         row = orelse[0]
         assert isinstance(row, RowNode)
         stmt = row.what
         if isinstance(stmt, IfNode):
-            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)] + stmt.bodies, [False] + stmt.minimizeds), lineno)
+            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)]), lineno)
         else:
-            return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]), lineno)
+            return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)]), lineno)
     else:
-        return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)], [False, False]), lineno)
+        return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)]), lineno)
 
 def Try(lineno, col_offset, body, handlers, orelse, finalbody):
     return RowNode(TryNode(SeqNode(body), handlers,

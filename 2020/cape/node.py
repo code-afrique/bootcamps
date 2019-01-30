@@ -57,12 +57,11 @@ class RowNode(Node):
         print(s, file=fd, end="")
 
 class DefNode(Node):
-    def __init__(self, name, args, body, minimized):
+    def __init__(self, name, args, body):
         super().__init__()
         self.name = name
         self.args = args
         self.body = body
-        self.minimized = minimized
 
     def toBlock(self, frame, block):
         return block.newDefBlock(frame, self)
@@ -81,12 +80,11 @@ class DefNode(Node):
         self.body.print(fd, level + 1)
 
 class ClassNode(Node):
-    def __init__(self, name, bases, body, minimized):
+    def __init__(self, name, bases, body):
         super().__init__()
         self.name = name
         self.bases = bases
         self.body = body
-        self.minimized = minimized
 
     def toBlock(self, frame, block):
         return block.newClassBlock(frame, self)
@@ -105,11 +103,10 @@ class ClassNode(Node):
         self.body.print(fd, level + 1)
 
 class IfNode(Node):
-    def __init__(self, conds, bodies, minimizeds):
+    def __init__(self, conds, bodies):
         super().__init__()
         self.conds = conds
         self.bodies = bodies
-        self.minimizeds = minimizeds
 
     def toBlock(self, frame, block):
         return block.newIfBlock(frame, self)
@@ -187,13 +184,11 @@ class TryNode(Node):
             self.finalbody.print(fd, level + 1)
 
 class WhileNode(Node):
-    def __init__(self, cond, body, orelse, minimized, minimized2):
+    def __init__(self, cond, body, orelse):
         super().__init__()
         self.cond = cond
         self.body = body
         self.orelse = orelse
-        self.minimized = minimized
-        self.minimized2 = minimized2
 
     def toBlock(self, frame, block):
         return block.newWhileBlock(frame, self)
@@ -217,14 +212,12 @@ class WhileNode(Node):
             self.orelse.print(fd, level + 1)
 
 class ForNode(Node):
-    def __init__(self, var, expr, body, orelse, minimized, minimized2):
+    def __init__(self, var, expr, body, orelse):
         super().__init__()
         self.var = var
         self.expr = expr
         self.body = body
         self.orelse = orelse
-        self.minimized = minimized
-        self.minimized2 = minimized2
 
     def toBlock(self, frame, block):
         return block.newForBlock(frame, self)

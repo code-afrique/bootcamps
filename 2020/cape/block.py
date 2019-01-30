@@ -413,7 +413,7 @@ class ClassBlock(Block):
             self.minimized = False
         else:
             self.cname.set(node.name)
-            self.minimized = node.minimized
+            self.minimized = True
 
         self.hdr = Block(self, shared)
         self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
@@ -485,7 +485,7 @@ class ClassBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad method name")
                 self.shared.cvtError = True
-        return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode(), self.minimized)
+        return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode())
 
 class CallBlock(Block):
     def __init__(self, parent, shared, node):
@@ -1364,7 +1364,7 @@ class DefBlock(Block):
         else:
             self.mname.set(node.name)
             self.args = node.args
-            self.minimized = node.minimized
+            self.minimized = True
 
         self.setHeader()
 
@@ -1427,7 +1427,7 @@ class DefBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad method name")
                 self.shared.cvtError = True
-        return DefNode(v, self.args, self.body.toNode(), self.minimized)
+        return DefNode(v, self.args, self.body.toNode())
 
 class IfBlock(Block):
     """
@@ -1447,7 +1447,7 @@ class IfBlock(Block):
         else:
             self.bodies = [ n.toBlock(self, self) for n in node.bodies ]
             self.hdrs = [ ]
-            self.minimizeds = node.minimizeds
+            self.minimizeds = [False] * len(self.bodies)
             self.conds = [ ]
             for i in range(len(self.bodies)):
                 if i < len(node.conds):
@@ -1529,7 +1529,7 @@ class IfBlock(Block):
         self.scrollUpdate()
 
     def toNode(self):
-        return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.bodies], self.minimizeds)
+        return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.bodies])
 
 class TryBlock(Block):
     def __init__(self, parent, shared, node):
@@ -1624,8 +1624,8 @@ class WhileBlock(Block):
             self.cond = ExpressionBlock(hdr, self.shared, node.cond)
             self.body = node.body.toBlock(self, self)
             self.orelse = None if node.orelse == None else node.orelse.toBlock(self, self)
-            self.minimized = node.minimized
-            self.minimized2 = node.minimized2
+            self.minimized = False
+            self.minimized2 = False
         self.cond.grid(row=0, column=1)
         tk.Button(hdr, text=":", command=self.minmax).grid(row=0, column=2, sticky=tk.W)
 
@@ -1687,7 +1687,7 @@ class WhileBlock(Block):
         self.needsSaving()
 
     def toNode(self):
-        return WhileNode(self.cond.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
+        return WhileNode(self.cond.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode())
 
 class ForBlock(Block):
     def __init__(self, parent, shared, node):
@@ -1707,8 +1707,8 @@ class ForBlock(Block):
             self.expr = ExpressionBlock(hdr, shared, node.expr)
             self.body = node.body.toBlock(self, self)
             self.orelse = None if node.orelse == None else node.orelse.toBlock(self, self)
-            self.minimized = node.minimized
-            self.minimized2 = node.minimized2
+            self.minimized = False
+            self.minimized2 = False
         self.var.grid(row=0, column=1)
         tk.Button(hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
@@ -1772,4 +1772,4 @@ class ForBlock(Block):
         self.needsSaving()
 
     def toNode(self):
-        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode(), self.minimized, self.minimized2)
+        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode())
