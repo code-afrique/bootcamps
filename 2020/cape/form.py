@@ -747,6 +747,18 @@ class AttrForm(Form):
         delb = tk.Button(self, text="delete", command=self.delExpr)
         delb.grid(row=2, column=1)
 
+class TryForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'try' statement").grid(columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="A try statement is used to catch exceptions that may occur during evaluation of a sequence of statements.").grid(row=1,columnspan=2)
+        copy = tk.Button(self, text="copy", command=self.copyExpr)
+        copy.grid(row=2, column=0)
+        delb = tk.Button(self, text="delete", command=self.delExpr)
+        delb.grid(row=2, column=1)
+
 class BinaryopForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent, block)

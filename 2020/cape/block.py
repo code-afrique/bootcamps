@@ -1533,7 +1533,7 @@ class IfBlock(Block):
 
 class TryBlock(Block):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
+        super().__init__(parent, shared, borderwidth=1)
         self.bodyMinimized = False
 
         hdr = Block(self, shared)
@@ -1575,8 +1575,28 @@ class TryBlock(Block):
                 row += 1
                 body.grid(row=row, column=0, sticky=tk.W)
                 row += 1
-            self.orelse = None
-            self.finalbody = None
+            if node.orelse == None:
+                self.orelse = None
+            else:
+                hdr = Block(self, shared)
+                tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+                tk.Button(hdr, text=":", command=lambda: self.minmax(self.body)).grid(row=0, column=1, sticky=tk.W)
+                hdr.grid(row=row, column=0, sticky=tk.W)
+                row += 1
+                self.orelse = node.orelse.toBlock(self, self)
+                self.orelse.grid(row=row, column=0, sticky=tk.W)
+                row += 1
+            if node.finalbody == None:
+                self.finalbody = None
+            else:
+                hdr = Block(self, shared)
+                tk.Button(hdr, text="finally", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+                tk.Button(hdr, text=":", command=lambda: self.minmax(self.body)).grid(row=0, column=1, sticky=tk.W)
+                hdr.grid(row=row, column=0, sticky=tk.W)
+                row += 1
+                self.finalbody = node.finalbody.toBlock(self, self)
+                self.finalbody.grid(row=row, column=0, sticky=tk.W)
+                row += 1
 
     def genForm(self):
         self.setForm(TryForm(self.shared.confarea, self))
