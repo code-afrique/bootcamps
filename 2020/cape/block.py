@@ -74,16 +74,7 @@ class Block(tk.Frame):
 
     def newWithBlock(self, parent, node):
         return WithBlock(parent, self.shared, node)
-        
-    def newWhileBlock(self, parent, node):
-        return WhileBlock(parent, self.shared, node)
-        
-    def newWhileBlock(self, parent, node):
-        return WhileBlock(parent, self.shared, node)
-        
-    def newWhileBlock(self, parent, node):
-        return WhileBlock(parent, self.shared, node)
-        
+
     def newWhileBlock(self, parent, node):
         return WhileBlock(parent, self.shared, node)
 

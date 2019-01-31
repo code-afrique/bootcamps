@@ -280,14 +280,15 @@ class TopLevel(tk.Frame):
         if self.shared.cvtError:
             print("===== Fix program first =====")
         else:
-            fd, path = tempfile.mkstemp(dir=".")
+            fd, path = tempfile.mkstemp(dir=".", suffix=".py")
             try:
                 with os.fdopen(fd, 'w') as tmp:
                     n.print(tmp, 0)
                     tmp.close()
                     print("===== Start running =====")
-                    # subprocess.Popen(['python3', path])
-                    subprocess.call(['python3', path])
+                    # theproc = subprocess.Popen(['python', path])
+                    # theproc.communicate()
+                    subprocess.call(['python', path])
                     print("===== Done =====")
             finally:
                 os.remove(path)
