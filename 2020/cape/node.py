@@ -54,6 +54,8 @@ class RowNode(Node):
             i = s.index('\n')
             s = s[:i] + ('#' if isinstance(self.what, EmptyNode) else '\t#') + self.comment + s[i:]
 
+        if isinstance(self.what, DefNode) or isinstance(self.what, ClassNode):
+            print(file=fd)
         print(s, file=fd, end="")
 
 class DefNode(Node):
@@ -71,7 +73,6 @@ class DefNode(Node):
         return self.body.findRow(lineno)
 
     def print(self, fd, level):
-        print("", file=fd)
         self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
         d = len(self.args) - len(self.defaults)
@@ -123,7 +124,6 @@ class ClassNode(Node):
         return self.body.findRow(lineno)
 
     def print(self, fd, level):
-        print("", file=fd)
         self.printIndent(fd, level)
         print("class {}(".format(self.name), end="", file=fd)
         for i in range(len(self.bases)):

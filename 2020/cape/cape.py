@@ -153,7 +153,7 @@ class TopLevel(tk.Frame):
 
         self.help()
 
-    def xxx(self):
+    def printx(self):
         self.shared.cvtError = False
         n = self.program.toNode()
         if not self.shared.cvtError:
@@ -274,7 +274,7 @@ class TopLevel(tk.Frame):
                     print("saved")
                     self.shared.saved = True
 
-    def run(self):
+    def runx(self):
         self.shared.cvtError = False
         n = self.program.toNode()
         if self.shared.cvtError:
@@ -292,6 +292,17 @@ class TopLevel(tk.Frame):
                     print("===== Done =====")
             finally:
                 os.remove(path)
+
+    def run(self):
+        self.shared.cvtError = False
+        n = self.program.toNode()
+        if self.shared.cvtError:
+            print("===== Fix program first =====")
+        else:
+            f = io.StringIO("")
+            n.print(f, 0)
+            code = f.getvalue()
+            exec(code)
 
     def help(self):
         if self.shared.curForm != None:
