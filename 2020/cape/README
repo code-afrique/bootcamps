@@ -1,3 +1,30 @@
 To run this, just execute
 
 	python cape.py
+
+CAPE (Code Afrique Python Editor -- with a wink to Cape Coast), is
+an editor for Python programs.  It was inspired by trying to teach
+500 Ghanaian students how to code in Python in just two days.
+Trouble was, the students were having a lot of trouble with the
+syntax.  Much more so than with the programming principles.  Learning
+syntax is boring and can be frustrating.
+
+The problem comes from programming using text editors to enter
+programs.  A text editor is used to enter characters left to right,
+but a program is essentially a tree of statements.  The syntax of
+a program encodes the tree structured in the linear text.  In the
+case of Python, such encoding include the following constructs:
+
+	- indentation for blocks of statements
+	- use of precedence to know which operators are executed first
+	- use of brackets '()' to encode exceptions to these rules
+	- use of escape characters in strings
+
+CAPE gets around all this by presenting the program in the tree
+structure that it is.  For those who know what it is, CAPE directly
+manipulates the Abstract Syntax Tree (AST).  As a result, it becomes
+virtually impossible to create programs that are syntactically
+broken.  CAPE completely does away with the concept of "lines of code"
+(and, with it, line numbers).  CAPE reads and stores Python programs,
+but only as a representation of the AST---you can't edit the Python
+program directly in CAPE.
