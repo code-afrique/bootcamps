@@ -208,11 +208,41 @@ class TryNode(Node):
                 print(":", file=fd)
             body.print(fd, level + 1)
         if self.orelse != None:
+            self.printIndent(fd, level)
             print("else:", file=fd)
             self.orelse.print(fd, level + 1)
         if self.finalbody != None:
+            self.printIndent(fd, level)
             print("finally:", file=fd)
             self.finalbody.print(fd, level + 1)
+
+class WithNode(Node):
+    def __init__(self, items, body):
+        super().__init__()
+        self.items = items
+        self.body = body
+
+    def toBlock(self, frame, block):
+        return block.newWithBlock(frame, self)
+
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        print("with ", end="", file=fd)
+        first = True
+        for expr, var in self.items:
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
+            expr.print(fd, 0)
+            if var != None:
+                print(" as ", end="", file=fd)
+                var.print(fd, 0)
+        print(":", file=fd)
+        self.body.print(fd, level + 1)
 
 class WhileNode(Node):
     def __init__(self, cond, body, orelse):
@@ -231,7 +261,6 @@ class WhileNode(Node):
         return loc
 
     def print(self, fd, level):
-        print("WHILE {}".format(level))
         self.printIndent(fd, level)
         print("while ", end="", file=fd)
         self.cond.print(fd, 0)

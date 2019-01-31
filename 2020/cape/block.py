@@ -71,6 +71,15 @@ class Block(tk.Frame):
 
     def newTryBlock(self, parent, node):
         return TryBlock(parent, self.shared, node)
+
+    def newWithBlock(self, parent, node):
+        return WithBlock(parent, self.shared, node)
+        
+    def newWhileBlock(self, parent, node):
+        return WhileBlock(parent, self.shared, node)
+        
+    def newWhileBlock(self, parent, node):
+        return WhileBlock(parent, self.shared, node)
         
     def newWhileBlock(self, parent, node):
         return WhileBlock(parent, self.shared, node)
@@ -1770,6 +1779,46 @@ class TryBlock(Block):
                 body.toNode()) for (hdr, type, name, body) in self.handlers],
             None if self.orelse == None else self.orelse.toNode(),
             None if self.finalbody == None else self.finalbody.toNode())
+
+class WithBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.node = node
+
+        hdr = Block(self, self.shared)
+        tk.Button(hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        column = 1
+        for expr, var in node.items:
+            expr.toBlock(hdr, self).grid(row=0, column=column)
+            column += 1
+            if var != None:
+                tk.Button(hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                var.toBlock(hdr, self).grid(row=0, column=column)
+                column += 1
+        tk.Button(hdr, text=":", fg="red", width=0, command=self.minmax).grid(row=0, column=column)
+        hdr.grid(row=0, column=0, sticky=tk.W)
+        self.body = node.body.toBlock(self, self)
+        self.body.grid(row=1, column=0, sticky=tk.W)
+
+    def genForm(self):
+        self.setForm(WithForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def minmax(self):
+        if self.minimized:
+            self.body.grid(row=1, column=0, sticky=tk.W)
+            self.update()
+            self.minimized = False
+        else:
+            self.body.grid_forget()
+            self.minimized = True
+        self.scrollUpdate()
+
+    def toNode(self):
+        return self.node
 
 class WhileBlock(Block):
     def __init__(self, parent, shared, node):

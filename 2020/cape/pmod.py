@@ -73,6 +73,9 @@ def Try(lineno, col_offset, body, handlers, orelse, finalbody):
 def ExceptHandler(lineno, col_offset, type, name, body):
     return (type, name, SeqNode(body))
 
+def With(lineno, col_offset, items, body):
+    return RowNode(WithNode(items, SeqNode(body)), lineno)
+
 def Compare(lineno, col_offset, left, ops, comparators):
     assert len(ops) == 1
     assert len(comparators) == 1
@@ -237,19 +240,14 @@ def NotIn():
 def comprehension(target, iter, ifs, is_async=0):
     return (target, iter, ifs, is_async)
 
+def withitem(context_expr, optional_vars):
+    return (context_expr, optional_vars)
+
 #####
 
 def GeneratorExp(lineno, col_offset, elt, generators):
     assert False, "generators not yet implemented"
     return ExpressionNode(ConstantNode("GENERATOR"))
-
-def With(lineno, col_offset, items, body):
-    assert False, "'with' not yet implemented"
-    return RowNode(PassNode(), lineno)
-
-def withitem(context_expr, optional_vars):
-    assert False, "'with' not yet implemented"
-    return None
 
 def Yield(lineno, col_offset, value):
     assert False, "'yield' not yet implemented"
