@@ -1,6 +1,8 @@
 import tkinter as tk
 import tkinter.messagebox
 
+import io
+
 from form import *
 from node import *
 
@@ -44,6 +46,11 @@ class Block(tk.Frame):
 
     def copyExpr(self):
         self.shared.exprBuffer = self.toNode()
+        self.clipboard_clear()
+        f = io.StringIO("")
+        self.shared.exprBuffer.print(f, 0)
+        code = f.getvalue()
+        self.clipboard_append(code)
         print("expression copied")
 
     def delExpr(self):
@@ -1446,6 +1453,11 @@ class RowBlock(Block):
 
     def copyStmt(self):
         self.shared.stmtBuffer = self.what.toNode()
+        self.clipboard_clear()
+        f = io.StringIO("")
+        self.shared.stmtBuffer.print(f, 0)
+        code = f.getvalue()
+        self.clipboard_append(code)
         print("statement copied")
 
     def delStmt(self):
