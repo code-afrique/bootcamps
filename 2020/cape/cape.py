@@ -304,14 +304,10 @@ class CAPE(tk.Frame):
             with os.fdopen(fd, 'w') as tmp:
                 n.print(tmp, 0)
                 tmp.close()
-                print("===== Start running =====")
-                # theproc = subprocess.Popen(['python', path])
-                # theproc.communicate()
                 t = tk.Toplevel(self)
                 c = console.Console(t)
                 c.grid()
-                c.start_proc("python " + path)
-                print("===== Done =====")
+                c.start_proc(path)
 
     def runx(self):
         self.shared.cvtError = False

@@ -3,12 +3,10 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import threading
 import time
+import os
 from subprocess import Popen, PIPE
 
 class Console(tk.Frame):
-
-    """Simple console that can execute bash commands"""
-
     def __init__(self, master, *args, **kwargs):
         tk.Frame.__init__(self, master, *args, **kwargs)
 
@@ -25,11 +23,7 @@ class Console(tk.Frame):
 
         self.text.pack(expand=True, fill="both")
 
-        # bash command, for example 'ping localhost' or 'pwd'
-        # that will be executed when "Execute" is pressed
-        self.command = ""  
         self.popen = None     # will hold a reference to a Popen object
-        self.running = False  # True if the process is running
 
         self.bottom = tk.Frame(self)
 
@@ -51,16 +45,12 @@ class Console(tk.Frame):
 
     def start_proc(self, command):
         """Starts a new thread and calls process"""
-        self.stop()
-        self.running = True
         self.command = command
         # self.process is called by the Thread's run method
         threading.Thread(target=self.process).start()
 
     def process(self):
-        """Runs in an infinite loop until self.running is False""" 
-        while self.running:
-            self.execute()
+        self.execute()
 
     def stop(self):
         """Stops an eventual running process"""
@@ -69,29 +59,25 @@ class Console(tk.Frame):
                 self.popen.kill()
             except ProcessLookupError:
                 pass 
-        self.running = False
+        self.master.destroy()
 
     def execute(self):
         """Keeps inserting line by line into self.text
         the output of the execution of self.command"""
         try:
-            # self.popen is a Popen object
-            self.popen = Popen(self.command.split(), stdout=PIPE, bufsize=1)
+            self.popen = Popen(['python'] + self.command.split(), stdout=PIPE, bufsize=1)
             lines_iterator = iter(self.popen.stdout.readline, b"")
-
-            # poll() return None if the process has not terminated
+            # poll() returns None if the process has not terminated
             # otherwise poll() returns the process's exit code
             while self.popen.poll() is None:
                 for line in lines_iterator:
                     self.show(line.decode("utf-8"))
                 else:
                     time.sleep(0.1)
-            # self.show("Process " + self.command  + " terminated.\n\n")
             self.status.set("Terminated")
-
         except FileNotFoundError:
-            self.show("Unknown command: " + self.command + "\n\n")                               
+            self.show("Can't find python\n\n")
         except IndexError:
             self.show("No command entered\n\n")
-
-        self.stop()
+        finally:
+            os.remove(self.command)
