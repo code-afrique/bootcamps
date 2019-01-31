@@ -96,7 +96,6 @@ class LambdaNode(Node):
 
     def print(self, fd, level):
         print("(lambda ", end="", file=fd)
-        first = True
         d = len(self.args) - len(self.defaults)
         for i in range(len(self.args)):
             if i != 0:

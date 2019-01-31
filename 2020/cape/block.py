@@ -1177,16 +1177,19 @@ class LambdaBlock(Block):
 
         tk.Button(self, text="lambda", fg="red", command=self.cb).grid(row=0, column=0)
 
-        first = True
         column = 1
-        for arg in node.args:
-            if first:
-                first = False
-            else:
+        d = len(node.defaults)
+        for i in range(len(node.args)):
+            if i > 0:
                 tk.Button(self, text=",", fg="red", command=self.cb).grid(row=0, column=column)
                 column += 1
-            tk.Button(self, text=arg, fg="red", command=self.cb).grid(row=0, column=column)
+            tk.Button(self, text=node.args[i], fg="red", command=self.cb).grid(row=0, column=column)
             column += 1
+            if i >= d:
+                tk.Button(self, text="=", fg="red", command=self.cb).grid(row=0, column=column)
+                column += 1
+                node.defaults[i - d].toBlock(self, self).grid(row=0, column=column)
+                column += 1
 
         tk.Button(self, text=":", fg="red", command=self.cb).grid(row=0, column=column)
         column += 1
