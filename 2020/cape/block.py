@@ -1489,13 +1489,17 @@ class DefBlock(Block):
         super().__init__(parent, shared)
         self.isWithinDef = True
         self.mname = tk.StringVar()
+        self.hdr = Block(self, self.shared)
+        self.hdr.grid(row=0, column=0, sticky=tk.W)
 
         if node == None:
             self.args = [ ]
+            self.defaults = [ ]
             self.minimized = False
         else:
             self.mname.set(node.name)
             self.args = node.args
+            self.defaults = [ d.toBlock(self.hdr, self) for d in node.defaults ]
             self.minimized = True
 
         self.setHeader()
@@ -1508,7 +1512,6 @@ class DefBlock(Block):
             self.body.grid(row=1, column=0, sticky=tk.W)
 
     def setHeader(self):
-        self.hdr = Block(self, self.shared)
         self.btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
         self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
@@ -1516,12 +1519,18 @@ class DefBlock(Block):
         tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
 
         column = 3
+        d = len(self.args) - len(self.defaults)
         for i in range(len(self.args)):
             if i != 0:
                 tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
                 column += 1
             tk.Button(self.hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=0, column=column)
             column += 1
+            if i >= d:
+                tk.Button(self.hdr, text="=", command=self.cb).grid(row=0, column=column)
+                column += 1
+                self.defaults[i - d].grid(row=0, column=column)
+                column += 1
 
         tk.Button(self.hdr, text=")", command=self.cb).grid(row=0, column=column)
         tk.Button(self.hdr, text=":", command=self.minmax).grid(row=0, column=column+1)
@@ -1559,7 +1568,7 @@ class DefBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad method name")
                 self.shared.cvtError = True
-        return DefNode(v, self.args, [], self.body.toNode())
+        return DefNode(v, self.args, [d.toNode() for d in self.defaults], self.body.toNode())
 
 class IfBlock(Block):
     """
