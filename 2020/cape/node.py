@@ -71,6 +71,7 @@ class DefNode(Node):
         return self.body.findRow(lineno)
 
     def print(self, fd, level):
+        print("", file=fd)
         self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
         d = len(self.args) - len(self.defaults)
@@ -122,6 +123,7 @@ class ClassNode(Node):
         return self.body.findRow(lineno)
 
     def print(self, fd, level):
+        print("", file=fd)
         self.printIndent(fd, level)
         print("class {}(".format(self.name), end="", file=fd)
         for i in range(len(self.bases)):

@@ -58,10 +58,10 @@ class TextForm(Form):
         self.lineno = tk.Text(self, width=4, height=30, relief=tk.SUNKEN, wrap=tk.NONE, tabs=('0.2i', tk.RIGHT))
         self.text = tk.Text(self, width=48, height=30, relief=tk.SUNKEN, wrap=tk.NONE)
 
-        ysbar = tk.Scrollbar(self)
-        ysbar['command'] = self.text.yview
-        self.text['yscrollcommand'] = ysbar.set
-        ysbar.grid(row=0, column=2, sticky=tk.S+tk.N+tk.W)
+        self.ysbar = tk.Scrollbar(self)
+        self.ysbar['command'] = self.scroller
+        self.text['yscrollcommand'] = self.on_scroll
+        self.ysbar.grid(row=0, column=2, sticky=tk.S+tk.N+tk.W)
 
         self.lineno.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S)
         self.text.grid(row=0, column=1, sticky=tk.W+tk.N+tk.E+tk.S)
@@ -70,6 +70,14 @@ class TextForm(Form):
         xsbar['command'] = self.text.xview
         self.text['xscrollcommand'] = xsbar.set
         xsbar.grid(row=1, column=1, sticky=tk.W+tk.E+tk.N)
+
+    def scroller(self, *args):
+        self.text.yview(*args)
+        self.lineno.yview(*args)
+
+    def on_scroll(self, *args):
+        self.ysbar.set(*args)
+        self.scroller('moveto', args[0])
 
     def settext(self, text):
         self.text.delete('1.0', tk.END)
