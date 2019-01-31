@@ -390,7 +390,12 @@ class ImportfromNode(Node):
         print("from ", end="", file=fd)
         self.module.print(fd, 0)
         print(" import ", end="", file=fd)
+        first = True
         for (name, asname) in self.names:
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
             name.print(fd, 0)
             if asname != None:
                 print(" as ", end="", file=fd)
