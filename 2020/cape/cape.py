@@ -14,6 +14,7 @@ import shared
 from form import HelpForm, TextForm
 from node import RowNode, EmptyNode
 from block import Block, SeqBlock
+import console
 
 class Scrollable(tk.Frame):
     """
@@ -73,7 +74,7 @@ class Scrollable(tk.Frame):
         self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
         # self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
-class TopLevel(tk.Frame):
+class CAPE(tk.Frame):
     def __init__(self, parent, shared):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
         self.parent = parent
@@ -99,7 +100,7 @@ class TopLevel(tk.Frame):
 
         actions = tk.Menu(menu)
         actions.add_command(label="Show code", command=self.text)
-        actions.add_command(label="Run", command=self.run)
+        actions.add_command(label="Run", command=self.run2)
         menu.add_cascade(label="Actions", menu=actions)
 
         help = tk.Menu(menu)
@@ -274,7 +275,7 @@ class TopLevel(tk.Frame):
                     print("saved")
                     self.shared.saved = True
 
-    def runx(self):
+    def run(self):
         self.shared.cvtError = False
         n = self.program.toNode()
         if self.shared.cvtError:
@@ -293,7 +294,26 @@ class TopLevel(tk.Frame):
             finally:
                 os.remove(path)
 
-    def run(self):
+    def run2(self):
+        self.shared.cvtError = False
+        n = self.program.toNode()
+        if self.shared.cvtError:
+            print("===== Fix program first =====")
+        else:
+            fd, path = tempfile.mkstemp(dir=".", suffix=".py")
+            with os.fdopen(fd, 'w') as tmp:
+                n.print(tmp, 0)
+                tmp.close()
+                print("===== Start running =====")
+                # theproc = subprocess.Popen(['python', path])
+                # theproc.communicate()
+                t = tk.Toplevel(self)
+                c = console.Console(t)
+                c.grid()
+                c.start_proc("python " + path)
+                print("===== Done =====")
+
+    def runx(self):
         self.shared.cvtError = False
         n = self.program.toNode()
         if self.shared.cvtError:
@@ -332,12 +352,18 @@ class TopLevel(tk.Frame):
             tk.messagebox.showinfo("Warning", "You must save the program first")
             self.shared.saved = True
 
-if __name__ == '__main__':
+def top(root):
+    s = shared.Shared()
+    tl = CAPE(root, s)
+    tl.grid()
+    tl.grid_propagate(0)
+
+def main():
     root = tk.Tk()
     root.title("Code Afrique Python Editor")
     root.geometry("1250x550")
-    shared = shared.Shared()
-    tl = TopLevel(root, shared)
-    tl.grid()
-    tl.grid_propagate(0)
+    top(root)
     root.mainloop()
+
+if __name__ == '__main__':
+    main()
