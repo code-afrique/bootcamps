@@ -1,3 +1,4 @@
+# Based on code from 'nbro': https://stackoverflow.com/questions/30410421/run-process-with-realtime-output-to-a-tkinter-gui
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import threading
