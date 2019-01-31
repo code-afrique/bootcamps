@@ -46,6 +46,12 @@ def Slice(lower, upper, step):
 def Num(lineno, col_offset, n):
     return ExpressionNode(NumberNode(n))
 
+def Str(lineno, col_offset, s):
+    return ExpressionNode(StringNode(s))
+
+def Bytes(lineno, col_offset, s):
+    return ExpressionNode(BytesNode(s))
+
 def For(lineno, col_offset, target, iter, body, orelse):
     return RowNode(ForNode(target.what, iter, SeqNode(body),
         None if orelse == [] else SeqNode(orelse)), lineno)
@@ -152,9 +158,6 @@ def Attribute(lineno, col_offset, value, attr, ctx):
 
 def arg(lineno, col_offset, arg, annotation):
     return arg
-
-def Str(lineno, col_offset, s):
-    return ExpressionNode(StringNode(s))
 
 def NameConstant(lineno, col_offset, value):
     return ExpressionNode(ConstantNode(str(value)))

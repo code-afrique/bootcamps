@@ -735,6 +735,17 @@ class StringNode(Node):
                 print(c, end="", file=fd)
         print('"', end="", file=fd)
 
+class BytesNode(Node):
+    def __init__(self, what):
+        super().__init__()
+        self.what = what
+
+    def toBlock(self, frame, block):
+        return block.newBytesBlock(frame, self)
+
+    def print(self, fd, level):
+        print(self.what, end="", file=fd)
+
 class ExpressionNode(Node):
     def __init__(self, what):
         super().__init__()

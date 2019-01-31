@@ -156,6 +156,9 @@ class Block(tk.Frame):
     def newStringBlock(self, parent, what):
         return StringBlock(parent, self.shared, what)
 
+    def newBytesBlock(self, parent, what):
+        return BytesBlock(parent, self.shared, what)
+
     def newExpressionBlock(self, parent, what):
         return ExpressionBlock(parent, self.shared, what)
 
@@ -268,6 +271,34 @@ class StringBlock(Block):
 
     def toNode(self):
         return StringNode(self.string.get())
+
+class BytesBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.bytes = tk.StringVar()
+        tk.Label(self, text="b'").grid(row=0, column=0)
+        self.btn = tk.Button(self, textvariable=self.bytes, fg="green", width=0, command=self.cb)
+        self.lq = tk.Label(self, text="b'")
+        self.bytes.set(node.what.decode())
+        self.btn.grid(row=0, column=1)
+        tk.Label(self, text="'").grid(row=0, column=2)
+
+    def genForm(self):
+        f = BytesForm(self.shared.confarea, self)
+        self.setForm(f)
+        f.entry.focus()
+
+    def cb(self):
+        self.setBlock(self)
+
+    def setContents(self, s):
+        self.bytes.set(s)
+        self.btn.config(width=0)
+        self.scrollUpdate()
+        self.needsSaving()
+
+    def toNode(self):
+        return BytesNode(self.bytes.get().encode())
 
 class SubscriptBlock(Block):
     def __init__(self, parent, shared, node):
