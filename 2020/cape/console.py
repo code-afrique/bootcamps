@@ -41,7 +41,9 @@ class Console(tk.Frame):
         self.entry.focus()
         self.entry.pack(side="left", fill="x", expand=True)
 
-        self.executer = tk.Button(self.bottom, text="Execute", command=self.start_thread)
+        self.status = tk.StringVar()
+        self.status.set("Executing")
+        self.executer = tk.Label(self.bottom, textvariable=self.status)
         self.executer.pack(side="left", padx=5, pady=2)
         self.clearer = tk.Button(self.bottom, text="Clear", command=self.clear)
         self.clearer.pack(side="left", padx=5, pady=2)
@@ -116,7 +118,8 @@ class Console(tk.Frame):
             while self.popen.poll() is None:
                 for line in lines_iterator:
                     self.show(line.decode("utf-8"))
-            self.show("Process " + self.command  + " terminated.\n\n")
+            # self.show("Process " + self.command  + " terminated.\n\n")
+            self.status.set("Terminated")
 
         except FileNotFoundError:
             self.show("Unknown command: " + self.command + "\n\n")                               
