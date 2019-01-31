@@ -340,6 +340,27 @@ class ImportNode(Node):
             self.asname.print(fd, 0)
         print("", file=fd)
 
+class ImportfromNode(Node):
+    def __init__(self, module, names):
+        super().__init__()
+        self.module = module
+        self.names = names
+
+    def toBlock(self, frame, block):
+        return block.newImportfromBlock(frame, self)
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        print("from ", end="", file=fd)
+        self.module.print(fd, 0)
+        print(" import ", end="", file=fd)
+        for (name, asname) in self.names:
+            name.print(fd, 0)
+            if asname != None:
+                print(" as ", end="", file=fd)
+                asname.print(fd, 0)
+        print("", file=fd)
+
 class GlobalNode(Node):
     def __init__(self, names):
         super().__init__()

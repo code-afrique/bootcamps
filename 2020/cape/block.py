@@ -99,6 +99,9 @@ class Block(tk.Frame):
     def newImportBlock(self, parent, node):
         return ImportBlock(parent, self.shared, node)
 
+    def newImportfromBlock(self, parent, node):
+        return ImportfromBlock(parent, self.shared, node)
+
     def newGlobalBlock(self, parent, node):
         return GlobalBlock(parent, self.shared, node)
 
@@ -1329,6 +1332,40 @@ class ImportBlock(Block):
 
     def toNode(self):
         return ImportNode(self.module.toNode(), None if self.alias == None else self.alias.toNode())
+
+class ImportfromBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.node = node
+
+        tk.Button(self, text="from", fg="red", command=self.cb).grid(row=0, column=0)
+        self.module = node.module.toBlock(self, self)
+        self.module.grid(row=0, column=1)
+        tk.Button(self, text="import", fg="red", command=self.cb).grid(row=0, column=2)
+        first = True
+        column = 3
+        for name, alias in node.names:
+            if first:
+                first = False
+            else:
+                tk.Button(self, text=",", fg="red", command=self.cb).grid(row=0, column=column)
+                column += 1
+            name.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            if alias != None:
+                tk.Button(self, text=" as ", fg="red", command=self.cb).grid(row=0, column=column)
+                column += 1
+                alias.grid(row=0, column=column)
+                column += 1
+
+    def genForm(self):
+        self.setForm(ImportForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return self.node
 
 class RowBlock(Block):
     def __init__(self, parent, shared, node, row):

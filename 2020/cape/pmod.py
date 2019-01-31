@@ -179,7 +179,7 @@ def Import(lineno, col_offset, names):
 
 def ImportFrom(lineno, col_offset, module, names, level):
     components = module.split('.')
-    return RowNode(ImportNode(attrify(components), None), lineno)
+    return RowNode(ImportfromNode(attrify(components), [(NameNode(name), None if asname == None else NameNode(asname)) for name, asname in names]), lineno)
 
 def Global(lineno, col_offset, names):
     return RowNode(GlobalNode([NameNode(n) for n in names]), lineno)
