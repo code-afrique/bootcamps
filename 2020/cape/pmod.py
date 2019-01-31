@@ -17,7 +17,10 @@ def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
     return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body)), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
-    return (args, defaults)
+    if vararg == None:
+        return (args, defaults)
+    else:
+        return (args + ['*' + vararg], defaults)
 
 def args(lineno, col_offset, arg, annotation):
     return arg
@@ -161,6 +164,9 @@ def BinOp(lineno, col_offset, left, op, right):
 
 def UnaryOp(lineno, col_offset, op, operand):
     return ExpressionNode(UnaryopNode(operand, op))
+
+def Starred(lineno, col_offset, value, ctx):
+    return ExpressionNode(UnaryopNode(value, '*'))
 
 def BoolOp(lineno, col_offset, op, values):
     return ExpressionNode(BinaryopNode(values[0], values[1], op))
