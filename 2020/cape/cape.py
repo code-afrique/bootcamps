@@ -280,7 +280,7 @@ class TopLevel(tk.Frame):
         if self.shared.cvtError:
             print("===== Fix program first =====")
         else:
-            fd, path = tempfile.mkstemp()
+            fd, path = tempfile.mkstemp(dir=".")
             try:
                 with os.fdopen(fd, 'w') as tmp:
                     n.print(tmp, 0)
