@@ -57,10 +57,11 @@ class RowNode(Node):
         print(s, file=fd, end="")
 
 class DefNode(Node):
-    def __init__(self, name, args, body):
+    def __init__(self, name, args, defaults, body):
         super().__init__()
         self.name = name
         self.args = args
+        self.defaults = defaults
         self.body = body
 
     def toBlock(self, frame, block):
@@ -72,17 +73,22 @@ class DefNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
+        d = len(self.args) - len(self.defaults)
         for i in range(len(self.args)):
             if i != 0:
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
+            if i >= d:
+                print("=", end="", file=fd)
+                self.defaults[i - d].print(fd, 0)
         print("):", file=fd)
         self.body.print(fd, level + 1)
 
 class LambdaNode(Node):
-    def __init__(self, args, body):
+    def __init__(self, args, defaults, body):
         super().__init__()
         self.args = args
+        self.defaults = defaults
         self.body = body
 
     def toBlock(self, frame, block):
@@ -91,12 +97,14 @@ class LambdaNode(Node):
     def print(self, fd, level):
         print("(lambda ", end="", file=fd)
         first = True
-        for arg in self.args:
-            if first:
-                first = False
-            else:
+        d = len(self.args) - len(self.defaults)
+        for i in range(len(self.args)):
+            if i != 0:
                 print(", ", end="", file=fd)
-            print("{}".format(arg), end="", file=fd)
+            print(self.args[i], end="", file=fd)
+            if i >= d:
+                print("=", end="", file=fd)
+                self.defaults[i - d].print(fd, 0)
         print(": ", end="", file=fd)
         self.body.print(fd, 0)
         print(")", end="", file=fd)

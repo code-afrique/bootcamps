@@ -218,21 +218,22 @@ class TopLevel(tk.Frame):
                 self.program.grid(sticky=tk.W)
                 self.shared.scrollable.scrollUpdate()
 
-                # verify that it has been done right
+                # verify that conversion has been done right
                 print("verify")
                 tree2 = pparse.pparse(code, show_offsets=False)
                 n3 = self.program.toNode()
                 f3 = io.StringIO("")
                 n3.print(f3, 0)
                 code3 = f3.getvalue()
-                # print(code3)
                 tree3 = pparse.pparse(code3, show_offsets=False)
                 if tree2 != tree3:
                     print("Parse verification failed; edit at own risk")
-                    with open("tree2", "w") as fd:
-                        fd.write(tree2)
-                    with open("tree3", "w") as fd:
-                        fd.write(tree3)
+                with open("tree2", "w") as fd:
+                    fd.write(tree2)
+                with open("tree3", "w") as fd:
+                    fd.write(tree3)
+                with open("code3", "w") as fd:
+                    fd.write(code3)
 
                 self.shared.saved = True
 

@@ -6,16 +6,18 @@ def Module(body):
     return SeqNode(body)
 
 def Lambda(lineno, col_offset, args, body):
-    return ExpressionNode(LambdaNode(args, body))
+    argnames, defaults = args
+    return ExpressionNode(LambdaNode(argnames, defaults, body))
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
-    return RowNode(DefNode(name, args, SeqNode(body)), lineno)
+    argnames, defaults = args
+    return RowNode(DefNode(name, argnames, defaults, SeqNode(body)), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
     return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body)), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
-    return args
+    return (args, defaults)
 
 def args(lineno, col_offset, arg, annotation):
     return arg

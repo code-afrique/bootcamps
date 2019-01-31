@@ -1193,7 +1193,7 @@ class LambdaBlock(Block):
         node.body.toBlock(self, self).grid(row=0, column=column)
 
     def genForm(self):
-        self.setForm(ReturnForm(self.shared.confarea, self))
+        self.setForm(LambdaForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1559,7 +1559,7 @@ class DefBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad method name")
                 self.shared.cvtError = True
-        return DefNode(v, self.args, self.body.toNode())
+        return DefNode(v, self.args, [], self.body.toNode())
 
 class IfBlock(Block):
     """
