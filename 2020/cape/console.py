@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import threading
+import time
 from subprocess import Popen, PIPE
 
 class Console(tk.Frame):
@@ -32,41 +33,14 @@ class Console(tk.Frame):
 
         self.bottom = tk.Frame(self)
 
-        self.prompt = tk.Label(self.bottom, text="Enter the command: ")
-        self.prompt.pack(side="left", fill="x")
-        self.entry = tk.Entry(self.bottom)
-        self.entry.bind("<Return>", self.start_thread)
-        self.entry.bind("<Command-a>", lambda e: self.entry.select_range(0, "end"))
-        self.entry.bind("<Command-c>", self.clear)
-        self.entry.focus()
-        self.entry.pack(side="left", fill="x", expand=True)
-
         self.status = tk.StringVar()
         self.status.set("Executing")
         self.executer = tk.Label(self.bottom, textvariable=self.status)
         self.executer.pack(side="left", padx=5, pady=2)
-        self.clearer = tk.Button(self.bottom, text="Clear", command=self.clear)
-        self.clearer.pack(side="left", padx=5, pady=2)
         self.stopper = tk.Button(self.bottom, text="Stop", command=self.stop)
         self.stopper.pack(side="left", padx=5, pady=2)
 
         self.bottom.pack(side="bottom", fill="both")
-
-    def clear_text(self):
-        """Clears the Text widget"""
-        self.text.config(state="normal")
-        self.text.delete(1.0, "end-1c")
-        self.text.config(state="disabled")
-
-    def clear_entry(self):
-        """Clears the Entry command widget"""
-        self.entry.delete(0, "end")
-
-    def clear(self, event=None):
-        """Does not stop an eventual running process,
-        but just clears the Text and Entry widgets."""
-        self.clear_entry()
-        self.clear_text()
 
     def show(self, message):
         """Inserts message into the Text wiget"""
@@ -74,14 +48,6 @@ class Console(tk.Frame):
         self.text.insert("end", message)
         self.text.see("end")
         self.text.config(state="disabled")
-
-    def start_thread(self, event=None):
-        """Starts a new thread and calls process"""
-        self.stop()
-        self.running = True
-        self.command = self.entry.get()
-        # self.process is called by the Thread's run method
-        threading.Thread(target=self.process).start()
 
     def start_proc(self, command):
         """Starts a new thread and calls process"""
@@ -118,6 +84,8 @@ class Console(tk.Frame):
             while self.popen.poll() is None:
                 for line in lines_iterator:
                     self.show(line.decode("utf-8"))
+                else:
+                    time.sleep(0.1)
             # self.show("Process " + self.command  + " terminated.\n\n")
             self.status.set("Terminated")
 
