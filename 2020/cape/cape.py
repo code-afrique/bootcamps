@@ -239,7 +239,7 @@ class TopLevel(tk.Frame):
 
     def save(self):
         if self.curfile == None:
-            saveAs()
+            self.saveAs()
         else:
             self.shared.cvtError = False
             n = self.program.toNode()
@@ -264,7 +264,7 @@ class TopLevel(tk.Frame):
             else:
                 curName = os.path.basename(self.curfile)
                 curDir = os.path.dirname(self.curfile)
-                filename = tk.filedialog.asksaveasfilename(initialdir=curDir, initialfile=curFile, defaultextension='.py',
+                filename = tk.filedialog.asksaveasfilename(initialdir=curDir, initialfile=curName, defaultextension='.py',
                          filetypes=(('Python source files', '*.py'),
                                             ('All files', '*.*')))
             if filename:
