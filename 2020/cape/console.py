@@ -65,15 +65,18 @@ class Console(tk.Frame):
         """Keeps inserting line by line into self.text
         the output of the execution of self.command"""
         try:
-            self.popen = Popen(['python'] + self.command.split(), stdout=PIPE, bufsize=1)
-            lines_iterator = iter(self.popen.stdout.readline, b"")
+            self.popen = Popen(['python'] + self.command.split(), stdout=PIPE, stderr=PIPE, bufsize=1)
+            stdout_iterator = iter(self.popen.stdout.readline, b"")
+            stderr_iterator = iter(self.popen.stderr.readline, b"")
             # poll() returns None if the process has not terminated
             # otherwise poll() returns the process's exit code
             while self.popen.poll() is None:
-                for line in lines_iterator:
+                for line in stdout_iterator:
                     self.show(line.decode("utf-8"))
-                else:
-                    time.sleep(0.1)
+                for line in stderr_iterator:
+                    self.show(line.decode("utf-8"))
+                # else:
+                #     time.sleep(0.1)
             self.status.set("Terminated")
         except FileNotFoundError:
             self.show("Can't find python\n\n")
