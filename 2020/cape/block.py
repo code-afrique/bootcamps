@@ -260,12 +260,11 @@ class StringBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.string = tk.StringVar()
-        tk.Label(self, text='"').grid(row=0, column=0)
+        tk.Button(self, text='"', command=self.cb).grid(row=0, column=0)
         self.btn = tk.Button(self, textvariable=self.string, fg="green", width=0, command=self.cb)
-        self.lq = tk.Label(self, text='"')
         self.string.set(node.what)
         self.btn.grid(row=0, column=1)
-        tk.Label(self, text='"').grid(row=0, column=2)
+        tk.Button(self, text='"', command=self.cb).grid(row=0, column=2)
 
     def genForm(self):
         f = StringForm(self.shared.confarea, self)
@@ -288,12 +287,11 @@ class BytesBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.bytes = tk.StringVar()
-        tk.Label(self, text="b'").grid(row=0, column=0)
+        tk.Button(self, text="b'", command=self.cb).grid(row=0, column=0)
         self.btn = tk.Button(self, textvariable=self.bytes, fg="green", width=0, command=self.cb)
-        self.lq = tk.Label(self, text="b'")
         self.bytes.set(node.what.decode())
         self.btn.grid(row=0, column=1)
-        tk.Label(self, text="'").grid(row=0, column=2)
+        tk.Button(self, text="'", command=self.cb).grid(row=0, column=2)
 
     def genForm(self):
         f = BytesForm(self.shared.confarea, self)

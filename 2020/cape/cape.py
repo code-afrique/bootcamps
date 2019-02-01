@@ -351,7 +351,7 @@ class CAPE(tk.Frame):
         if self.shared.curBlock == None:
             print("nothing to copy")
         else:
-            self.shared.Expr.curBlock.copy()
+            self.shared.curBlock.copy()
 
     def paste(self):
         pass
