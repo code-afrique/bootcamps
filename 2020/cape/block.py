@@ -76,7 +76,11 @@ class Block(tk.Frame):
         print("expression deleted")
 
     def goLeft(self):
-        return self if self.parent == None else self.parent
+        if self.parent == None:
+            return
+        if isinstance(self.parent, ExpressionBlock):
+            return self.parent.parent
+        return self.parent
 
     def goRight(self):
         return self
@@ -827,14 +831,15 @@ class TupleBlock(Block):
 class ExpressionBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
+
+        self.button = tk.Button(self, text="?", width=0, command=self.cb)
         if node == None or node.what == None:
-            self.what = tk.Button(self, text="?", width=0, command=self.cb)
-            self.init = False
+            self.what = None
+            self.button.grid()
         else:
             assert isinstance(node, ExpressionNode)
             self.what = node.what.toBlock(self, self)
-            self.init = True
-        self.what.grid()
+            self.what.grid()
 
     def goRight(self):
         return self if self.what == None else self.what
@@ -843,12 +848,7 @@ class ExpressionBlock(Block):
         return self.parent
 
     def delExpr(self):
-        self.what.grid_forget()
-        self.what = tk.Button(self, text="?", width=0, command=self.cb)
-        self.what.grid()
-        self.init = False
-        self.setBlock(self)
-        self.needsSaving()
+        self.setValue(None)
 
     def genForm(self):
         f = ExpressionForm(self.shared.confarea, self)
@@ -857,112 +857,64 @@ class ExpressionBlock(Block):
     def cb(self):
         self.setBlock(self)
 
+    def setValue(self, v):
+        if v == None:
+            if self.what != None:
+                self.what.grid_forget()
+                self.what = None
+                self.button.grid()
+            self.setBlock(self)
+        else:
+            if self.what == None:
+                self.button.grid_forget()
+            else:
+                self.what.grid_forget()
+            self.what = v.toBlock(self, self)
+            self.what.grid()
+            self.setBlock(self.what)
+            self.needsSaving()
+
     def exprNumber(self, v):
-        self.what.grid_forget()
-        self.what = NumberBlock(self, self.shared, NumberNode(v))
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
+        self.setValue(NumberNode(v))
         self.shared.curForm.entry.focus()
 
     def exprConstant(self, value):
-        self.what.grid_forget()
-        self.what = ConstantBlock(self, self.shared, ConstantNode(value))
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
+        self.setValue(ConstantNode(value))
 
     def exprString(self):
-        self.what.grid_forget()
-        self.what = StringBlock(self, self.shared, StringNode(""))
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
+        self.setValue(StringNode(""))
         self.shared.curForm.entry.focus()
 
     def exprName(self, v):
-        self.what.grid_forget()
-        self.what = NameBlock(self, self.shared, NameNode(v))
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
+        self.setValue(NameNode(v))
         self.shared.curForm.entry.focus()
 
     def exprSubscript(self, isSlice):
-        self.what.grid_forget()
-        self.what = SubscriptBlock(self, self.shared, SubscriptNode(None, (isSlice, None, None, None)))
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.array)
-        self.needsSaving()
+        self.setValue(SubscriptNode(None, (isSlice, None, None, None)))
 
     def exprAttr(self):
-        self.what.grid_forget()
-        self.what = AttrBlock(self, self.shared, None)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.array)
-        self.needsSaving()
+        self.setValue(AttrNode(ExpressionNode(None), ExpressionNode(None)))
 
     def exprList(self):
-        self.what.grid_forget()
-        self.what = ListBlock(self, self.shared, None)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
+        self.setValue(ListNode([]))
 
     def exprTuple(self):
-        self.what.grid_forget()
-        self.what = TupleBlock(self, self.shared, None)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
+        self.setValue(TupleNode([]))
 
     def exprDict(self):
-        self.what.grid_forget()
-        self.what = DictBlock(self, self.shared, None)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what)
-        self.needsSaving()
+        self.setValue(DictNode([], []))
 
     def exprUnaryop(self, op):
-        self.what.grid_forget()
-        self.what = UnaryopBlock(self, self.shared, UnaryopNode(None, op))
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.right)
-        self.needsSaving()
+        self.setValue(UnaryopNode(None, op))
 
     def exprBinaryop(self, op):
-        self.what.grid_forget()
-        self.what = BinaryopBlock(self, self.shared, BinaryopNode(None, None, op))
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.left)
-        self.needsSaving()
+        self.setValue(BinaryopNode(None, None, op))
 
     def exprCall(self):
-        self.what.grid_forget()
-        self.what = CallBlock(self, self.shared, None)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.func)
-        self.needsSaving()
+        self.setValue(CallNode(ExpressionNode(None), [], []))
 
     def exprIfelse(self):
-        self.what.grid_forget()
-        self.what = IfelseBlock(self, self.shared, None)
-        self.what.grid()
-        self.init = True
-        self.setBlock(self.what.ifTrue)
-        self.needsSaving()
+        self.setValue(IfelseNode(ExpressionNode(None), ExpressionNode(None), ExpressionNode(None)))
 
     def paste(self):
         try:
@@ -970,18 +922,13 @@ class ExpressionBlock(Block):
             tree = pparse.pparse(code, mode='eval')
             n = pmod.nodeEval(tree)
             assert isinstance(n, ExpressionNode)
-            self.what.grid_forget()
-            self.what = n.what.toBlock(self, self)
-            self.what.grid(row=0, column=1, sticky=tk.W)
-            self.init = True
-            self.setBlock(self.what)
-            self.needsSaving()
+            self.setValue(n.what)
         except SyntaxError:
             tk.messagebox.showinfo("Paste Error", "not a Python expression")
             print("invalid Python expression: '{}'".format(code))
 
     def toNode(self):
-        if not self.init:
+        if self.what == None:
             if not self.shared.cvtError:
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix uninitialized expression")

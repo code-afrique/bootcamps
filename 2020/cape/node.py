@@ -759,10 +759,7 @@ class ExpressionNode(Node):
         return block.newExpressionBlock(frame, self)
 
     def print(self, fd, level):
-        # if self.init:
-            self.what.print(fd, 0)
-        # else:
-        #   print("?", end="", file=fd)
+        self.what.print(fd, 0)
 
 class SeqNode(Node):
     def __init__(self, rows):

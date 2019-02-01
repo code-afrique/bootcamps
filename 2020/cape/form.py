@@ -298,7 +298,7 @@ class ExpressionForm(Form):
         self.isExpression = False
         self.isStatement = False
 
-        if self.block.init:
+        if self.block.what != None:
             tk.Message(self, width=350, font='Helvetica 16 bold', text="Expression").grid(row=0, column=0)
             tk.Message(self, width=350, font='Helvetica 14', text="This block wraps an expression.  You can copy or delete it here.").grid(row=1, column=0)
             tk.Button(self, text="Delete this expression",
