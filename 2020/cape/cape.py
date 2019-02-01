@@ -145,6 +145,7 @@ class CAPE(tk.Frame):
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
         self.program = SeqBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
+        self.program.parent = None
         self.shared.scrollable.scrollUpdate()
 
         # self.shared.confarea.place(x=0, y=0)
@@ -183,6 +184,7 @@ class CAPE(tk.Frame):
             self.program.grid_forget()
         self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, None)
         self.program.grid(sticky=tk.W)
+        self.program.parent = None
         self.shared.scrollable.scrollUpdate()
 
         self.shared.saved = True
@@ -219,6 +221,7 @@ class CAPE(tk.Frame):
                     self.program.grid_forget()
                 self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
                 self.program.grid(sticky=tk.W)
+                self.program.parent = None
                 self.shared.scrollable.scrollUpdate()
 
                 # verify that conversion has been done right

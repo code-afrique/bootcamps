@@ -1455,8 +1455,7 @@ class RowBlock(Block):
             self.comment.set("#" + comment)
 
     def genForm(self):
-        f = RowForm(self.shared.confarea, self)
-        self.setForm(f)
+        self.setForm(RowForm(self.shared.confarea, self))
 
     def addStmt(self):
         self.parent.insert(self.row + 1)
@@ -1518,6 +1517,9 @@ class SeqBlock(Block):
             for i in range(len(node.rows)):
                 self.rows.append(RowBlock(self, shared, node.rows[i]))
             self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(SeqForm(self.shared.confarea, self))
 
     def insert(self, row):
         rb = RowBlock(self, self.shared, None)

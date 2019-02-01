@@ -19,6 +19,10 @@ class Form(tk.Frame):
     def pasteKey(self, event):
         self.block.paste()
 
+    def leftKey(self, event):
+        if self.parent != None:
+            self.block.setBlock(self.block.parent)
+
     def delStmt(self):
         self.block.parent.delStmt()
 
@@ -26,6 +30,7 @@ class Form(tk.Frame):
         self.bind("<<Cut>>", self.cutKey)
         self.bind("<<Copy>>", self.copyKey)
         self.bind("<<Paste>>", self.pasteKey)
+        self.bind("<Left>", self.leftKey)
         self.focus_set()
 
 class HelpForm(Form):
@@ -36,6 +41,14 @@ class HelpForm(Form):
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Help").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements.  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to minimize or maximize their bodies.").grid(sticky=tk.W)
         tk.Message(self, width=350, font='Helvetica 14', text="Under the 'Actions' menu you will find commands to show the Python code and to run it.  When you run a Python program, a console will appear that displays the output.  It also shows if the program is still running or has terminated.").grid(sticky=tk.W)
+
+class SeqForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Body of statments").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="This is a sequence of statement").grid(sticky=tk.W)
 
 class TextForm(Form):
     def __init__(self, parent, block):
@@ -123,8 +136,6 @@ class RowForm(Form):
             return
         if ev.char == '\r':
             self.addStmt()
-        elif ev.char == '\177':
-            self.delStmt()
 
     def addStmt(self):
         self.block.addStmt()
