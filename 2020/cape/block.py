@@ -46,9 +46,6 @@ class Block(tk.Frame):
     def needsSaving(self):
         self.shared.saved = False
 
-    def copyExpr(self):
-        self.copy()
-
     def copy(self):
         self.shared.exprBuffer = self.toNode()
         self.clipboard_clear()
@@ -170,6 +167,9 @@ class Block(tk.Frame):
 
     def newBytesBlock(self, parent, what):
         return BytesBlock(parent, self.shared, what)
+
+    def newRowBlock(self, parent, what):
+        return RowBlock(parent, self.shared, what)
 
     def newExpressionBlock(self, parent, what):
         return ExpressionBlock(parent, self.shared, what)
@@ -323,11 +323,11 @@ class SubscriptBlock(Block):
         self.eol = tk.Button(self, text=']', command=self.cb)
 
         self.isSlice, lower, upper, step = node.slice
+        if lower == None:
+            self.lower = None
+        else:
+            self.lower = lower.toBlock(self, self)
         if self.isSlice:
-            if lower == None:
-                self.lower = None
-            else:
-                self.lower = lower.toBlock(self, self)
             if upper == None:
                 self.upper = None
             else:
@@ -337,7 +337,6 @@ class SubscriptBlock(Block):
             else:
                 self.step = step.toBlock(self, self)
         else:
-            self.lower = lower.toBlock(self, self)
             self.upper = self.step = None
 
         self.updateGrid()
@@ -930,20 +929,10 @@ class ExpressionBlock(Block):
         self.needsSaving()
 
     def exprPaste(self):
-        if False:
-            if self.shared.exprBuffer != None:
-                self.what.grid_forget()
-                self.what = self.shared.exprBuffer.toBlock(self, self)
-                self.what.grid(row=0, column=1, sticky=tk.W)
-                self.init = True
-                self.setBlock(self.what)
-                self.needsSaving()
         try:
             code = self.clipboard_get()
             tree = pparse.pparse(code, mode='eval')
-            print("PARSE '{}'".format(tree))
             n = pmod.nodeEval(tree)
-            print("PARSE DONE")
             self.what.grid_forget()
             self.what = n.toBlock(self, self)
             self.what.grid(row=0, column=1, sticky=tk.W)
@@ -951,7 +940,7 @@ class ExpressionBlock(Block):
             self.setBlock(self.what)
             self.needsSaving()
         except SyntaxError:
-            print("invalid Python: '{}'".format(code))
+            print("invalid Python expression: '{}'".format(code))
 
 
     def toNode(self):
@@ -1162,13 +1151,28 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.module)
         self.needsSaving()
 
-    def stmtPaste(self):
+    def stmtPasteOld(self):
         if self.shared.stmtBuffer != None:
             self.rowblk.what.grid_forget()
             self.rowblk.what = self.shared.stmtBuffer.toBlock(self.rowblk, self.rowblk)
             self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
             self.setBlock(self.rowblk.what)
         self.needsSaving()
+
+    def stmtPaste(self):
+        try:
+            code = self.clipboard_get()
+            tree = pparse.pparse(code, mode='single')
+            print("PASTE '{}'".format(tree))
+            n = pmod.nodeEval(tree)
+            self.rowblk.what.grid_forget()
+            self.rowblk.what = n.toBlock(self.rowblk, self.rowblk)
+            assert self.rowblk.what != None
+            self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+            self.setBlock(self.rowblk.what)
+            self.needsSaving()
+        except SyntaxError:
+            print("invalid Python statement: '{}'".format(code))
 
     def toNode(self):
         return PassNode()
@@ -1428,9 +1432,9 @@ class ImportfromBlock(Block):
         return self.node
 
 class RowBlock(Block):
-    def __init__(self, parent, shared, node, row):
+    def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
-        self.row = row
+        self.row = None
         self.comment = tk.StringVar()
 
         menu = tk.Button(self, text="-", width=3, command=self.listcmd)
@@ -1503,11 +1507,11 @@ class SeqBlock(Block):
             self.insert(0)
         else:
             for i in range(len(node.rows)):
-                self.rows.append(RowBlock(self, shared, node.rows[i], i))
+                self.rows.append(RowBlock(self, shared, node.rows[i]))
             self.gridUpdate()
 
     def insert(self, row):
-        rb = RowBlock(self, self.shared, None, row)
+        rb = RowBlock(self, self.shared, None)
         self.rows.insert(row, rb)
         self.gridUpdate()
         self.setBlock(rb.what)

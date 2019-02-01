@@ -156,6 +156,10 @@ def Expr(lineno, col_offset, value):
 def Expression(body):
     return body
 
+def Interactive(body):
+    assert len(body) == 1
+    return body[0]
+
 def Attribute(lineno, col_offset, value, attr, ctx):
     return ExpressionNode(AttrNode(value, NameNode(attr)))
 

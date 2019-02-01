@@ -2,6 +2,7 @@ import io
 
 class Node():
     def toBlock(self, frame, block):
+        print("toBlock not implemented by {}".format(self))
         return None
 
     def findRow(self, lineno):
@@ -39,6 +40,9 @@ class RowNode(Node):
         self.what = what
         self.lineno = lineno
         self.comment = None
+
+    def toBlock(self, frame, block):
+        return block.newRowBlock(frame, self)
 
     def findRow(self, lineno):
         return self.what.findRow(lineno)
