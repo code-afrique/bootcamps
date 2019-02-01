@@ -10,6 +10,9 @@ class Console(tk.Frame):
     def __init__(self, master, *args, **kwargs):
         tk.Frame.__init__(self, master, *args, **kwargs)
 
+        self.bind('<Key>', self.key)
+        self.focus_set()
+
         self.text_options = {"state": "disabled",
                              "bg": "black",
                              "fg": "#08c614",
@@ -17,6 +20,7 @@ class Console(tk.Frame):
                              "selectbackground": "#f01c1c"}
 
         self.text = ScrolledText(self, **self.text_options)
+        self.text.tag_config("stdin", foreground="green")
         self.text.tag_config("stdout", foreground="white")
         self.text.tag_config("stderr", foreground="red")
         self.curpos = 0
@@ -38,6 +42,11 @@ class Console(tk.Frame):
         self.stopper.pack(side="left", padx=5, pady=2)
 
         self.bottom.pack(side="bottom", fill="both")
+
+    def key(self, ev):
+        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
+            return
+        self.show('\n' if ev.char == '\r' else ev.char, "stdin")
 
     def show(self, message, tag):
         """Inserts message into the Text wiget"""
