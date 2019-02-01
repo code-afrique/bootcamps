@@ -95,7 +95,9 @@ class CAPE(tk.Frame):
         menu.add_cascade(label="File", menu=file)
 
         edit = tk.Menu(menu)
-        edit.add_command(label="TO BE IMPLEMENTED")
+        edit.add_command(label="Cut", command=self.cut)
+        edit.add_command(label="Copy", command=self.copy)
+        edit.add_command(label="Paste", command=self.paste)
         menu.add_cascade(label="Edit", menu=edit)
 
         actions = tk.Menu(menu)
@@ -340,6 +342,19 @@ class CAPE(tk.Frame):
             self.shared.curForm.settext(f.getvalue())
             self.shared.curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
             self.shared.curForm.update()
+
+    def cut(self):
+        self.copy()
+        pass
+
+    def copy(self):
+        if self.shared.curBlock == None:
+            print("nothing to copy")
+        else:
+            self.shared.Expr.curBlock.copy()
+
+    def paste(self):
+        pass
 
     def quit(self):
         if self.shared.saved:

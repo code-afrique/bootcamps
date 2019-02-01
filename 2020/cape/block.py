@@ -47,6 +47,9 @@ class Block(tk.Frame):
         self.shared.saved = False
 
     def copyExpr(self):
+        self.copy()
+
+    def copy(self):
         self.shared.exprBuffer = self.toNode()
         self.clipboard_clear()
         f = io.StringIO("")
