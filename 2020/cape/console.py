@@ -10,9 +10,6 @@ class Console(tk.Frame):
     def __init__(self, master, *args, **kwargs):
         tk.Frame.__init__(self, master, *args, **kwargs)
 
-        self.bind('<Key>', self.key)
-        self.focus_set()
-
         self.text_options = {"state": "disabled",
                              "bg": "black",
                              "fg": "#08c614",
@@ -23,12 +20,19 @@ class Console(tk.Frame):
         self.text.tag_config("stdin", foreground="green")
         self.text.tag_config("stdout", foreground="white")
         self.text.tag_config("stderr", foreground="red")
-        self.curpos = 0
 
         # It seems not to work when Text is disabled...
         # self.text.bind("<<Modified>>", lambda: self.text.frame.see(tk.END))
 
         self.text.pack(expand=True, fill="both")
+
+        input = tk.Frame(self)
+        tk.Label(input, text="Input:").pack(side=tk.LEFT)
+        self.entry = tk.Entry(input)
+        self.entry.bind('<Return>', self.entryEnter)
+        self.entry.pack(expand=True, fill="both")
+        self.entry.focus_set()
+        input.pack(expand=True, fill=tk.BOTH)
 
         self.popen = None     # will hold a reference to a Popen object
 
@@ -43,10 +47,10 @@ class Console(tk.Frame):
 
         self.bottom.pack(side="bottom", fill="both")
 
-    def key(self, ev):
-        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
-            return
-        self.show('\n' if ev.char == '\r' else ev.char, "stdin")
+    def entryEnter(self, ev):
+        m = self.entry.get()
+        self.entry.delete(0, tk.END)
+        self.show(m + '\n', "stdin")
 
     def show(self, message, tag):
         """Inserts message into the Text wiget"""
