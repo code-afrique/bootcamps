@@ -30,7 +30,7 @@ class Block(tk.Frame):
             f.catchKeys()
 
     def genForm(self):
-        print("genForm {}".format(self))
+        print("no genForm {}".format(self))
 
     def setBlock(self, b):
         if self.shared.curBlock:
@@ -70,6 +70,20 @@ class Block(tk.Frame):
         self.copyExpr()
         self.parent.delExpr()
         print("expression deleted")
+
+    def goLeft(self):
+        if self.parent == None:
+            print("no parent")
+        return self if self.parent == None else self.parent
+
+    def goRight(self):
+        return self
+
+    def goUp(self):
+        return self
+
+    def goDown(self):
+        return self
 
     def newPassBlock(self, parent, node):
         return PassBlock(parent, self.shared, node)
@@ -820,6 +834,13 @@ class ExpressionBlock(Block):
             self.init = True
         self.what.grid()
 
+    def goRight(self):
+        return self if self.what == None else self.what
+
+    def goLeft(self):
+        print("expr left", self.parent)
+        return self.parent
+
     def delExpr(self):
         self.what.grid_forget()
         self.what = tk.Button(self, text="?", width=0, command=self.cb)
@@ -986,6 +1007,9 @@ class AssignBlock(Block):
             tk.Button(self, text='=', fg="purple", command=self.cb).grid(row=0, column=column)
             column += 1
         self.value.grid(row=0, column=column)
+
+    def goRight(self):
+        return self.targets[0]
 
     def genForm(self):
         self.setForm(AssignForm(self.shared.confarea, self))
@@ -1181,9 +1205,7 @@ class EmptyBlock(Block):
         # btn.grid(row=0, column=0)
 
     def genForm(self):
-        # f = EmptyForm(self.shared.confarea, self)
-        # self.setForm(f)
-        pass
+        self.setForm(EmptyForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1201,7 +1223,10 @@ class EvalBlock(Block):
         self.expr.grid()
 
     def genForm(self):
-        pass
+        self.setForm(EvalForm(self.shared.confarea, self))
+
+    def goRight(self):
+        return self.expr
 
     def toNode(self):
         return EvalNode(self.expr.toNode())
@@ -1448,6 +1473,21 @@ class RowBlock(Block):
             self.comment.set("#" + node.comment)
         tk.Button(self, textvariable=self.comment, fg="brown", command=self.listcmd).grid(row=0, column=2, sticky=tk.N+tk.W)
 
+    def goRight(self):
+        return self if self.what == None else self.what
+
+    def goUp(self):
+        if self.row != None and self.row > 0:
+            return self.parent.rows[self.row - 1]
+        else:
+            return self
+
+    def goDown(self):
+        if self.row != None and self.row < len(self.parent.rows) - 1:
+            return self.parent.rows[self.row + 1]
+        else:
+            return self
+
     def setComment(self, comment):
         if comment == "":
             self.comment.set("")
@@ -1517,6 +1557,9 @@ class SeqBlock(Block):
             for i in range(len(node.rows)):
                 self.rows.append(RowBlock(self, shared, node.rows[i]))
             self.gridUpdate()
+
+    def goRight(self):
+        return self.rows[0]
 
     def genForm(self):
         self.setForm(SeqForm(self.shared.confarea, self))

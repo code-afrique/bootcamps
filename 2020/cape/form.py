@@ -20,8 +20,16 @@ class Form(tk.Frame):
         self.block.paste()
 
     def leftKey(self, event):
-        if self.parent != None:
-            self.block.setBlock(self.block.parent)
+        self.block.setBlock(self.block.goLeft())
+
+    def rightKey(self, event):
+        self.block.setBlock(self.block.goRight())
+
+    def upKey(self, event):
+        self.block.setBlock(self.block.goUp())
+
+    def downKey(self, event):
+        self.block.setBlock(self.block.goDown())
 
     def delStmt(self):
         self.block.parent.delStmt()
@@ -31,6 +39,9 @@ class Form(tk.Frame):
         self.bind("<<Copy>>", self.copyKey)
         self.bind("<<Paste>>", self.pasteKey)
         self.bind("<Left>", self.leftKey)
+        self.bind("<Right>", self.rightKey)
+        self.bind("<Up>", self.upKey)
+        self.bind("<Down>", self.downKey)
         self.focus_set()
 
 class HelpForm(Form):
@@ -49,6 +60,22 @@ class SeqForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Body of statments").grid()
         tk.Message(self, width=350, font='Helvetica 14', text="This is a sequence of statement").grid(sticky=tk.W)
+
+class EvalForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Evaluation Statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="This is a statement that evaluates an expression").grid(sticky=tk.W)
+
+class EmptyForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Empty Statement").grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="This results in an empty line in the code.").grid(sticky=tk.W)
 
 class TextForm(Form):
     def __init__(self, parent, block):
