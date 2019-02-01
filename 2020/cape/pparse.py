@@ -118,5 +118,5 @@ def pformat(node, indent='  ', show_offsets=True, _indent=0):
         out += indentstr() + ')'
         return out
 
-def pparse(code, show_offsets=True):
-    return pformat(ast.parse(code), show_offsets=show_offsets)
+def pparse(code, show_offsets=True, mode='exec'):
+    return pformat(ast.parse(code, mode=mode), show_offsets=show_offsets)

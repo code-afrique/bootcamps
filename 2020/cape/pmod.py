@@ -153,6 +153,9 @@ def Tuple(lineno, col_offset, elts, ctx):
 def Expr(lineno, col_offset, value):
     return RowNode(EvalNode(value), lineno)
 
+def Expression(body):
+    return body
+
 def Attribute(lineno, col_offset, value, attr, ctx):
     return ExpressionNode(AttrNode(value, NameNode(attr)))
 

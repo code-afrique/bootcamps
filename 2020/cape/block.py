@@ -5,6 +5,8 @@ import io
 
 from form import *
 from node import *
+import pparse
+import pmod
 
 class Block(tk.Frame):
     def __init__(self, parent, shared, borderwidth=0):
@@ -927,13 +929,29 @@ class ExpressionBlock(Block):
         self.needsSaving()
 
     def exprPaste(self):
-        if self.shared.exprBuffer != None:
+        if False:
+            if self.shared.exprBuffer != None:
+                self.what.grid_forget()
+                self.what = self.shared.exprBuffer.toBlock(self, self)
+                self.what.grid(row=0, column=1, sticky=tk.W)
+                self.init = True
+                self.setBlock(self.what)
+                self.needsSaving()
+        try:
+            code = self.clipboard_get()
+            tree = pparse.pparse(code, mode='eval')
+            print("PARSE '{}'".format(tree))
+            n = pmod.nodeEval(tree)
+            print("PARSE DONE")
             self.what.grid_forget()
-            self.what = self.shared.exprBuffer.toBlock(self, self)
+            self.what = n.toBlock(self, self)
             self.what.grid(row=0, column=1, sticky=tk.W)
             self.init = True
             self.setBlock(self.what)
             self.needsSaving()
+        except SyntaxError:
+            print("invalid Python: '{}'".format(code))
+
 
     def toNode(self):
         if not self.init:

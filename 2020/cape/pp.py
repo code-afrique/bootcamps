@@ -152,8 +152,7 @@ def main(argv=None):
 
     with open(args.filename, 'rb') as f:
         contents = f.read()
-    pprint(args.parse_func(contents), show_offsets=args.show_offsets)
-
+    pprint(args.parse_func(contents, mode='exec'), show_offsets=args.show_offsets)
 
 if __name__ == '__main__':
     exit(main())
