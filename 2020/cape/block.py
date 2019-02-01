@@ -30,7 +30,7 @@ class Block(tk.Frame):
             f.catchKeys()
 
     def genForm(self):
-        print("genForm")
+        print("genForm {}".format(self))
 
     def setBlock(self, b):
         if self.shared.curBlock:
@@ -54,6 +54,9 @@ class Block(tk.Frame):
         code = f.getvalue()
         self.clipboard_append(code)
         print("expression copied")
+
+    def paste(self):
+        tk.messagebox.showinfo("Paste Error", "paste only allowed into uninitialized expression or rows")
 
     def delExpr(self):
         self.copyExpr()
@@ -928,23 +931,21 @@ class ExpressionBlock(Block):
         self.setBlock(self.what.ifTrue)
         self.needsSaving()
 
-    def exprPaste(self):
+    def paste(self):
         try:
             code = self.clipboard_get()
             tree = pparse.pparse(code, mode='eval')
             n = pmod.nodeEval(tree)
-            if not isinstance(n, ExpressionNode):
-                print("must be Expression")
-            else:
-                self.what.grid_forget()
-                self.what = n.what.toBlock(self, self)
-                self.what.grid(row=0, column=1, sticky=tk.W)
-                self.init = True
-                self.setBlock(self.what)
-                self.needsSaving()
+            assert isinstance(n, ExpressionNode)
+            self.what.grid_forget()
+            self.what = n.what.toBlock(self, self)
+            self.what.grid(row=0, column=1, sticky=tk.W)
+            self.init = True
+            self.setBlock(self.what)
+            self.needsSaving()
         except SyntaxError:
+            tk.messagebox.showinfo("Paste Error", "not a Python expression")
             print("invalid Python expression: '{}'".format(code))
-
 
     def toNode(self):
         if not self.init:
@@ -1190,6 +1191,9 @@ class EvalBlock(Block):
         else:
             self.expr = ExpressionBlock(self, shared, node.what)
         self.expr.grid()
+
+    def genForm(self):
+        pass
 
     def toNode(self):
         return EvalNode(self.expr.toNode())
@@ -1462,29 +1466,19 @@ class RowBlock(Block):
         self.parent.moveDown(self.row)
         self.needsSaving()
 
-    def copyStmt(self):
-        self.shared.stmtBuffer = self.what.toNode()
-        self.clipboard_clear()
-        f = io.StringIO("")
-        self.shared.stmtBuffer.print(f, 0)
-        code = f.getvalue()
-        self.clipboard_append(code)
-        print("statement copied")
-
     def delStmt(self):
         self.parent.delRow(self.row)
         print("statement deleted")
         self.needsSaving()
 
-    def stmtPaste(self):
+    def paste(self):
         try:
             code = self.clipboard_get()
             tree = pparse.pparse(code, mode='single')
             n = pmod.nodeEval(tree)
-            if not isinstance(n, RowNode):
-                print("must be Row")
-            elif not (isinstance(self.what, EmptyBlock) or isinstance(self.what, PassBlock)):
-                print("can only overwrite empty or pass statements")
+            assert isinstance(n, RowNode)
+            if not (isinstance(self.what, EmptyBlock) or isinstance(self.what, PassBlock)):
+                tk.messagebox.showinfo("Paste Error", "can only overwrite empty or pass statements")
             else:
                 self.what.grid_forget()
                 self.what = n.what.toBlock(self, self)
@@ -1492,6 +1486,7 @@ class RowBlock(Block):
                 self.setBlock(self.what)
                 self.needsSaving()
         except SyntaxError:
+            tk.messagebox.showinfo("Paste Error", "not a Python statement")
             print("invalid Python statement: '{}'".format(code))
 
     def listcmd(self):

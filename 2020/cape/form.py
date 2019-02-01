@@ -13,6 +13,9 @@ class Form(tk.Frame):
     def copyKey(self, event):
         self.block.copy()
 
+    def pasteKey(self, event):
+        self.block.paste()
+
     def delExpr(self):
         self.block.delExpr()
 
@@ -22,6 +25,7 @@ class Form(tk.Frame):
     def catchKeys(self):
         self.bind("<Key>", self.key)
         self.bind("<<Copy>>", self.copyKey)
+        self.bind("<<Paste>>", self.pasteKey)
         self.focus_set()
 
     def key(self, ev):
@@ -115,8 +119,7 @@ class RowForm(Form):
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=7, column=2)
 
-        tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
-        tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
+        tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it here (see Edit menu).").grid(columnspan=2)
 
     def cb(self):
         self.block.setComment(self.entry.get())
@@ -146,9 +149,6 @@ class RowForm(Form):
 
     def delStmt(self):
         self.block.copy()
-
-    def stmtPaste(self):
-        self.block.stmtPaste()
 
 class PassForm(Form):
     def __init__(self, parent, block):
@@ -242,9 +242,7 @@ class PassForm(Form):
     def key(self, ev):
         if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
             return
-        if ev.char == '\026':
-            self.stmtPaste()
-        elif ev.char == 'i':
+        if ev.char == 'i':
             self.stmtIf()
         elif ev.char == 'f':
             self.stmtFor()
@@ -323,8 +321,7 @@ class ExpressionForm(Form):
             ops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
-        tk.Message(frame, width=350, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted using the '<ctrl>v' key or by clicking on the following button:").grid(row=100, columnspan=3)
-        tk.Button(self, text="paste", command=self.exprPaste).grid(row=101, columnspan=3)
+        tk.Message(frame, width=350, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted (see Edit menu).").grid(row=100, columnspan=3)
 
     def exprNumber(self):
         self.block.exprNumber("")
@@ -374,15 +371,10 @@ class ExpressionForm(Form):
     def exprIfelse(self):
         self.block.exprIfelse()
 
-    def exprPaste(self):
-        self.block.exprPaste()
-
     def key(self, ev):
         if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
             return
-        if ev.char == '\026':
-            self.block.exprPaste()
-        elif ev.char.isidentifier():
+        if ev.char.isidentifier():
             self.block.exprName(ev.char)
         elif ev.char == '.':
             self.block.exprAttr()
