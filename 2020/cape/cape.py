@@ -344,12 +344,15 @@ class CAPE(tk.Frame):
             self.shared.curForm.update()
 
     def cut(self):
-        self.copy()
+        if self.shared.curBlock == None:
+            print("nothing to cut")
+        else:
+            self.shared.curBlock.cut()
         pass
 
     def copy(self):
         if self.shared.curBlock == None:
-            print("nothing to copy from")
+            print("nothing to copy")
         else:
             self.shared.curBlock.copy()
 

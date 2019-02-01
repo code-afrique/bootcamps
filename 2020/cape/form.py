@@ -10,6 +10,9 @@ class Form(tk.Frame):
         self.isStatement = False
         self.catchKeys()
 
+    def cutKey(self, event):
+        self.block.cut()
+
     def copyKey(self, event):
         self.block.copy()
 
@@ -24,6 +27,7 @@ class Form(tk.Frame):
 
     def catchKeys(self):
         self.bind("<Key>", self.key)
+        self.bind("<<Cut>>", self.cutKey)
         self.bind("<<Copy>>", self.copyKey)
         self.bind("<<Paste>>", self.pasteKey)
         self.focus_set()

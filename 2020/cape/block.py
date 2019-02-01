@@ -46,6 +46,15 @@ class Block(tk.Frame):
     def needsSaving(self):
         self.shared.saved = False
 
+    def cut(self):
+        self.copy()
+        if isinstance(self.parent, RowBlock):
+            self.parent.delStmt()
+        elif isinstance(self.parent, ExpressionBlock):
+            self.parent.delExpr()
+        else:
+            print("Can't cut when parent is {}".format(self.parent))
+
     def copy(self):
         self.shared.exprBuffer = self.toNode()
         self.clipboard_clear()
@@ -53,7 +62,6 @@ class Block(tk.Frame):
         self.shared.exprBuffer.print(f, 0)
         code = f.getvalue()
         self.clipboard_append(code)
-        print("expression copied")
 
     def paste(self):
         tk.messagebox.showinfo("Paste Error", "paste only allowed into uninitialized expression or rows")
