@@ -48,9 +48,14 @@ class Console(tk.Frame):
         self.bottom.pack(side="bottom", fill="both")
 
     def entryEnter(self, ev):
-        m = self.entry.get()
+        m = self.entry.get() + '\n'
         self.entry.delete(0, tk.END)
-        self.show(m + '\n', "stdin")
+        try:
+            self.popen.stdin.write(m.encode())
+            self.popen.stdin.flush()
+            self.show(m, "stdin")
+        except:
+            pass
 
     def show(self, message, tag):
         """Inserts message into the Text wiget"""
@@ -83,7 +88,7 @@ class Console(tk.Frame):
         """Keeps inserting line by line into self.text
         the output of the execution of self.command"""
         try:
-            self.popen = Popen(['python'] + self.command.split(), stdout=PIPE, stderr=PIPE, bufsize=1)
+            self.popen = Popen(['python'] + self.command.split(), stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=1)
             stdout_iterator = iter(self.popen.stdout.readline, b"")
             stderr_iterator = iter(self.popen.stderr.readline, b"")
             # poll() returns None if the process has not terminated
