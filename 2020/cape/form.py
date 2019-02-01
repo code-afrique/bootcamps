@@ -134,7 +134,7 @@ class RowForm(Form):
         tk.Button(self, text="Move this statement down",
                         command=self.downStmt).grid(row=4, columnspan=3)
         tk.Button(self, text="Delete this statement",
-                        command=self.delStmt).grid(row=5, column=1)
+                        command=self.delStmt).grid(row=5, columnspan=3)
 
         tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: <return> or <enter> adds a new statement below.").grid(row=6, columnspan=3)
 
@@ -177,7 +177,7 @@ class RowForm(Form):
         self.block.downStmt()
 
     def delStmt(self):
-        self.block.copy()
+        self.block.cut()
 
 class PassForm(Form):
     def __init__(self, parent, block):
@@ -298,59 +298,67 @@ class ExpressionForm(Form):
         self.isExpression = False
         self.isStatement = False
 
-        frame = tk.Frame(self)
-        frame.bind("<Key>", self.key)
-        frame.focus_set()
-        frame.grid()
+        if self.block.init:
+            tk.Message(self, width=350, font='Helvetica 16 bold', text="Expression").grid(row=0, column=0)
+            tk.Message(self, width=350, font='Helvetica 14', text="This block wraps an expression.  You can copy or delete it here.").grid(row=1, column=0)
+            tk.Button(self, text="Delete this expression",
+                        command=self.delExpr).grid(row=2, column=0)
+            return
+
+        self.bind("<Key>", self.key)
 
         row = 0
-        tk.Message(frame, width=350, font='Helvetica 16 bold', text="Select an expression type").grid(row=row, column=0, columnspan=3)
+
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Select an expression type").grid(row=row, column=0, columnspan=3)
         row += 1
-        tk.Message(frame, width=350, font='Helvetica 14', text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, column=0, columnspan=3)
+        tk.Message(self, width=350, font='Helvetica 14', text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, column=0, columnspan=3)
         row += 1
-        tk.Button(frame, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
-        tk.Button(frame, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
-        tk.Button(frame, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
+        tk.Button(self, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
+        tk.Button(self, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
+        tk.Button(self, text="x[y]", command=self.exprIndex).grid(row=row, column=2, sticky=tk.W)
         row += 1
-        tk.Button(frame, text="x[y:z]", command=self.exprSlice).grid(row=row, column=0, sticky=tk.W)
-        tk.Button(frame, text="[..., ...]", command=self.exprList).grid(row=row, column=1, sticky=tk.W)
-        tk.Button(frame, text="(..., ...)", command=self.exprTuple).grid(row=row, column=2, sticky=tk.W)
+        tk.Button(self, text="x[y:z]", command=self.exprSlice).grid(row=row, column=0, sticky=tk.W)
+        tk.Button(self, text="[..., ...]", command=self.exprList).grid(row=row, column=1, sticky=tk.W)
+        tk.Button(self, text="(..., ...)", command=self.exprTuple).grid(row=row, column=2, sticky=tk.W)
         row += 1
 
         if not block.isWithinStore:
-            tk.Button(frame, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
-            tk.Button(frame, text="string", command=self.exprString).grid(row=row, column=1, sticky=tk.W)
-            tk.Button(frame, text="f()", command=self.exprCall).grid(row=row, column=2, sticky=tk.W)
+            tk.Button(self, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
+            tk.Button(self, text="string", command=self.exprString).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(self, text="f()", command=self.exprCall).grid(row=row, column=2, sticky=tk.W)
             row += 1
-            tk.Button(frame, text="False", command=self.exprFalse).grid(row=row, column=0, sticky=tk.W)
-            tk.Button(frame, text="True", command=self.exprTrue).grid(row=row, column=1, sticky=tk.W)
-            tk.Button(frame, text="None", command=self.exprNone).grid(row=row, column=2, sticky=tk.W)
+            tk.Button(self, text="False", command=self.exprFalse).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(self, text="True", command=self.exprTrue).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(self, text="None", command=self.exprNone).grid(row=row, column=2, sticky=tk.W)
             row += 1
-            tk.Button(frame, text="{...: ...}", command=self.exprDict).grid(row=row, column=0, sticky=tk.W)
-            tk.Button(frame, text="x if c else y", command=self.exprIfelse).grid(row=row, column=1, sticky=tk.W)
-            row += 1
-
-            tk.Label(frame, text="").grid(row=row)
+            tk.Button(self, text="{...: ...}", command=self.exprDict).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(self, text="x if c else y", command=self.exprIfelse).grid(row=row, column=1, sticky=tk.W)
             row += 1
 
-            tk.Button(frame, text="x <op> y", command=self.exprBinaryop).grid(row=row, sticky=tk.W)
+            tk.Label(self, text="").grid(row=row)
+            row += 1
+
+            tk.Button(self, text="x <op> y", command=self.exprBinaryop).grid(row=row, sticky=tk.W)
             self.binaryop = tk.StringVar(self)
             self.binaryop.set("+")
-            ops = tk.OptionMenu(frame, self.binaryop,
+            ops = tk.OptionMenu(self, self.binaryop,
                 "+", "-", "*", "/", "//", "%", "**",
                 "==", "!=", "<", "<=", ">", ">=",
                 "and", "or", "in", "not in", "is", "is not")
             ops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
-            tk.Button(frame, text="<op> x", command=self.exprUnaryop).grid(row=row, sticky=tk.W)
+            tk.Button(self, text="<op> x", command=self.exprUnaryop).grid(row=row, sticky=tk.W)
             self.unaryop = tk.StringVar(self)
             self.unaryop.set("-")
-            ops = tk.OptionMenu(frame, self.unaryop, "-", "not")
+            ops = tk.OptionMenu(self, self.unaryop, "-", "not")
             ops.grid(row=row, column=1, sticky=tk.W)
             row += 1
 
-        tk.Message(frame, width=350, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted (see Edit menu).").grid(row=100, columnspan=3)
+        tk.Message(self, width=350, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted (see Edit menu).").grid(row=100, columnspan=3)
+
+    def delExpr(self):
+        self.block.cut()
 
     def exprNumber(self):
         self.block.exprNumber("")
@@ -840,6 +848,7 @@ class StringForm(Form):
 
     def cb(self):
         self.block.setContents(self.entry.get())
+        self.focus_set()
 
     def keyEnter(self, ev):
         self.cb()
@@ -866,6 +875,7 @@ class NameForm(Form):
             tk.messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
         else:
             self.block.setName(v)
+            self.focus_set()
 
     def keyEnter(self, ev):
         self.cb()
@@ -888,6 +898,7 @@ class NumberForm(Form):
         try:
             float(self.entry.get())
             self.block.setValue(self.entry.get())
+            self.focus_set()
         except ValueError:
             tk.messagebox.showinfo("Format Error", "'{}' is not a valid number".format(self.entry.get()))
 

@@ -48,12 +48,16 @@ class Block(tk.Frame):
 
     def cut(self):
         self.copy()
-        if isinstance(self.parent, RowBlock):
+        if isinstance(self, RowBlock):
+            self.delStmt()
+        elif isinstance(self.parent, RowBlock):
             self.parent.delStmt()
+        elif isinstance(self, ExpressionBlock):
+            self.delExpr()
         elif isinstance(self.parent, ExpressionBlock):
             self.parent.delExpr()
         else:
-            print("Can't cut when parent is {}".format(self.parent))
+            print("Can't cut {0} {1}".format(self.parent, self))
 
     def copy(self):
         self.shared.exprBuffer = self.toNode()
