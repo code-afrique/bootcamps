@@ -17,6 +17,9 @@ class Console(tk.Frame):
                              "selectbackground": "#f01c1c"}
 
         self.text = ScrolledText(self, **self.text_options)
+        self.text.tag_config("stdout", foreground="white")
+        self.text.tag_config("stderr", foreground="red")
+        self.curpos = 0
 
         # It seems not to work when Text is disabled...
         # self.text.bind("<<Modified>>", lambda: self.text.frame.see(tk.END))
@@ -36,10 +39,12 @@ class Console(tk.Frame):
 
         self.bottom.pack(side="bottom", fill="both")
 
-    def show(self, message):
+    def show(self, message, tag):
         """Inserts message into the Text wiget"""
         self.text.config(state="normal")
         self.text.insert("end", message)
+        n = len(message)
+        self.text.tag_add(tag, "end-{}c".format(n+1), "end-2c")
         self.text.see("end")
         self.text.config(state="disabled")
 
@@ -72,15 +77,15 @@ class Console(tk.Frame):
             # otherwise poll() returns the process's exit code
             while self.popen.poll() is None:
                 for line in stdout_iterator:
-                    self.show(line.decode("utf-8"))
+                    self.show(line.decode("utf-8"), "stdout")
                 for line in stderr_iterator:
-                    self.show(line.decode("utf-8"))
+                    self.show(line.decode("utf-8"), "stderr")
                 # else:
                 #     time.sleep(0.1)
             self.status.set("Terminated")
         except FileNotFoundError:
-            self.show("Can't find python\n\n")
+            self.show("Can't find python\n\n", "stderr")
         except IndexError:
-            self.show("No command entered\n\n")
+            self.show("No command entered\n\n", "stderr")
         finally:
             os.remove(self.command)
