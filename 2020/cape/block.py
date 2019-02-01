@@ -1526,20 +1526,23 @@ class RowBlock(Block):
     def paste(self):
         try:
             code = self.clipboard_get()
-            tree = pparse.pparse(code, mode='single')
-            n = pmod.nodeEval(tree)
-            assert isinstance(n, RowNode)
-            if not (isinstance(self.what, EmptyBlock) or isinstance(self.what, PassBlock)):
-                tk.messagebox.showinfo("Paste Error", "can only overwrite empty or pass statements")
-            else:
-                self.what.grid_forget()
-                self.what = n.what.toBlock(self, self)
-                self.what.grid(row=0, column=1, sticky=tk.W)
-                self.setBlock(self.what)
-                self.needsSaving()
-        except SyntaxError:
-            tk.messagebox.showinfo("Paste Error", "not a Python statement")
-            print("invalid Python statement: '{}'".format(code))
+            try:
+                tree = pparse.pparse(code, mode='single')
+                n = pmod.nodeEval(tree)
+                assert isinstance(n, RowNode)
+                if not (isinstance(self.what, EmptyBlock) or isinstance(self.what, PassBlock)):
+                    tk.messagebox.showinfo("Paste Error", "can only overwrite empty or pass statements")
+                else:
+                    self.what.grid_forget()
+                    self.what = n.what.toBlock(self, self)
+                    self.what.grid(row=0, column=1, sticky=tk.W)
+                    self.setBlock(self.what)
+                    self.needsSaving()
+            except SyntaxError:
+                tk.messagebox.showinfo("Paste Error", "not a Python statement")
+                print("invalid Python statement: '{}'".format(code))
+        except e:
+            tk.messagebox.showinfo("Paste Error", e)
 
     def listcmd(self):
         self.setBlock(self)
