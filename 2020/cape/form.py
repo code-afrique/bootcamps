@@ -101,7 +101,7 @@ class RowForm(Form):
         tk.Button(self, text="delete",
                         command=self.delStmt).grid(row=5, column=1)
 
-        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: <return> or <enter> adds a new statement below, while '<ctrl>c' copies the statement, and '<delete>' deletes the statement.").grid(row=6, columnspan=3)
+        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: <return> or <enter> adds a new statement below.").grid(row=6, columnspan=3)
 
         self.bind("<Key>", self.key)
         self.focus_set()
@@ -114,6 +114,9 @@ class RowForm(Form):
         self.entry.grid(row=7, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=7, column=2)
+
+        tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
+        tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
 
     def cb(self):
         self.block.setComment(self.entry.get())
@@ -143,6 +146,9 @@ class RowForm(Form):
 
     def delStmt(self):
         self.block.copy()
+
+    def stmtPaste(self):
+        self.block.stmtPaste()
 
 class PassForm(Form):
     def __init__(self, parent, block):
@@ -188,9 +194,8 @@ class PassForm(Form):
         tk.Button(self, text="assert statement", width=0, command=self.stmtAssert).grid()
         tk.Button(self, text="del statement", width=0, command=self.stmtDel).grid()
         tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid()
-        tk.Message(self, width=350, font='Helvetica 14', text="If you copied or deleted a statement, you can paste it by clicking on the following button:").grid(columnspan=2)
-        tk.Button(self, text="paste", width=0, command=self.stmtPaste).grid()
-        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: '?' inserts an expression, '<ctrl>v' pastes a statement, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=2)
+
+        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=2)
 
     def stmtEmpty(self):
         self.block.stmtEmpty()
@@ -233,9 +238,6 @@ class PassForm(Form):
 
     def stmtImport(self):
         self.block.stmtImport()
-
-    def stmtPaste(self):
-        self.block.stmtPaste()
 
     def key(self, ev):
         if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress

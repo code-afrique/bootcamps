@@ -933,12 +933,15 @@ class ExpressionBlock(Block):
             code = self.clipboard_get()
             tree = pparse.pparse(code, mode='eval')
             n = pmod.nodeEval(tree)
-            self.what.grid_forget()
-            self.what = n.toBlock(self, self)
-            self.what.grid(row=0, column=1, sticky=tk.W)
-            self.init = True
-            self.setBlock(self.what)
-            self.needsSaving()
+            if not isinstance(n, ExpressionNode):
+                print("must be Expression")
+            else:
+                self.what.grid_forget()
+                self.what = n.what.toBlock(self, self)
+                self.what.grid(row=0, column=1, sticky=tk.W)
+                self.init = True
+                self.setBlock(self.what)
+                self.needsSaving()
         except SyntaxError:
             print("invalid Python expression: '{}'".format(code))
 
@@ -1158,21 +1161,6 @@ class PassBlock(Block):
             self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
             self.setBlock(self.rowblk.what)
         self.needsSaving()
-
-    def stmtPaste(self):
-        try:
-            code = self.clipboard_get()
-            tree = pparse.pparse(code, mode='single')
-            print("PASTE '{}'".format(tree))
-            n = pmod.nodeEval(tree)
-            self.rowblk.what.grid_forget()
-            self.rowblk.what = n.toBlock(self.rowblk, self.rowblk)
-            assert self.rowblk.what != None
-            self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-            self.setBlock(self.rowblk.what)
-            self.needsSaving()
-        except SyntaxError:
-            print("invalid Python statement: '{}'".format(code))
 
     def toNode(self):
         return PassNode()
@@ -1487,6 +1475,24 @@ class RowBlock(Block):
         self.parent.delRow(self.row)
         print("statement deleted")
         self.needsSaving()
+
+    def stmtPaste(self):
+        try:
+            code = self.clipboard_get()
+            tree = pparse.pparse(code, mode='single')
+            n = pmod.nodeEval(tree)
+            if not isinstance(n, RowNode):
+                print("must be Row")
+            elif not (isinstance(self.what, EmptyBlock) or isinstance(self.what, PassBlock)):
+                print("can only overwrite empty or pass statements")
+            else:
+                self.what.grid_forget()
+                self.what = n.what.toBlock(self, self)
+                self.what.grid(row=0, column=1, sticky=tk.W)
+                self.setBlock(self.what)
+                self.needsSaving()
+        except SyntaxError:
+            print("invalid Python statement: '{}'".format(code))
 
     def listcmd(self):
         self.setBlock(self)
