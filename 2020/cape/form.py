@@ -19,27 +19,14 @@ class Form(tk.Frame):
     def pasteKey(self, event):
         self.block.paste()
 
-    def delExpr(self):
-        self.block.delExpr()
-
     def delStmt(self):
         self.block.parent.delStmt()
 
     def catchKeys(self):
-        self.bind("<Key>", self.key)
         self.bind("<<Cut>>", self.cutKey)
         self.bind("<<Copy>>", self.copyKey)
         self.bind("<<Paste>>", self.pasteKey)
         self.focus_set()
-
-    def key(self, ev):
-        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
-            return
-        elif ev.char == '\177':
-            if self.isStatement:
-                self.delStmt()
-            elif self.isExpression:
-                self.delExpr()
 
 class HelpForm(Form):
     def __init__(self, parent, block):
@@ -106,7 +93,7 @@ class RowForm(Form):
                         command=self.upStmt).grid(row=3, columnspan=3)
         tk.Button(self, text="Move this statement down",
                         command=self.downStmt).grid(row=4, columnspan=3)
-        tk.Button(self, text="delete",
+        tk.Button(self, text="Delete this statement",
                         command=self.delStmt).grid(row=5, column=1)
 
         tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: <return> or <enter> adds a new statement below.").grid(row=6, columnspan=3)
@@ -482,8 +469,6 @@ class ClassForm(Form):
 
         ma = tk.Button(self, text="+ Add a new base class", command=self.addBaseClass)
         ma.grid(row=3, column=0, columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=4, column=1)
 
     def addBaseClass(self):
         self.block.addBaseClass(None)
@@ -645,8 +630,6 @@ class ListForm(Form):
         tk.Message(self, width=350, font='Helvetica 14', text="A 'list' is simply a sequence of expressions").grid(row=1,columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the list", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=3, column=1)
 
     def addEntry(self):
         self.block.addEntry(None)
@@ -661,8 +644,6 @@ class DictForm(Form):
         tk.Message(self, width=350, font='Helvetica 14', text="A dictionary is a map of keys to values").grid(row=1,columnspan=2)
         ma = tk.Button(self, text="+ Add a new mapping to the dictionary", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=3, column=1)
 
     def addEntry(self):
         self.block.addEntry(None, None)
@@ -677,8 +658,6 @@ class TupleForm(Form):
         tk.Message(self, width=350, font='Helvetica 14', text="A 'tuple' is simply a sequence of expressions").grid(row=1,columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the tuple", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=3, column=1)
 
     def addEntry(self):
         self.block.addEntry(None)
@@ -705,9 +684,6 @@ class SubscriptForm(Form):
             tk.Message(self, width=350, font='Helvetica 14', text="An index expression is of the form x[y], where x is a list or a string and y some expression to index into the list or string").grid(row=1,columnspan=2)
             tk.Button(self, text="turn index into a 'slice'", command=self.makeSlice).grid(columnspan=2)
 
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=100, column=1)
-
     def makeSlice(self):
         self.block.isSlice = True
         self.addUpper()
@@ -728,8 +704,6 @@ class AttrForm(Form):
         self.isStatement = False
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'reference' expression").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A reference expression is of the form x.y, where x is an expression that expresses an object and y the name of a field in the object.").grid(row=1,columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
 class TryForm(Form):
     def __init__(self, parent, block):
@@ -738,8 +712,6 @@ class TryForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'try' statement").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A try statement is used to catch exceptions that may occur during evaluation of a sequence of statements.").grid(row=1,columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
 class BinaryopForm(Form):
     def __init__(self, parent, block):
@@ -748,8 +720,6 @@ class BinaryopForm(Form):
         self.isStatement = False
         tk.Message(self, width=350, font='Helvetica 16 bold', text="binary operation").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A binary operation is an operation with two operands.").grid(row=1,columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
 class UnaryopForm(Form):
     def __init__(self, parent, block):
@@ -758,8 +728,6 @@ class UnaryopForm(Form):
         self.isStatement = False
         tk.Message(self, width=350, font='Helvetica 16 bold', text="unary operation").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A unary operation is an operation with a single operand.").grid(row=1,columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
 class ConstantForm(Form):
     def __init__(self, parent, block):
@@ -768,8 +736,6 @@ class ConstantForm(Form):
         self.isStatement = False
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Constant").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="Python supports three constants: False, True, and None.").grid(row=1,columnspan=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
 class CallForm(Form):
     def __init__(self, parent, block):
@@ -787,8 +753,6 @@ class CallForm(Form):
         self.entry.grid(row=3, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=3, column=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=4, column=1)
 
     def addArg(self):
         self.block.addArg(None)
@@ -835,8 +799,6 @@ class StringForm(Form):
         self.entry.grid(row=1, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=1, column=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
     def cb(self):
         self.block.setContents(self.entry.get())
@@ -857,8 +819,6 @@ class NameForm(Form):
         self.entry.grid(row=1, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=1, column=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
     def cb(self):
         v = self.entry.get()
@@ -885,8 +845,6 @@ class NumberForm(Form):
         self.entry.grid(row=1, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=1, column=2)
-        delb = tk.Button(self, text="delete", command=self.delExpr)
-        delb.grid(row=2, column=1)
 
     def cb(self):
         try:
