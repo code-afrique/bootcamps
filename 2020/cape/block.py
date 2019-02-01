@@ -72,8 +72,6 @@ class Block(tk.Frame):
         print("expression deleted")
 
     def goLeft(self):
-        if self.parent == None:
-            print("no parent")
         return self if self.parent == None else self.parent
 
     def goRight(self):
@@ -838,7 +836,6 @@ class ExpressionBlock(Block):
         return self if self.what == None else self.what
 
     def goLeft(self):
-        print("expr left", self.parent)
         return self.parent
 
     def delExpr(self):
