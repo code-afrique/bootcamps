@@ -494,6 +494,7 @@ class DefForm(Form):
                 return
             args.append(a)
         self.block.defUpdate(name, args)
+        self.focus_set()
 
     def keyEnter(self, x):
         self.cb()
@@ -859,6 +860,7 @@ class NameForm(Form):
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Set the name").grid(row=0, columnspan=2)
+        self.focus_set()
         tk.Label(self, text="Name: ").grid(row=1)
         self.entry = tk.Entry(self)
         self.entry.bind('<Return>', self.keyEnter)
