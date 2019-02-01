@@ -864,6 +864,7 @@ class ExpressionBlock(Block):
         self.init = True
         self.setBlock(self.what)
         self.needsSaving()
+        self.shared.curForm.entry.focus()
 
     def exprConstant(self, value):
         self.what.grid_forget()
@@ -880,6 +881,7 @@ class ExpressionBlock(Block):
         self.init = True
         self.setBlock(self.what)
         self.needsSaving()
+        self.shared.curForm.entry.focus()
 
     def exprName(self, v):
         self.what.grid_forget()
@@ -888,6 +890,7 @@ class ExpressionBlock(Block):
         self.init = True
         self.setBlock(self.what)
         self.needsSaving()
+        self.shared.curForm.entry.focus()
 
     def exprSubscript(self, isSlice):
         self.what.grid_forget()
@@ -1099,6 +1102,7 @@ class PassBlock(Block):
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what)
         self.needsSaving()
+        self.shared.curForm.entry.focus()
 
     def stmtAugassign(self, op):
         self.rowblk.what.grid_forget()
