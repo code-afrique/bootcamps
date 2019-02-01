@@ -215,7 +215,7 @@ class NameBlock(Block):
     def genForm(self):
         f = NameForm(self.shared.confarea, self)
         self.setForm(f)
-        f.entry.focus()
+        # f.entry.focus()
 
     def cb(self):
         self.setBlock(self)
@@ -245,7 +245,7 @@ class NumberBlock(Block):
     def genForm(self):
         f = NumberForm(self.shared.confarea, self)
         self.setForm(f)
-        f.entry.focus()
+        # f.entry.focus()
 
     def cb(self):
         self.setBlock(self)
@@ -296,7 +296,7 @@ class StringBlock(Block):
     def genForm(self):
         f = StringForm(self.shared.confarea, self)
         self.setForm(f)
-        f.entry.focus()
+        # f.entry.focus()
 
     def cb(self):
         self.setBlock(self)
@@ -323,7 +323,7 @@ class BytesBlock(Block):
     def genForm(self):
         f = BytesForm(self.shared.confarea, self)
         self.setForm(f)
-        f.entry.focus()
+        # f.entry.focus()
 
     def cb(self):
         self.setBlock(self)
@@ -1663,7 +1663,7 @@ class DefBlock(Block):
     def genForm(self):
         f = DefForm(self.shared.confarea, self)
         self.setForm(f)
-        f.entry.focus()
+        # f.entry.focus()
 
     def cb(self):
         self.setBlock(self)
