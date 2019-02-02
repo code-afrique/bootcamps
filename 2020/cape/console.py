@@ -93,11 +93,13 @@ class Console(tk.Frame):
 
     def reader(self, pipe, queue, tag):
         try:
-            while True:
+            while not self.stopped:
                 c = pipe.read(1)
                 if c == b'' or c == '':
                     break
                 queue.put((tag, c))
+                if queue.qsize() > 256:
+                    time.sleep(0.1)
         finally:
             queue.put((tag, None))
 
@@ -107,7 +109,7 @@ class Console(tk.Frame):
         try:
             self.popen = Popen(['python', '-u', self.command], stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0)
 
-            q = Queue()
+            q = Queue(1024)
             Thread(target=self.reader, args=[self.popen.stdout, q, "stdout"]).start()
             Thread(target=self.reader, args=[self.popen.stderr, q, "stderr"]).start()
             d = { "stdout": True, "stderr": True }
