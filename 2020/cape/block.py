@@ -637,7 +637,7 @@ class ClassBlock(Block):
         if not v.isidentifier():
             if not self.shared.cvtError:
                 self.setBlock(self)
-                tk.messagebox.showinfo("Convert Error", "Fix bad method name")
+                tk.messagebox.showinfo("Convert Error", "Fix bad class name")
                 self.shared.cvtError = True
         if self.minimized:
             return ClassNode(v, [b.toNode() for b in self.bases], self.body_node)
@@ -1191,14 +1191,23 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.targets[0])
         self.needsSaving()
 
+    def stmtCall(self):
+        self.rowblk.what.grid_forget()
+        n = EvalNode(ExpressionNode(CallNode(ExpressionNode(None), [], [])))
+        self.rowblk.what = n.toBlock(self.rowblk, self)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.expr.what.func)
+        self.needsSaving()
+        self.shared.curForm.entry.focus()
+
     def stmtPrint(self):
         self.rowblk.what.grid_forget()
         n = EvalNode(ExpressionNode(CallNode(ExpressionNode(NameNode("print")), [ExpressionNode(StringNode(""))], [])))
         self.rowblk.what = n.toBlock(self.rowblk, self)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.expr.what.args[0].what)
-        self.shared.curForm.entry.focus()
         self.needsSaving()
+        self.shared.curForm.entry.focus()
 
     def stmtAssert(self):
         self.rowblk.what.grid_forget()
@@ -1745,7 +1754,7 @@ class DefBlock(Block):
         if not v.isidentifier():
             if not self.shared.cvtError:
                 self.setBlock(self)
-                tk.messagebox.showinfo("Convert Error", "Fix bad method name")
+                tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
         return DefNode(v, self.args, [d.toNode() for d in self.defaults], self.body.toNode())
 

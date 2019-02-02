@@ -240,9 +240,11 @@ class PassForm(Form):
         self.assignop.set("=")
         assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
         assignops.grid(row=row, column=2, sticky=tk.W)
-
         row += 1
-        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row, columnspan=3, pady=10)
+
+        # tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row, columnspan=3, pady=10)
+        # row += 1
+        tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=3, pady=10)
         row += 1
 
         tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid(columnspan=3)
@@ -264,6 +266,9 @@ class PassForm(Form):
     def stmtEval(self):
         self.block.stmtEval()
 
+    def stmtCall(self):
+        self.block.stmtCall()
+
     def stmtIf(self):
         self.block.stmtIf()
 
@@ -277,7 +282,7 @@ class PassForm(Form):
         if self.block.isWithinDef:
             self.block.stmtReturn()
         else:
-            tk.messagebox.showinfo("Syntax Error", "Return statements can only be within method definitions")
+            tk.messagebox.showinfo("Syntax Error", "Return statements can only be within function definitions")
 
     def stmtDel(self):
         self.block.stmtDel()
@@ -336,6 +341,8 @@ class PassForm(Form):
             self.stmtAugassign('=')
         elif ev.char == '?':
             self.stmtEval()
+        elif ev.char == '(':
+            self.stmtCall()
         elif ev.char == '\r':
             self.stmtEmpty()
         elif ev.char == '\177':
@@ -499,8 +506,8 @@ class DefForm(Form):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="Set method information").grid(row=0, columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="A method has a name, a list of names of arguments, and a 'body'.  With this form, you can edit the method name and arguments.").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="Set function information").grid(row=0, columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="A function (aka method) has a name, a list of names of arguments, and a 'body'.  With this form, you can edit the function name and arguments.").grid(row=1, columnspan=2)
         tk.Label(self, text="Method name: ").grid(row=2, sticky=tk.W)
         self.entry = tk.Entry(self)
         self.entry.insert(tk.END, block.mname.get())
@@ -532,7 +539,7 @@ class DefForm(Form):
             tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
-            tk.messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid function name".format(name))
             return
 
         args = [ ]
@@ -556,7 +563,7 @@ class ClassForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font='Helvetica 16 bold', text="Set class information").grid(row=0, columnspan=2)
-        tk.Message(self, width=350, font='Helvetica 14', text="A method has a name, a list of bases, and a 'body'.  With this form, you can edit the method name and bases.").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="A class has a name, a list of bases, and a 'body'.  With this form, you can edit the class name and bases.").grid(row=1, columnspan=2)
         tk.Label(self, text="Class name: ").grid(row=2, sticky=tk.W)
         self.entry = tk.Entry(self)
         self.entry.insert(tk.END, block.cname.get())
@@ -578,7 +585,7 @@ class ClassForm(Form):
             tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
             return
         if not name.isidentifier():
-            tk.messagebox.showinfo("Format Error", "'{}' is not a valid method name".format(name))
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid class name".format(name))
             return
 
         self.block.classUpdate(name)
@@ -655,7 +662,7 @@ class ReturnForm(Form):
         self.isStatement = True
         self.block = block
         tk.Message(self, width=350, font='Helvetica 16 bold', text="'return' statement").grid()
-        tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a method and, optionally, causes the method to return a value.").grid(row=1)
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'return' statement' terminates a function and, optionally, causes the function to return a value.").grid(row=1)
         if block.expr == None:
             rv = tk.Button(self, text="Return a value", command=self.returnValue)
             rv.grid()
