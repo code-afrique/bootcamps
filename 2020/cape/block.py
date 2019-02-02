@@ -1149,7 +1149,7 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ForBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.var)
+        self.setBlock(self.rowblk.what.target)
         self.needsSaving()
 
     def stmtReturn(self):
@@ -2051,20 +2051,24 @@ class ForBlock(Block):
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.isWithinLoop = True
         if node == None:
-            self.var = ExpressionBlock(hdr, shared, None)
+            hdr.isWithinStore = True
+            self.target = ExpressionBlock(hdr, shared, None)
+            hdr.isWithinStore = False
             self.expr = ExpressionBlock(hdr, shared, None)
             self.body = SeqBlock(self, shared, None)
             self.orelse = None
             self.minimized = False
             self.minimized2 = False
         else:
-            self.var = node.var.toBlock(hdr, self)
+            hdr.isWithinStore = True
+            self.target = node.target.toBlock(hdr, self)
+            hdr.isWithinStore = False
             self.expr = ExpressionBlock(hdr, shared, node.expr)
             self.body = node.body.toBlock(self, self)
             self.orelse = None if node.orelse == None else node.orelse.toBlock(self, self)
             self.minimized = False
             self.minimized2 = False
-        self.var.grid(row=0, column=1)
+        self.target.grid(row=0, column=1)
         tk.Button(hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
         tk.Button(hdr, text=":", command=self.minmax).grid(row=0, column=4, sticky=tk.W)
@@ -2127,4 +2131,4 @@ class ForBlock(Block):
         self.needsSaving()
 
     def toNode(self):
-        return ForNode(self.var.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode())
+        return ForNode(self.target.toNode(), self.expr.toNode(), self.body.toNode(), None if self.orelse == None else self.orelse.toNode())
