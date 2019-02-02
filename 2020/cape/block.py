@@ -1089,6 +1089,14 @@ class PassBlock(Block):
         self.needsSaving()
         self.shared.curForm.entry.focus()
 
+    def stmtClass(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = ClassBlock(self.rowblk, self.shared, None)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what)
+        self.needsSaving()
+        self.shared.curForm.entry.focus()
+
     def stmtAugassign(self, op):
         self.rowblk.what.grid_forget()
         if op == '=':
@@ -1176,7 +1184,8 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = GlobalBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.var)
+        self.setBlock(self.rowblk.what.vars[0])
+        self.shared.curForm.entry.focus()
         self.needsSaving()
 
     def stmtImport(self):
@@ -1184,8 +1193,8 @@ class PassBlock(Block):
         self.rowblk.what = ImportBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.module)
-        self.needsSaving()
         self.shared.curForm.entry.focus()
+        self.needsSaving()
 
     def stmtPasteOld(self):
         if self.shared.stmtBuffer != None:
