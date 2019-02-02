@@ -44,9 +44,30 @@ class Block(tk.Frame):
             b.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
             b.update()
             b.genForm()
-            print("xy", self.getCoord(self.shared.canvas, b), (b.winfo_width(), b.winfo_height()))
+
+            # See if we need to move the scrollbars
+            c = self.shared.canvas
+            box = self.getBoxWithin(c, b)
+            cv = self.getBoxWithin(c, c)
+            # print("xy", box, cv)
+            if not self.intersects(box, cv):
+                x = (box[2] * 1.0) / cv[2] - 0.5
+                y = (box[3] * 1.0) / cv[3] - 0.5
+                if x < 0:
+                    x = 0
+                if y < 0:
+                    y = 0
+                c.xview(tk.MOVETO, x)
+                c.yview(tk.MOVETO, y)
 
         self.scrollUpdate()
+
+    def intersects(self, b1, b2):
+        return not (b1[2] < b2[0] or b1[0] > b2[2] or b1[3] < b2[1] or b1[1] > b2[3])
+
+    def getBoxWithin(self, outer, inner):
+        (x, y) = self.getCoord(outer, inner)
+        return (x, y, x + inner.winfo_width(), y + inner.winfo_height())
 
     def getCoord(self, outer, inner):
         if outer is inner:
