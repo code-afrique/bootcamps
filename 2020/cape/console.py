@@ -55,10 +55,10 @@ class Console(tk.Frame):
     def entryEnter(self, ev):
         m = self.entry.get() + '\n'
         self.entry.delete(0, tk.END)
+        self.show(m, "stdin")
         try:
             self.popen.stdin.write(m.encode())
             self.popen.stdin.flush()
-            self.show(m, "stdin")
         except:
             pass
 
