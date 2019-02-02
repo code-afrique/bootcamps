@@ -41,7 +41,7 @@ class Block(tk.Frame):
             b.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
             b.update()
             b.genForm()
-            print("xy", self.getCoord(self.shared.canvas, b))
+            print("xy", self.getCoord(self.shared.canvas, b), (b.winfo_width(), b.winfo_height()))
 
         self.scrollUpdate()
 
