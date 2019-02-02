@@ -512,6 +512,26 @@ class BinaryopNode(Node):
         self.right.print(fd, 0)
         print(")", end="", file=fd)
 
+# n values separated by n-1 operators
+class ListopNode(Node):
+    def __init__(self, values, ops):
+        super().__init__()
+        self.values = values
+        self.ops = ops
+
+    def toBlock(self, frame, block):
+        return block.newListopBlock(frame, self)
+
+    def print(self, fd, level):
+        print("(", end="", file=fd)
+        i = 0
+        n = len(self.ops)
+        for i in range(n):
+            self.values[i].print(fd, 0)
+            print(" {} ".format(self.ops[i]), end="", file=fd)
+        self.values[n].print(fd, 0)
+        print(")", end="", file=fd)
+
 class UnaryopNode(Node):
     def __init__(self, right, op):
         super().__init__()

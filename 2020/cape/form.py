@@ -819,6 +819,14 @@ class BinaryopForm(Form):
         tk.Message(self, width=350, font='Helvetica 16 bold', text="binary operation").grid(columnspan=2)
         tk.Message(self, width=350, font='Helvetica 14', text="A binary operation is an operation with two operands.").grid(row=1,columnspan=2)
 
+class ListopForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = True
+        self.isStatement = False
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="List of operations").grid(columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 14', text="This is a list of values separated by operators.").grid(row=1,columnspan=2)
+
 class UnaryopForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent, block)

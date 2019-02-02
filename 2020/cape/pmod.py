@@ -89,9 +89,7 @@ def With(lineno, col_offset, items, body):
     return RowNode(WithNode(items, SeqNode(body)), lineno)
 
 def Compare(lineno, col_offset, left, ops, comparators):
-    assert len(ops) == 1
-    assert len(comparators) == 1
-    return ExpressionNode(BinaryopNode(left, comparators[0], ops[0]))
+    return ExpressionNode(ListopNode([left] + comparators, ops))
 
 def Is():
     return "is"
@@ -181,14 +179,8 @@ def UnaryOp(lineno, col_offset, op, operand):
 def Starred(lineno, col_offset, value, ctx):
     return ExpressionNode(UnaryopNode(value, '*'))
 
-def binafy(op, values):
-    if len(values) == 1:
-        return values[0]
-    else:
-        return ExpressionNode(BinaryopNode(values[0], binafy(op, values[1:]), op))
-
 def BoolOp(lineno, col_offset, op, values):
-    return binafy(op, values)
+    return ExpressionNode(ListopNode(values, [op] * (len(values) - 1)))
 
 def alias(name, asname):
     return (name, asname)

@@ -192,6 +192,9 @@ class Block(tk.Frame):
     def newBinaryopBlock(self, parent, node):
         return BinaryopBlock(parent, self.shared, node)
 
+    def newListopBlock(self, parent, node):
+        return ListopBlock(parent, self.shared, node)
+
     def newUnaryopBlock(self, parent, node):
         return UnaryopBlock(parent, self.shared, node)
 
@@ -529,6 +532,28 @@ class BinaryopBlock(Block):
 
     def toNode(self):
         return BinaryopNode(self.left.toNode(), self.right.toNode(), self.op)
+
+class ListopBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+
+        self.values = [ExpressionBlock(self, shared, v) for v in node.values]
+        self.ops = node.ops
+        n = len(node.ops)
+        for i in range(n):
+            self.values[i].grid(row=0, column=2*i)
+            op = tk.Button(self, text=node.ops[i], fg="purple", width=0, command=self.cb)
+            op.grid(row=0, column=2*i+1)
+        self.values[n].grid(row=0, column=2*n)
+
+    def genForm(self):
+        self.setForm(ListopForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ListopNode([v.toNode() for v in self.values], self.ops)
 
 class ClassBlock(Block):
     def __init__(self, parent, shared, node):
