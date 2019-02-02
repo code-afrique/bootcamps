@@ -522,8 +522,8 @@ class UnaryopNode(Node):
         return block.newUnaryopBlock(frame, self)
 
     def print(self, fd, level):
-        print(self.op, end="", file=fd)
         print("(", end="", file=fd)
+        print(self.op, end="", file=fd)
         self.right.print(fd, 0)
         print(")", end="", file=fd)
 

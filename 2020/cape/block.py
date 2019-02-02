@@ -929,7 +929,7 @@ class ExpressionBlock(Block):
         self.shared.curForm.entry.focus()
 
     def exprSubscript(self, isSlice):
-        self.setValue(SubscriptNode(None, (isSlice, ExpressionNode(None), None, None)))
+        self.setValue(SubscriptNode(None, (isSlice, None if isSlice else ExpressionNode(None), None, None)))
         self.setBlock(self.what.array)
 
     def exprAttr(self):
@@ -947,9 +947,11 @@ class ExpressionBlock(Block):
 
     def exprUnaryop(self, op):
         self.setValue(UnaryopNode(None, op))
+        self.setBlock(self.what.right)
 
     def exprBinaryop(self, op):
         self.setValue(BinaryopNode(None, None, op))
+        self.setBlock(self.what.left)
 
     def exprCall(self):
         self.setValue(CallNode(ExpressionNode(None), [], []))
