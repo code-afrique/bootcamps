@@ -113,9 +113,12 @@ class Block(tk.Frame):
     def goLeft(self):
         if self.isTop or self.parent == None or self.parent.isTop:
             return
-        if isinstance(self.parent, ExpressionBlock):
-            return self.parent.parent
-        return self.parent
+        p = self.parent
+        if isinstance(p, ExpressionBlock):
+            p = p.parent
+        if isinstance(p, HeaderBlock):
+            p = p.parent
+        return p
 
     def goRight(self):
         return self
@@ -242,6 +245,10 @@ class Block(tk.Frame):
 
     def newSeqBlock(self, parent, rows):
         return SeqBlock(parent, self.shared, rows)
+
+class HeaderBlock(Block):
+    def __init__(self, parent, shared):
+        super().__init__(parent, shared)
 
 class NameBlock(Block):
     def __init__(self, parent, shared, node):
@@ -538,7 +545,7 @@ class ClassBlock(Block):
             self.body = None
             self.body_node = node.body
 
-        self.hdr = Block(self, shared)
+        self.hdr = HeaderBlock(self, shared)
         self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
         self.name = tk.Button(self.hdr, textvariable=self.cname, fg="blue", command=self.cb)
@@ -883,7 +890,7 @@ class ExpressionBlock(Block):
         return self if self.what == None else self.what
 
     def goLeft(self):
-        return self.parent
+        return super().goLeft()
 
     def delExpr(self):
         self.setValue(None)
@@ -1636,7 +1643,7 @@ class DefBlock(Block):
         super().__init__(parent, shared)
         self.isWithinDef = True
         self.mname = tk.StringVar()
-        self.hdr = Block(self, self.shared)
+        self.hdr = HeaderBlock(self, self.shared)
         self.hdr.grid(row=0, column=0, sticky=tk.W)
 
         if node == None:
@@ -1725,7 +1732,7 @@ class IfBlock(Block):
         super().__init__(parent, shared)
 
         if node == None:
-            self.hdrs = [Block(self, shared)]
+            self.hdrs = [HeaderBlock(self, shared)]
             self.minimizeds = [ False ]
             tk.Button(self.hdrs[0], text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
             self.conds = [ExpressionBlock(self.hdrs[0], shared, None)]
@@ -1739,7 +1746,7 @@ class IfBlock(Block):
             self.conds = [ ]
             for i in range(len(self.bodies)):
                 if i < len(node.conds):
-                    hdr = Block(self, shared)
+                    hdr = HeaderBlock(self, shared)
                     cond = ExpressionBlock(hdr, shared, node.conds[i])
                     self.conds.append(cond)
                     if i == 0:
@@ -1749,7 +1756,7 @@ class IfBlock(Block):
                     cond.grid(row=0, column=1)
                     tk.Button(hdr, text=":", command=lambda: self.minmax(self.bodies[i])).grid(row=0, column=2, sticky=tk.W)
                 else:
-                    hdr = Block(self, shared)
+                    hdr = HeaderBlock(self, shared)
                     tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                     tk.Button(hdr, text=":", width=0, command=lambda: self.minmax(self.bodies[-1])).grid(row=0, column=1)
                 self.hdrs.append(hdr)
@@ -1775,7 +1782,7 @@ class IfBlock(Block):
 
     def addElse(self):
         self.bodies.append(SeqBlock(self, self.shared, None))
-        hdr = Block(self, self.shared)
+        hdr = HeaderBlock(self, self.shared)
         tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         tk.Button(hdr, text=":", width=0, command=lambda: self.minmax(self.bodies[-1])).grid(row=0, column=1)
         self.hdrs.append(hdr)
@@ -1792,7 +1799,7 @@ class IfBlock(Block):
         self.needsSaving()
 
     def insertElif(self):
-        hdr = Block(self, self.shared)
+        hdr = HeaderBlock(self, self.shared)
         tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         cond = ExpressionBlock(hdr, self.shared, None)
         cond.grid(row=0, column=1)
@@ -1824,7 +1831,7 @@ class TryBlock(Block):
         super().__init__(parent, shared, borderwidth=1)
         self.bodyMinimized = False
 
-        hdr = Block(self, shared)
+        hdr = HeaderBlock(self, shared)
         tk.Button(hdr, text="try", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         tk.Button(hdr, text=":", command=lambda: self.minmax(self.body)).grid(row=0, column=1, sticky=tk.W)
         hdr.grid(row=0, column=0, sticky=tk.W)
@@ -1840,7 +1847,7 @@ class TryBlock(Block):
             self.body.grid(row=1, column=0, sticky=tk.W)
             self.handlers = []
             for type, name, body in node.handlers:
-                hdr = Block(self, shared)
+                hdr = HeaderBlock(self, shared)
                 self.handlers.append((hdr,
                     None if type == None else type.toBlock(hdr, self),
                     None if name == None else name.toBlock(hdr, self),
@@ -1866,7 +1873,7 @@ class TryBlock(Block):
             if node.orelse == None:
                 self.orelse = None
             else:
-                hdr = Block(self, shared)
+                hdr = HeaderBlock(self, shared)
                 tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                 tk.Button(hdr, text=":", command=lambda: self.minmax(self.body)).grid(row=0, column=1, sticky=tk.W)
                 hdr.grid(row=row, column=0, sticky=tk.W)
@@ -1877,7 +1884,7 @@ class TryBlock(Block):
             if node.finalbody == None:
                 self.finalbody = None
             else:
-                hdr = Block(self, shared)
+                hdr = HeaderBlock(self, shared)
                 tk.Button(hdr, text="finally", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                 tk.Button(hdr, text=":", command=lambda: self.minmax(self.body)).grid(row=0, column=1, sticky=tk.W)
                 hdr.grid(row=row, column=0, sticky=tk.W)
@@ -1920,7 +1927,7 @@ class WithBlock(Block):
         super().__init__(parent, shared)
         self.node = node
 
-        hdr = Block(self, self.shared)
+        hdr = HeaderBlock(self, self.shared)
         tk.Button(hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         column = 1
         for expr, var in node.items:
@@ -1959,7 +1966,7 @@ class WhileBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
 
-        hdr = Block(self, self.shared)
+        hdr = HeaderBlock(self, self.shared)
         tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.isWithinLoop = True
         if node == None:
@@ -1984,7 +1991,7 @@ class WhileBlock(Block):
         if self.orelse == None:
             self.hdr2 = None
         else:
-            self.hdr2 = Block(self, self.shared)
+            self.hdr2 = HeaderBlock(self, self.shared)
             tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
             tk.Button(self.hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
             self.hdr2.grid(row=2, column=0, sticky=tk.W)
@@ -2018,7 +2025,7 @@ class WhileBlock(Block):
 
     def addElse(self):
         self.orelse = SeqBlock(self, self.shared, None)
-        self.hdr2 = Block(self, self.shared)
+        self.hdr2 = HeaderBlock(self, self.shared)
         tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
         self.hdr2.grid(row=2, column=0, sticky=tk.W)
@@ -2040,7 +2047,7 @@ class WhileBlock(Block):
 class ForBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        hdr = Block(self, shared)
+        hdr = HeaderBlock(self, shared)
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.isWithinLoop = True
         if node == None:
@@ -2069,7 +2076,7 @@ class ForBlock(Block):
         if self.orelse == None:
             self.hdr2 = None
         else:
-            self.hdr2 = Block(self, shared)
+            self.hdr2 = HeaderBlock(self, shared)
             tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
             tk.Button(self.hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
             self.hdr2.grid(row=2, column=0, sticky=tk.W)
@@ -2103,7 +2110,7 @@ class ForBlock(Block):
 
     def addElse(self):
         self.orelse = SeqBlock(self, self.shared, None)
-        self.hdr2 = Block(self, self.shared)
+        self.hdr2 = HeaderBlock(self, self.shared)
         tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
         self.hdr2.grid(row=2, column=0, sticky=tk.W)
