@@ -189,49 +189,64 @@ class PassForm(Form):
         self.focus_set()
 
         row = 0
-        tk.Message(self, width=350, font='Helvetica 16 bold', text="'pass' statement").grid(row=row, columnspan=2)
+        tk.Message(self, width=350, font='Helvetica 16 bold', text="'pass' statement").grid(row=row, columnspan=3)
         row += 1
-        tk.Message(self, width=350, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=row, columnspan=2)
-        row += 1
-        tk.Button(self, text="define a new method", width=0, command=self.stmtDef).grid(row=row)
+        tk.Message(self, width=350, font='Helvetica 14', text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=row, columnspan=3)
         row += 1
 
-        tk.Button(self, text="assignment", width=0, command=self.stmtAugassign).grid(row=row)
+        statements = [
+            ("assert", self.stmtAssert),
+            ("break", self.stmtBreak),
+            ("class", self.stmtClass),
+            ("continue", self.stmtContinue),
+            ("def", self.stmtDef),
+            ("del", self.stmtDel),
+            ("for", self.stmtFor),
+            ("global", self.stmtGlobal),
+            ("if", self.stmtIf),
+            ("import", self.stmtImport),
+            ("print", self.stmtPrint),
+            ("return", self.stmtReturn),
+            ("try", self.stmtTry),
+            ("with", self.stmtWith),
+            ("yield", self.stmtYield),
+        ]
+
+        ncolumns = 3
+        n = len(statements)
+        nrows = (n + ncolumns - 1) // ncolumns
+        r = 0
+        while r < nrows:
+            for c in range(ncolumns):
+                i = r + c * nrows
+                if i < n:
+                    name, stmt = statements[i]
+                    tk.Button(self, text=name, width=0, command=stmt).grid(row=row, column=c)
+            r += 1
+            row += 1
+
+        tk.Button(self, text="assignment", width=0, command=self.stmtAugassign).grid(row=row, column=1, pady=10)
         self.assignop = tk.StringVar(self)
         self.assignop.set("=")
         assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
-        assignops.grid(row=row, column=1, sticky=tk.W)
+        assignops.grid(row=row, column=2, sticky=tk.W)
 
         row += 1
-        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row)
+        tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row, columnspan=3, pady=10)
         row += 1
-        tk.Button(self, text="if statement", width=0, command=self.stmtIf).grid(row=row)
-        row += 1
-        tk.Button(self, text="while statement", width=0, command=self.stmtWhile).grid(row=row)
-        row += 1
-        tk.Button(self, text="for statement", width=0, command=self.stmtFor).grid(row=row)
-        row += 1
-        if self.block.isWithinLoop:
-            tk.Button(self, text="break statement", width=0, command=self.stmtBreak).grid(row=row)
-            row += 1
-            tk.Button(self, text="continue statement", width=0, command=self.stmtContinue).grid(row=row)
-            row += 1
-        if self.block.isWithinDef:
-            tk.Button(self, text="return statement", width=0, command=self.stmtReturn).grid()
-        tk.Button(self, text="global statement", width=0, command=self.stmtGlobal).grid()
-        tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
-        tk.Button(self, text="assert statement", width=0, command=self.stmtAssert).grid()
-        tk.Button(self, text="del statement", width=0, command=self.stmtDel).grid()
-        tk.Button(self, text="print statement", width=0, command=self.stmtPrint).grid()
-        tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid()
 
-        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=2)
+        tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid(columnspan=3)
+
+        tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=3, pady=10)
 
     def stmtEmpty(self):
         self.block.stmtEmpty()
 
     def stmtDef(self):
         self.block.stmtDef()
+
+    def stmtClass(self):
+        self.block.stmtClass()
 
     def stmtAugassign(self):
         self.block.stmtAugassign(self.assignop.get())
@@ -249,7 +264,10 @@ class PassForm(Form):
         self.block.stmtFor()
 
     def stmtReturn(self):
-        self.block.stmtReturn()
+        if self.block.isWithinDef:
+            self.block.stmtReturn()
+        else:
+            tk.messagebox.showinfo("Syntax Error", "Return statements can only be within method definitions")
 
     def stmtDel(self):
         self.block.stmtDel()
@@ -260,11 +278,26 @@ class PassForm(Form):
     def stmtAssert(self):
         self.block.stmtAssert()
 
+    def stmtTry(self):
+        self.block.stmtTry()
+
+    def stmtWith(self):
+        self.block.stmtWith()
+
+    def stmtYield(self):
+        self.block.stmtYield()
+
     def stmtBreak(self):
-        self.block.stmtBreak()
+        if self.block.isWithinLoop:
+            self.block.stmtBreak()
+        else:
+            tk.messagebox.showinfo("Syntax Error", "Break statements can only be within loops")
 
     def stmtContinue(self):
-        self.block.stmtContinue()
+        if self.block.isWithinLoop:
+            self.block.stmtContinue()
+        else:
+            tk.messagebox.showinfo("Syntax Error", "Continue statements can only be within loops")
 
     def stmtGlobal(self):
         self.block.stmtGlobal()
