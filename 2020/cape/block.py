@@ -1185,6 +1185,7 @@ class PassBlock(Block):
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.module)
         self.needsSaving()
+        self.shared.curForm.entry.focus()
 
     def stmtPasteOld(self):
         if self.shared.stmtBuffer != None:
