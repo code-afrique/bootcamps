@@ -91,7 +91,7 @@ class TextForm(Form):
         self.isExpression = False
         self.isStatement = True
 
-        self.lineno = tk.Text(self, width=4, height=30, relief=tk.SUNKEN, wrap=tk.NONE, tabs=('0.2i', tk.RIGHT))
+        self.lineno = tk.Text(self, width=5, height=30, relief=tk.SUNKEN, wrap=tk.NONE, tabs=('0.2i', tk.RIGHT))
         self.text = tk.Text(self, width=48, height=30, relief=tk.SUNKEN, wrap=tk.NONE)
 
         self.ysbar = tk.Scrollbar(self)
