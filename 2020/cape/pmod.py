@@ -181,8 +181,14 @@ def UnaryOp(lineno, col_offset, op, operand):
 def Starred(lineno, col_offset, value, ctx):
     return ExpressionNode(UnaryopNode(value, '*'))
 
+def binafy(op, values):
+    if len(values) == 1:
+        return values[0]
+    else:
+        return ExpressionNode(BinaryopNode(values[0], binafy(op, values[1:]), op))
+
 def BoolOp(lineno, col_offset, op, values):
-    return ExpressionNode(BinaryopNode(values[0], values[1], op))
+    return binafy(op, values)
 
 def alias(name, asname):
     return (name, asname)
