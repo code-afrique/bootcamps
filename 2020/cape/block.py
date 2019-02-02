@@ -929,10 +929,11 @@ class ExpressionBlock(Block):
         self.shared.curForm.entry.focus()
 
     def exprSubscript(self, isSlice):
-        self.setValue(SubscriptNode(None, (isSlice, None, None, None)))
+        self.setValue(SubscriptNode(None, (isSlice, ExpressionNode(None), None, None)))
+        self.setBlock(self.what.array)
 
     def exprAttr(self):
-        self.setValue(AttrNode(ExpressionNode(None), ExpressionNode(None)))
+        self.setValue(AttrNode(ExpressionNode(None), NameNode("")))
         self.setBlock(self.what.array)
 
     def exprList(self):
