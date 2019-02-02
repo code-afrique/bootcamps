@@ -35,9 +35,12 @@ class Block(tk.Frame):
 
     def setBlock(self, b):
         if self.shared.curBlock:
-            self.shared.curBlock.configure(bd=1, highlightbackground="white", highlightcolor="white", highlightthickness=1)
+            self.shared.curBlock.configure(bd=1, highlightbackground=self.shared.hlb, highlightcolor=self.shared.hlc, highlightthickness=self.shared.hlt)
         self.shared.curBlock = b
         if b:
+            b.shared.hlb = b.cget("highlightbackground")
+            b.shared.hlc = b.cget("highlightcolor")
+            b.shared.hlt = b.cget("highlightthickness")
             b.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
             b.update()
             b.genForm()
