@@ -1144,6 +1144,7 @@ class PassBlock(Block):
         self.rowblk.what = n.toBlock(self.rowblk, self)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.expr.what.args[0].what)
+        self.shared.curForm.entry.focus()
         self.needsSaving()
 
     def stmtAssert(self):
