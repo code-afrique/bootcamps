@@ -5,6 +5,8 @@ import threading
 import time
 import os
 from subprocess import Popen, PIPE
+from threading import Thread
+from queue import Queue
 
 class Console(tk.Frame):
     def __init__(self, master, *args, **kwargs):
@@ -17,8 +19,8 @@ class Console(tk.Frame):
                              "selectbackground": "#f01c1c"}
 
         self.text = ScrolledText(self, **self.text_options)
-        self.text.tag_config("stdin", foreground="green")
-        self.text.tag_config("stdout", foreground="white")
+        self.text.tag_config("stdin", foreground="yellow")
+        self.text.tag_config("stdout", foreground="#000fff000")
         self.text.tag_config("stderr", foreground="red")
 
         # It seems not to work when Text is disabled...
@@ -60,9 +62,7 @@ class Console(tk.Frame):
     def show(self, message, tag):
         """Inserts message into the Text wiget"""
         self.text.config(state="normal")
-        self.text.insert("end", message)
-        n = len(message)
-        self.text.tag_add(tag, "end-{}c".format(n+1), "end-2c")
+        self.text.insert(tk.END, message, (tag))
         self.text.see("end")
         self.text.config(state="disabled")
 
@@ -70,10 +70,7 @@ class Console(tk.Frame):
         """Starts a new thread and calls process"""
         self.command = command
         # self.process is called by the Thread's run method
-        threading.Thread(target=self.process).start()
-
-    def process(self):
-        self.execute()
+        threading.Thread(target=self.execute).start()
 
     def stop(self):
         """Stops an eventual running process"""
@@ -84,26 +81,37 @@ class Console(tk.Frame):
                 pass 
         self.master.destroy()
 
+    def reader(self, pipe, queue, tag):
+        try:
+            while True:
+                c = pipe.read(1)
+                if c == b'' or c == '':
+                    break
+                queue.put((tag, c))
+        finally:
+            queue.put((tag, None))
+
     def execute(self):
         """Keeps inserting line by line into self.text
         the output of the execution of self.command"""
         try:
-            self.popen = Popen(['python'] + self.command.split(), stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=1)
-            stdout_iterator = iter(self.popen.stdout.readline, b"")
-            stderr_iterator = iter(self.popen.stderr.readline, b"")
-            # poll() returns None if the process has not terminated
-            # otherwise poll() returns the process's exit code
+            self.popen = Popen(['python', '-u', self.command], stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0)
+
+            q = Queue()
+            Thread(target=self.reader, args=[self.popen.stdout, q, "stdout"]).start()
+            Thread(target=self.reader, args=[self.popen.stderr, q, "stderr"]).start()
+            d = { "stdout": True, "stderr": True }
+            while d["stdout"] or d["stderr"]:
+                (tag, c) = q.get()
+                if c == None:
+                    d[tag] = False
+                else:
+                    self.show(c.decode("utf-8"), tag)
             while self.popen.poll() is None:
-                for line in stdout_iterator:
-                    self.show(line.decode("utf-8"), "stdout")
-                for line in stderr_iterator:
-                    self.show(line.decode("utf-8"), "stderr")
-                # else:
-                #     time.sleep(0.1)
+                print("process still running")
+                time.sleep(0.1)
             self.status.set("Terminated")
         except FileNotFoundError:
             self.show("Can't find python\n\n", "stderr")
-        except IndexError:
-            self.show("No command entered\n\n", "stderr")
         finally:
             os.remove(self.command)
