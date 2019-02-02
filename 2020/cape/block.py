@@ -2051,7 +2051,7 @@ class ForBlock(Block):
         tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.isWithinLoop = True
         if node == None:
-            self.var = NameBlock(hdr, shared, NameNode(""))
+            self.var = ExpressionBlock(hdr, shared, None)
             self.expr = ExpressionBlock(hdr, shared, None)
             self.body = SeqBlock(self, shared, None)
             self.orelse = None
