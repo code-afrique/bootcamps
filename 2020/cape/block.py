@@ -263,6 +263,7 @@ class NameBlock(Block):
         self.vname.set(v)
         self.btn.config(width=0)
         self.needsSaving()
+        self.setBlock(self.goLeft())
 
     def toNode(self):
         v = self.vname.get()
@@ -293,6 +294,7 @@ class NumberBlock(Block):
         self.value.set(v)
         self.btn.config(width=0)
         self.needsSaving()
+        self.setBlock(self.goLeft())
 
     def toNode(self):
         v = self.value.get()
@@ -345,6 +347,7 @@ class StringBlock(Block):
         self.btn.config(width=0)
         self.scrollUpdate()
         self.needsSaving()
+        self.setBlock(self.goLeft())
 
     def toNode(self):
         return StringNode(self.string.get())
@@ -915,6 +918,7 @@ class ExpressionBlock(Block):
 
     def exprConstant(self, value):
         self.setValue(ConstantNode(value))
+        self.setBlock(self.goLeft())
 
     def exprString(self):
         self.setValue(StringNode(""))
@@ -929,6 +933,7 @@ class ExpressionBlock(Block):
 
     def exprAttr(self):
         self.setValue(AttrNode(ExpressionNode(None), ExpressionNode(None)))
+        self.setBlock(self.what.array)
 
     def exprList(self):
         self.setValue(ListNode([]))
@@ -947,6 +952,7 @@ class ExpressionBlock(Block):
 
     def exprCall(self):
         self.setValue(CallNode(ExpressionNode(None), [], []))
+        self.setBlock(self.what.func)
 
     def exprIfelse(self):
         self.setValue(IfelseNode(ExpressionNode(None), ExpressionNode(None), ExpressionNode(None)))

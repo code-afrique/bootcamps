@@ -927,7 +927,6 @@ class NameForm(Form):
             tk.messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
         else:
             self.block.setName(v)
-            self.focus_set()
 
     def keyEnter(self, ev):
         self.cb()
