@@ -13,6 +13,7 @@ class Block(tk.Frame):
         super().__init__(parent, borderwidth=borderwidth, relief=tk.SUNKEN)
         self.parent = parent
         self.shared = shared
+        self.isTop = False
         self.isWithinDef = False if parent == None else parent.isWithinDef
         self.isWithinLoop = False if parent == None else parent.isWithinLoop
         self.isWithinStore = False if parent == None else parent.isWithinStore # lvalue
@@ -40,8 +41,16 @@ class Block(tk.Frame):
             b.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
             b.update()
             b.genForm()
+            print("xy", self.getCoord(self.shared.canvas, b))
 
         self.scrollUpdate()
+
+    def getCoord(self, outer, inner):
+        if outer is inner:
+            return (0, 0)
+        else:
+            (x, y) = self.getCoord(outer, inner.parent)
+            return (x + inner.winfo_x(), y + inner.winfo_y())
 
     def needsSaving(self):
         self.shared.saved = False
@@ -76,7 +85,7 @@ class Block(tk.Frame):
         print("expression deleted")
 
     def goLeft(self):
-        if self.parent == None:
+        if self.isTop or self.parent == None or self.parent.isTop:
             return
         if isinstance(self.parent, ExpressionBlock):
             return self.parent.parent

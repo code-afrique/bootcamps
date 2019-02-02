@@ -7,3 +7,4 @@ class Shared():
         self.saved = True
         self.cvtError = False
         self.confarea = None
+        self.canvas = None

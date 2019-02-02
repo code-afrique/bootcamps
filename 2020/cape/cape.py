@@ -25,7 +25,7 @@ class Scrollable(tk.Frame):
 
     def __init__(self, frame, shared, width=16):
         super().__init__(None)
-        self.canvas = tk.Canvas(frame, width=725, height=475)
+        self.canvas = shared.canvas = tk.Canvas(frame, width=725, height=475)
         self.canvas.isWithinDef = False     # ???
         self.canvas.isWithinLoop = False    # ???
         self.canvas.isWithinStore = False    # ???
@@ -34,6 +34,7 @@ class Scrollable(tk.Frame):
         # self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
 
         self.stuff = Block(self.canvas, shared)
+        self.stuff.isTop = True
         self.stuff.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
 
         ysb.grid(row=0, column=0, sticky=tk.N+tk.S)
@@ -145,7 +146,6 @@ class CAPE(tk.Frame):
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
         self.program = SeqBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
-        self.program.parent = None
         self.shared.scrollable.scrollUpdate()
 
         # self.shared.confarea.place(x=0, y=0)
@@ -184,7 +184,6 @@ class CAPE(tk.Frame):
             self.program.grid_forget()
         self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, None)
         self.program.grid(sticky=tk.W)
-        self.program.parent = None
         self.shared.scrollable.scrollUpdate()
 
         self.shared.saved = True
@@ -221,7 +220,6 @@ class CAPE(tk.Frame):
                     self.program.grid_forget()
                 self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
                 self.program.grid(sticky=tk.W)
-                self.program.parent = None
                 self.shared.scrollable.scrollUpdate()
 
                 # verify that conversion has been done right
