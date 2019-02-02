@@ -323,7 +323,7 @@ class CAPE(tk.Frame):
         if self.shared.curBlock == None:
             print("nothing to cut")
         else:
-            self.shared.curBlock.cut()
+            self.shared.curBlock.cut(True)
         pass
 
     def copy(self):
