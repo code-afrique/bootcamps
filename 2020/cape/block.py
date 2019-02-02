@@ -1138,6 +1138,14 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.targets[0])
         self.needsSaving()
 
+    def stmtPrint(self):
+        self.rowblk.what.grid_forget()
+        n = EvalNode(ExpressionNode(CallNode(ExpressionNode(NameNode("print")), [ExpressionNode(StringNode(""))], [])))
+        self.rowblk.what = n.toBlock(self.rowblk, self)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.expr.what.args[0].what)
+        self.needsSaving()
+
     def stmtAssert(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = AssertBlock(self.rowblk, self.shared, None)

@@ -222,6 +222,7 @@ class PassForm(Form):
         tk.Button(self, text="import statement", width=0, command=self.stmtImport).grid()
         tk.Button(self, text="assert statement", width=0, command=self.stmtAssert).grid()
         tk.Button(self, text="del statement", width=0, command=self.stmtDel).grid()
+        tk.Button(self, text="print statement", width=0, command=self.stmtPrint).grid()
         tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid()
 
         tk.Message(self, width=350, font='Helvetica 14', text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=2)
@@ -252,6 +253,9 @@ class PassForm(Form):
 
     def stmtDel(self):
         self.block.stmtDel()
+
+    def stmtPrint(self):
+        self.block.stmtPrint()
 
     def stmtAssert(self):
         self.block.stmtAssert()
