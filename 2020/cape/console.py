@@ -12,6 +12,9 @@ class Console(tk.Frame):
     def __init__(self, master, *args, **kwargs):
         tk.Frame.__init__(self, master, *args, **kwargs)
 
+        self.stopped = False
+        self.terminated = False
+
         self.text_options = {"state": "disabled",
                              "bg": "black",
                              "fg": "#08c614",
@@ -61,10 +64,13 @@ class Console(tk.Frame):
 
     def show(self, message, tag):
         """Inserts message into the Text wiget"""
-        self.text.config(state="normal")
-        self.text.insert(tk.END, message, (tag))
-        self.text.see("end")
-        self.text.config(state="disabled")
+        try:
+            self.text.config(state="normal")
+            self.text.insert(tk.END, message, (tag))
+            self.text.see("end")
+            self.text.config(state="disabled")
+        except:
+            print("console show had a problem")
 
     def start_proc(self, command):
         """Starts a new thread and calls process"""
@@ -79,7 +85,11 @@ class Console(tk.Frame):
                 self.popen.kill()
             except ProcessLookupError:
                 pass 
-        self.master.destroy()
+        if self.terminated:
+            self.master.destroy()
+        else:
+            self.status.set("Terminating")
+            self.stopped = True
 
     def reader(self, pipe, queue, tag):
         try:
@@ -115,3 +125,6 @@ class Console(tk.Frame):
             self.show("Can't find python\n\n", "stderr")
         finally:
             os.remove(self.command)
+            self.terminated = True
+            if self.stopped:
+                self.master.destroy()
