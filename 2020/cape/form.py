@@ -10,8 +10,11 @@ class Form(tk.Frame):
         self.isStatement = False
         self.catchKeys()
 
+    def deleteKey(self, event):
+        self.block.cut(False)
+
     def cutKey(self, event):
-        self.block.cut()
+        self.block.cut(True)
 
     def copyKey(self, event):
         self.block.copy()
@@ -31,18 +34,23 @@ class Form(tk.Frame):
     def downKey(self, event):
         self.block.setBlock(self.block.goDown())
 
-    def delStmt(self):
-        self.block.parent.delStmt()
-
     def catchKeys(self):
         self.bind("<<Cut>>", self.cutKey)
         self.bind("<<Copy>>", self.copyKey)
         self.bind("<<Paste>>", self.pasteKey)
+        self.bind("<Delete>", self.deleteKey)
         self.bind("<Left>", self.leftKey)
         self.bind("<Right>", self.rightKey)
         self.bind("<Up>", self.upKey)
         self.bind("<Down>", self.downKey)
+        self.bind("<Key>", self.key)
         self.focus_set()
+
+    def key(self, ev):
+        if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
+            return
+        if ev.char == '\177':
+            self.deleteKey(ev)
 
 class HelpForm(Form):
     def __init__(self, parent, block):
@@ -163,6 +171,8 @@ class RowForm(Form):
             return
         if ev.char == '\r':
             self.addStmt()
+        elif ev.char == '\177':
+            self.delStmt()
 
     def addStmt(self):
         self.block.addStmt()
@@ -177,7 +187,7 @@ class RowForm(Form):
         self.block.downStmt()
 
     def delStmt(self):
-        self.block.cut()
+        self.block.cut(False)
 
 class PassForm(Form):
     def __init__(self, parent, block):
@@ -328,6 +338,8 @@ class PassForm(Form):
             self.stmtEval()
         elif ev.char == '\r':
             self.stmtEmpty()
+        elif ev.char == '\177':
+            self.deleteKey(ev)
 
 class ExpressionForm(Form):
     def __init__(self, parent, block):
@@ -395,7 +407,7 @@ class ExpressionForm(Form):
         tk.Message(self, width=350, font='Helvetica 14', text="You can also paste in an expression you have copied or deleted (see Edit menu).").grid(row=100, columnspan=3)
 
     def delExpr(self):
-        self.block.cut()
+        self.block.cut(False)
 
     def exprNumber(self):
         self.block.exprNumber("")
@@ -454,6 +466,8 @@ class ExpressionForm(Form):
             self.block.exprAttr()
         elif ev.char == ']':
             self.block.exprSubscript()
+        elif ev.char == '\177':
+            self.delExpr()
         elif not self.block.isWithinStore:
             if ev.char.isdigit():
                 self.block.exprNumber(ev.char)

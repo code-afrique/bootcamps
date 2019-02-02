@@ -147,6 +147,7 @@ class CAPE(tk.Frame):
         self.program = SeqBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
+        # self.program.setBlock(self.program)
 
         # self.shared.confarea.place(x=0, y=0)
         # self.progarea.place(x=400, y=0)
@@ -301,7 +302,7 @@ class CAPE(tk.Frame):
     def help(self):
         if self.shared.curForm != None:
             self.shared.curForm.grid_forget()
-        self.shared.curForm = HelpForm(self.shared.confarea, self)
+        self.shared.curForm = HelpForm(self.shared.confarea, self.program)
         self.shared.curForm.grid(row=0, column=0, sticky=tk.E)
         self.shared.curForm.update()
 

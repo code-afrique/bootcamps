@@ -79,8 +79,9 @@ class Block(tk.Frame):
     def needsSaving(self):
         self.shared.saved = False
 
-    def cut(self):
-        self.copy()
+    def cut(self, doCopy):
+        if doCopy:
+            self.copy()
         if isinstance(self, RowBlock):
             self.delStmt()
         elif isinstance(self.parent, RowBlock):
@@ -1070,6 +1071,9 @@ class PassBlock(Block):
     def cb(self):
         self.setBlock(self)
 
+    def paste(self):
+        self.parent.paste()
+
     def stmtEmpty(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = EmptyBlock(self.rowblk, self.shared, None)
@@ -1201,6 +1205,9 @@ class EmptyBlock(Block):
 
     def genForm(self):
         self.setForm(EmptyForm(self.shared.confarea, self))
+
+    def paste(self):
+        self.parent.paste()
 
     def cb(self):
         self.setBlock(self)
