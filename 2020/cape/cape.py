@@ -103,7 +103,7 @@ class CAPE(tk.Frame):
 
         actions = tk.Menu(menu)
         actions.add_command(label="Show code", command=self.text)
-        actions.add_command(label="Run", command=self.run2)
+        actions.add_command(label="Run", command=self.run)
         menu.add_cascade(label="Actions", menu=actions)
 
         help = tk.Menu(menu)
@@ -245,59 +245,34 @@ class CAPE(tk.Frame):
         if self.curfile == None:
             self.saveAs()
         else:
-            self.shared.cvtError = False
+            self.shared.cvtError = True
             n = self.program.toNode()
-            if self.shared.cvtError:
-                print("===== Fix program first =====")
-            else:
-                with open(self.curfile, "w") as fd:
-                    n.print(fd, 0)
-                    print("saved")
-                    self.shared.saved = True
+            with open(self.curfile, "w") as fd:
+                n.print(fd, 0)
+                print("saved")
+                self.shared.saved = True
 
     def saveAs(self):
-        self.shared.cvtError = False
+        self.shared.cvtError = True
         n = self.program.toNode()
-        if self.shared.cvtError:
-            print("===== Fix program first =====")
+        if self.curfile == None:
+            filename = tk.filedialog.asksaveasfilename(defaultextension='.py',
+                                     filetypes=(('Python source files', '*.py'),
+                                                ('All files', '*.*')))
         else:
-            if self.curfile == None:
-                filename = tk.filedialog.asksaveasfilename(defaultextension='.py',
-                                         filetypes=(('Python source files', '*.py'),
-                                                    ('All files', '*.*')))
-            else:
-                curName = os.path.basename(self.curfile)
-                curDir = os.path.dirname(self.curfile)
-                filename = tk.filedialog.asksaveasfilename(initialdir=curDir, initialfile=curName, defaultextension='.py',
-                         filetypes=(('Python source files', '*.py'),
-                                            ('All files', '*.*')))
-            if filename:
-                self.curfile = filename
-                with open(filename, "w") as fd:
-                    n.print(fd, 0)
-                    print("saved")
-                    self.shared.saved = True
+            curName = os.path.basename(self.curfile)
+            curDir = os.path.dirname(self.curfile)
+            filename = tk.filedialog.asksaveasfilename(initialdir=curDir, initialfile=curName, defaultextension='.py',
+                     filetypes=(('Python source files', '*.py'),
+                                        ('All files', '*.*')))
+        if filename:
+            self.curfile = filename
+            with open(filename, "w") as fd:
+                n.print(fd, 0)
+                print("saved")
+                self.shared.saved = True
 
     def run(self):
-        self.shared.cvtError = False
-        n = self.program.toNode()
-        if self.shared.cvtError:
-            print("===== Fix program first =====")
-        else:
-            fd, path = tempfile.mkstemp(dir=".", suffix=".py")
-            try:
-                with os.fdopen(fd, 'w') as tmp:
-                    n.print(tmp, 0)
-                    tmp.close()
-                    print("===== Start running =====")
-                    # theproc = subprocess.Popen(['python', path])
-                    # theproc.communicate()
-                    subprocess.call(['python', path])
-                    print("===== Done =====")
-            finally:
-                os.remove(path)
-
-    def run2(self):
         self.shared.cvtError = False
         n = self.program.toNode()
         if self.shared.cvtError:
@@ -335,14 +310,13 @@ class CAPE(tk.Frame):
             self.shared.curForm.grid_forget()
         self.shared.curForm = TextForm(self.shared.confarea, self)
 
-        self.shared.cvtError = False
+        self.shared.cvtError = True
         n = self.program.toNode()
-        if not self.shared.cvtError:
-            f = io.StringIO("")
-            n.print(f, 0)
-            self.shared.curForm.settext(f.getvalue())
-            self.shared.curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
-            self.shared.curForm.update()
+        f = io.StringIO("")
+        n.print(f, 0)
+        self.shared.curForm.settext(f.getvalue())
+        self.shared.curForm.grid(row=0, column=0, sticky=tk.E+tk.S+tk.W+tk.N)
+        self.shared.curForm.update()
 
     def cut(self):
         if self.shared.curBlock == None:

@@ -93,6 +93,7 @@ class Block(tk.Frame):
             print("Can't cut {0} {1}".format(self.parent, self))
 
     def copy(self):
+        self.shared.cvtError = True
         self.shared.exprBuffer = self.toNode()
         self.clipboard_clear()
         f = io.StringIO("")
@@ -966,7 +967,7 @@ class ExpressionBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix uninitialized expression")
                 self.shared.cvtError = True
-            return None
+            return ExpressionNode(NameNode("__CAPE_UNINITIALIZED__"))
         return ExpressionNode(self.what.toNode())
 
 class AssignBlock(Block):

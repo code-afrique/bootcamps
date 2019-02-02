@@ -32,7 +32,10 @@ def AugAssign(lineno, col_offset, target, op, value):
     return RowNode(AugassignNode(target, value, op + '='), lineno)
 
 def Name(lineno, col_offset, id, ctx):
-    return ExpressionNode(NameNode(id))
+    if id == "__CAPE_UNINITIALIZED__":
+        return ExpressionNode(None)
+    else:
+        return ExpressionNode(NameNode(id))
 
 def Subscript(lineno, col_offset, value, slice, ctx):
     return ExpressionNode(SubscriptNode(value, slice))
