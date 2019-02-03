@@ -288,9 +288,9 @@ class WhileNode(Node):
 
 class ForNode(Node):
 
-    def __init__(self, var, expr, body, orelse):
+    def __init__(self, target, expr, body, orelse):
         super().__init__()
-        self.var = var
+        self.target = target
         self.expr = expr
         self.body = body
         self.orelse = orelse
@@ -307,7 +307,7 @@ class ForNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("for ", end="", file=fd)
-        self.var.print(fd, 0)
+        self.target.print(fd, 0)
         print(" in ", end="", file=fd)
         self.expr.print(fd, 0)
         print(":", file=fd)

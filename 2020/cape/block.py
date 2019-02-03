@@ -15,7 +15,7 @@ class Block(tk.Frame):
         self.isTop = False
         self.isWithinDef = (False if (parent == None) else parent.isWithinDef)
         self.isWithinLoop = (False if (parent == None) else parent.isWithinLoop)
-        self.isWithinStore = (False if (parent == None) else parent.isWithinStore)	# lvalue
+        self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
 
     def scrollUpdate(self):
         self.shared.scrollable.scrollUpdate()
@@ -34,9 +34,10 @@ class Block(tk.Frame):
 
     def setBlock(self, b):
         if self.shared.curBlock:
-            self.shared.curBlock.configure(bd=1, highlightbackground=self.shared.hlb, highlightcolor=self.shared.hlc, highlightthickness=self.shared.hlt)
+            self.shared.curBlock.configure(bd=self.shared.bd, highlightbackground=self.shared.hlb, highlightcolor=self.shared.hlc, highlightthickness=self.shared.hlt)
         self.shared.curBlock = b
         if b:
+            b.shared.bd = b.cget("bd")
             b.shared.hlb = b.cget("highlightbackground")
             b.shared.hlc = b.cget("highlightcolor")
             b.shared.hlt = b.cget("highlightthickness")
@@ -566,8 +567,8 @@ class ClassBlock(Block):
             self.body = None
             self.body_node = node.body
         self.hdr = HeaderBlock(self, shared)
-        self.btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
-        self.btn.grid(row=0, column=0)
+        btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
+        btn.grid(row=0, column=0)
         self.name = tk.Button(self.hdr, textvariable=self.cname, fg="blue", command=self.cb)
         self.name.grid(row=0, column=1)
         tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
@@ -594,11 +595,13 @@ class ClassBlock(Block):
             self.body.grid(row=1, column=0, sticky=tk.W)
             self.update()
             self.minimized = False
+            self.colon.configure(highlightbackground="white", text=":")
         else:
             self.body_node = self.body.toNode()
             self.body.grid_forget()
             self.body = None
             self.minimized = True
+            self.colon.configure(highlightbackground="red", text="+")
         self.scrollUpdate()
 
     def classUpdate(self, mname):
@@ -624,6 +627,10 @@ class ClassBlock(Block):
             column += 1
         self.eol.grid(row=0, column=column)
         self.colon.grid(row=0, column=(column + 1))
+        if self.minimized:
+            self.colon.configure(highlightbackground="red", text="+")
+        else:
+            self.colon.configure(highlightbackground="white", text=":")
 
     def toNode(self):
         v = self.cname.get()
@@ -1149,6 +1156,13 @@ class PassBlock(Block):
         self.rowblk.what = WhileBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.cond)
+        self.needsSaving()
+
+    def stmtWith(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = WithBlock(self.rowblk, self.shared, None)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what)
         self.needsSaving()
 
     def stmtFor(self):
@@ -1683,8 +1697,8 @@ class DefBlock(Block):
             self.body.grid(row=1, column=0, sticky=tk.W)
 
     def setHeader(self):
-        self.btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
-        self.btn.grid(row=0, column=0)
+        btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
+        btn.grid(row=0, column=0)
         self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
         self.name.grid(row=0, column=1)
         tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
@@ -1790,7 +1804,7 @@ class IfBlock(Block):
         else:
             body.grid_forget()
             self.minimizeds[which] = True
-        self.gridUpdate()	# ???
+        self.gridUpdate()    # ???
         self.scrollUpdate()
 
     def addElse(self):
@@ -1916,7 +1930,7 @@ class TryBlock(Block):
         else:
             body.grid_forget()
             self.minimizeds[which] = True
-        self.gridUpdate()	# ???
+        self.gridUpdate()    # ???
         self.scrollUpdate()
 
     def gridUpdate(self):
@@ -1942,7 +1956,8 @@ class WithBlock(Block):
                 column += 1
                 var.toBlock(hdr, self).grid(row=0, column=column)
                 column += 1
-        tk.Button(hdr, text=":", fg="red", width=0, command=self.minmax).grid(row=0, column=column)
+        self.button = tk.Button(hdr, text=":", fg="red", width=0, command=self.minmax)
+        self.button.grid(row=0, column=column)
         hdr.grid(row=0, column=0, sticky=tk.W)
         self.body = node.body.toBlock(self, self)
         self.body.grid(row=1, column=0, sticky=tk.W)
@@ -1958,9 +1973,11 @@ class WithBlock(Block):
             self.body.grid(row=1, column=0, sticky=tk.W)
             self.update()
             self.minimized = False
+            self.button.configure(highlightbackground="white", text=":")
         else:
             self.body.grid_forget()
             self.minimized = True
+            self.button.configure(highlightbackground="red", text="+")
         self.scrollUpdate()
 
     def toNode(self):

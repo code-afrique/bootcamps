@@ -81,6 +81,15 @@ class EvalForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Evaluation Statement").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a statement that evaluates an expression").grid(sticky=tk.W)
 
+class WithForm(Form):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="With Statement").grid()
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a with statement.").grid(sticky=tk.W)
+
 class EmptyForm(Form):
 
     def __init__(self, parent, block):
@@ -244,6 +253,9 @@ class PassForm(Form):
 
     def stmtWhile(self):
         self.block.stmtWhile()
+
+    def stmtWith(self):
+        self.block.stmtWith()
 
     def stmtFor(self):
         self.block.stmtFor()
