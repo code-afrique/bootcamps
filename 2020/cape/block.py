@@ -694,6 +694,9 @@ class CallBlock(Block):
         else:
             arg = ExpressionBlock(self, self.shared, node)
         self.args.append(arg)
+
+    def newArg(self, node):
+        self.addArg(node)
         self.gridUpdate()
         self.needsSaving()
 
@@ -707,8 +710,6 @@ class CallBlock(Block):
         else:
             arg = ExpressionBlock(self, self.shared, val)
         self.keywords.append((key, arg))
-        self.gridUpdate()
-        self.needsSaving()
 
     def gridUpdate(self):
         first = True
@@ -1742,7 +1743,6 @@ class DefBlock(Block):
     def defUpdate(self, mname, args):
         self.mname.set(mname)
         self.args = args
-        self.sb.hdr.grid_forget()
         self.setHeader()
         self.needsSaving()
 

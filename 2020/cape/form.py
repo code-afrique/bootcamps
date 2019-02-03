@@ -48,7 +48,7 @@ class Form(tk.Frame):
         self.focus_set()
 
     def key(self, ev):
-        if ((ev.type != "2") or (len(ev.char) != 1)):	# check if normal KeyPress
+        if ((ev.type != "2") or (len(ev.char) != 1)):    # check if normal KeyPress
             return
         if (ev.char == ""):
             self.deleteKey(ev)
@@ -141,7 +141,7 @@ class TextForm(Form):
         self.text.mark_set(tk.INSERT, "1.0")
         self.text.focus()
         for i in range(text.count("\n")):
-            self.lineno.insert(tk.END, "	{}\n".format((i + 1)))
+            self.lineno.insert(tk.END, "    {}\n".format((i + 1)))
 
     def gettext(self):
         return self.text.get("1.0", (tk.END + "-1c"))
@@ -178,7 +178,7 @@ class RowForm(Form):
         self.cb()
 
     def key(self, ev):
-        if ((ev.type != "2") or (len(ev.char) != 1)):	# check if normal KeyPress
+        if ((ev.type != "2") or (len(ev.char) != 1)):    # check if normal KeyPress
             return
         if (ev.char == "\r"):
             self.addStmt()
@@ -312,7 +312,7 @@ class PassForm(Form):
         self.block.stmtImport()
 
     def key(self, ev):
-        if ((ev.type != "2") or (len(ev.char) != 1)):	# check if normal KeyPress
+        if ((ev.type != "2") or (len(ev.char) != 1)):    # check if normal KeyPress
             return
         if (ev.char == "a"):
             self.stmtAssert()
@@ -454,7 +454,7 @@ class ExpressionForm(Form):
         self.block.exprIfelse()
 
     def key(self, ev):
-        if ((ev.type != "2") or (len(ev.char) != 1)):	# check if normal KeyPress
+        if ((ev.type != "2") or (len(ev.char) != 1)):    # check if normal KeyPress
             return
         if ev.char.isidentifier():
             self.block.exprName(ev.char)
@@ -504,12 +504,14 @@ class DefForm(Form):
         self.entry.bind("<Return>", self.keyEnter)
         self.entry.grid(row=2, column=1)
         self.args = []
+        self.ndefaults = 0
         for arg in block.args:
             self.addArg(arg)
         ma = tk.Button(self, text="+ Add argument", command=self.newArg)
         ma.grid(row=100, column=0)
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=100, column=1, sticky=tk.E)
+        self.ndefaults = len(block.defaults)
 
     def newArg(self):
         self.addArg("")
@@ -521,7 +523,7 @@ class DefForm(Form):
         e.insert(tk.END, name)
         e.grid(row=(nargs + 3), column=1)
         e.focus()
-        self.args.append(e)
+        self.args.insert(nargs - self.ndefaults, e)
 
     def cb(self):
         name = self.entry.get()
@@ -865,7 +867,7 @@ class CallForm(Form):
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="function calll").grid(columnspan=3)
         tk.Message(self, width=350, font="Helvetica 14", text="A function call is of the form f(list of arguments).  Here 'f' can be an expression in its own right.").grid(row=1, columnspan=3)
-        ma = tk.Button(self, text="+ Add a new argument", command=self.addArg)
+        ma = tk.Button(self, text="+ Add a new argument", command=self.newArg)
         ma.grid(row=2, column=0, columnspan=3)
         tk.Label(self, text="Add a named argument: ").grid(row=3)
         self.entry = tk.Entry(self, width=8)
@@ -874,8 +876,8 @@ class CallForm(Form):
         enter = tk.Button(self, text="Enter", command=self.cb)
         enter.grid(row=3, column=2)
 
-    def addArg(self):
-        self.block.addArg(None)
+    def newArg(self):
+        self.block.newArg(None)
         self.block.setBlock(self.block.args[(- 1)])
 
     def cb(self):
