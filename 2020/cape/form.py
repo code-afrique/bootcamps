@@ -70,7 +70,16 @@ class SeqForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Sequence of statements").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statement").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements.").grid(sticky=tk.W)
+
+class SubForm(Form):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="Header with Statements").grid()
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements with a header.").grid(sticky=tk.W)
 
 class EvalForm(Form):
 

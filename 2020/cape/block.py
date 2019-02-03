@@ -552,36 +552,74 @@ class ListopBlock(Block):
     def toNode(self):
         return ListopNode([v.toNode() for v in self.values], self.ops)
 
+class SubBlock(Block):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+
+        self.node = node
+        self.hdr = HeaderBlock(self, shared)
+        self.colon = tk.Button(self.hdr, highlightbackground="red", text="+", command=self.minmax)
+        self.body = None
+        self.hdr.grid(row=0, column=0, sticky=tk.W)
+        self.colon.grid(row=0, column=1000, sticky=tk.W)
+        self.minimized = True
+
+    def genForm(self):
+        self.setForm(SubForm(self.shared.confarea, self))
+
+    def goRight(self):
+        assert self.body != None
+        return self.body
+
+    def minmax(self):
+        if self.minimized:
+            self.body = self.node.toBlock(self, self)
+            self.body.grid(row=1, column=0, columnspan=2, sticky=tk.W)
+            self.update()
+            self.minimized = False
+            self.colon.configure(highlightbackground="white", text=":")
+        else:
+            self.node = self.body.toNode()
+            self.body.grid_forget()
+            self.body = None
+            self.minimized = True
+            self.colon.configure(highlightbackground="red", text="+")
+        self.scrollUpdate()
+
+    def toNode(self):
+        if self.minimized:
+            return self.node
+        else:
+            return self.body.toNode()
+
 class ClassBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.cname = tk.StringVar()
+
         if (node == None):
-            self.minimized = False
-            self.body = SeqBlock(self, shared, None)
-            self.body_node = self.body.toNode()
+            self.sb = SubBlock(self, shared, SeqNode([RowNode(PassNode())]))
         else:
-            self.minimized = True
             self.cname.set(node.name)
-            self.body = None
-            self.body_node = node.body
-        self.hdr = HeaderBlock(self, shared)
-        btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
+            self.sb = SubBlock(self, shared, node.body)
+
+        hdr = self.sb.hdr
+        btn = tk.Button(hdr, text="class", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
-        self.name = tk.Button(self.hdr, textvariable=self.cname, fg="blue", command=self.cb)
+        self.name = tk.Button(hdr, textvariable=self.cname, fg="blue", command=self.cb)
         self.name.grid(row=0, column=1)
-        tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
-        self.eol = tk.Button(self.hdr, text=")", command=self.cb)
-        self.colon = tk.Button(self.hdr, text=":", command=self.minmax)
-        self.hdr.grid(row=0, column=0, sticky=tk.W)
+        tk.Button(hdr, text="(", command=self.cb).grid(row=0, column=2)
+        self.eol = tk.Button(hdr, text=")", command=self.cb)
         self.bases = []
         if (node != None):
             for base in node.bases:
                 self.addBaseClass(base)
         self.setHeader()
-        if (not self.minimized):
-            self.body.grid(row=1, column=0, sticky=tk.W)
+        self.sb.grid()
+
+    def goRight(self):
+        return self.sb
 
     def genForm(self):
         self.setForm(ClassForm(self.shared.confarea, self))
@@ -589,48 +627,29 @@ class ClassBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def minmax(self):
-        if self.minimized:
-            self.body = self.body_node.toBlock(self, self)
-            self.body.grid(row=1, column=0, sticky=tk.W)
-            self.update()
-            self.minimized = False
-            self.colon.configure(highlightbackground="white", text=":")
-        else:
-            self.body_node = self.body.toNode()
-            self.body.grid_forget()
-            self.body = None
-            self.minimized = True
-            self.colon.configure(highlightbackground="red", text="+")
-        self.scrollUpdate()
-
     def classUpdate(self, mname):
         self.cname.set(mname)
         self.needsSaving()
 
     def addBaseClass(self, node):
         if (node == None):
-            base = ExpressionBlock(self.hdr, self.shared, None)
+            base = ExpressionBlock(self.sb.hdr, self.shared, None)
         else:
-            base = ExpressionBlock(self.hdr, self.shared, node)
+            base = ExpressionBlock(self.sb.hdr, self.shared, node)
         self.bases.append(base)
         self.setHeader()
         self.needsSaving()
 
     def setHeader(self):
+        hdr = self.sb.hdr
         column = 3
         for i in range(len(self.bases)):
             if (i != 0):
-                tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
+                tk.Button(hdr, text=",", command=self.cb).grid(row=0, column=column)
                 column += 1
             self.bases[i].grid(row=0, column=column)
             column += 1
         self.eol.grid(row=0, column=column)
-        self.colon.grid(row=0, column=(column + 1))
-        if self.minimized:
-            self.colon.configure(highlightbackground="red", text="+")
-        else:
-            self.colon.configure(highlightbackground="white", text=":")
 
     def toNode(self):
         v = self.cname.get()
@@ -639,10 +658,7 @@ class ClassBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad class name")
                 self.shared.cvtError = True
-        if self.minimized:
-            return ClassNode(v, [b.toNode() for b in self.bases], self.body_node)
-        else:
-            return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode())
+        return ClassNode(v, [b.toNode() for b in self.bases], self.sb.toNode())
 
 class CallBlock(Block):
 
@@ -1677,47 +1693,41 @@ class DefBlock(Block):
         super().__init__(parent, shared)
         self.isWithinDef = True
         self.mname = tk.StringVar()
-        self.hdr = HeaderBlock(self, self.shared)
-        self.hdr.grid(row=0, column=0, sticky=tk.W)
+
         if (node == None):
+            self.sb = SubBlock(self, shared, SeqNode([RowNode(PassNode())]))
             self.args = []
             self.defaults = []
-            self.minimized = False
         else:
+            self.sb = SubBlock(self, shared, node.body)
             self.mname.set(node.name)
             self.args = node.args
             self.defaults = [d.toBlock(self.hdr, self) for d in node.defaults]
-            self.minimized = True
+
         self.setHeader()
-        if (node == None):
-            self.body = SeqBlock(self, shared, None)
-        else:
-            self.body = node.body.toBlock(self, self)
-        if (not self.minimized):
-            self.body.grid(row=1, column=0, sticky=tk.W)
+        self.sb.grid()
 
     def setHeader(self):
-        btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
+        hdr = self.sb.hdr
+        btn = tk.Button(hdr, text="def", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
-        self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
+        self.name = tk.Button(hdr, textvariable=self.mname, fg="blue", command=self.cb)
         self.name.grid(row=0, column=1)
-        tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
+        tk.Button(hdr, text="(", command=self.cb).grid(row=0, column=2)
         column = 3
         d = (len(self.args) - len(self.defaults))
         for i in range(len(self.args)):
             if (i != 0):
-                tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
+                tk.Button(hdr, text=",", command=self.cb).grid(row=0, column=column)
                 column += 1
-            tk.Button(self.hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=0, column=column)
+            tk.Button(hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=0, column=column)
             column += 1
             if (i >= d):
-                tk.Button(self.hdr, text="=", command=self.cb).grid(row=0, column=column)
+                tk.Button(hdr, text="=", command=self.cb).grid(row=0, column=column)
                 column += 1
                 self.defaults[(i - d)].grid(row=0, column=column)
                 column += 1
-        tk.Button(self.hdr, text=")", command=self.cb).grid(row=0, column=column)
-        tk.Button(self.hdr, text=":", command=self.minmax).grid(row=0, column=(column + 1))
-        self.hdr.grid(row=0, column=0, sticky=tk.W)
+        tk.Button(hdr, text=")", command=self.cb).grid(row=0, column=column)
 
     def genForm(self):
         f = DefForm(self.shared.confarea, self)
@@ -1727,20 +1737,10 @@ class DefBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def minmax(self):
-        if self.minimized:
-            self.body.grid(row=1, column=0, sticky=tk.W)
-            self.update()
-            self.minimized = False
-        else:
-            self.body.grid_forget()
-            self.minimized = True
-        self.scrollUpdate()
-
     def defUpdate(self, mname, args):
         self.mname.set(mname)
         self.args = args
-        self.hdr.grid_forget()
+        self.sb.hdr.grid_forget()
         self.setHeader()
         self.needsSaving()
 
@@ -1751,7 +1751,7 @@ class DefBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefNode(v, self.args, [d.toNode() for d in self.defaults], self.body.toNode())
+        return DefNode(v, self.args, [d.toNode() for d in self.defaults], self.sb.toNode())
 
 class IfBlock(Block):
     "\n        An if statement has N conditions and N (no else) or N+1 (with else) bodies.\n    "
@@ -1943,9 +1943,10 @@ class WithBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
+
         self.node = node
-        self.minimized = False
-        hdr = HeaderBlock(self, self.shared)
+        self.sb = SubBlock(self, shared, node.body)
+        hdr = self.sb.hdr
         tk.Button(hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         column = 1
         for (expr, var) in node.items:
@@ -1956,29 +1957,13 @@ class WithBlock(Block):
                 column += 1
                 var.toBlock(hdr, self).grid(row=0, column=column)
                 column += 1
-        self.button = tk.Button(hdr, text=":", fg="red", width=0, command=self.minmax)
-        self.button.grid(row=0, column=column)
-        hdr.grid(row=0, column=0, sticky=tk.W)
-        self.body = node.body.toBlock(self, self)
-        self.body.grid(row=1, column=0, sticky=tk.W)
+        self.sb.grid()
 
     def genForm(self):
         self.setForm(WithForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
-
-    def minmax(self):
-        if self.minimized:
-            self.body.grid(row=1, column=0, sticky=tk.W)
-            self.update()
-            self.minimized = False
-            self.button.configure(highlightbackground="white", text=":")
-        else:
-            self.body.grid_forget()
-            self.minimized = True
-            self.button.configure(highlightbackground="red", text="+")
-        self.scrollUpdate()
 
     def toNode(self):
         return self.node
