@@ -558,7 +558,7 @@ class SubBlock(Block):
 
         self.node = node
         self.hdr = HeaderBlock(self, shared)
-        self.colon = tk.Button(self.hdr, highlightbackground="red", text="+", command=self.minmax)
+        self.colon = tk.Button(self.hdr, highlightbackground="yellow", text="+", command=self.minmax)
         self.body = None
         self.hdr.grid(row=0, column=0, sticky=tk.W)
         self.colon.grid(row=0, column=1000, sticky=tk.W)
@@ -585,7 +585,7 @@ class SubBlock(Block):
             self.body.grid_forget()
             self.body = None
             self.minimized = True
-            self.colon.configure(highlightbackground="red", text="+")
+            self.colon.configure(highlightbackground="yellow", text="+")
         self.scrollUpdate()
 
     def toNode(self):
@@ -1704,7 +1704,7 @@ class DefBlock(Block):
             self.sb = SubBlock(self, shared, node.body, True)
             self.mname.set(node.name)
             self.args = node.args
-            self.defaults = [d.toBlock(self.hdr, self) for d in node.defaults]
+            self.defaults = [d.toBlock(self.sb.hdr, self) for d in node.defaults]
 
         self.setHeader()
         self.sb.grid()
@@ -2035,42 +2035,35 @@ class ForBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        hdr = HeaderBlock(self, shared)
-        tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+
         self.isWithinLoop = True
         if (node == None):
+            self.sb = SubBlock(self, shared, SeqNode([RowNode(PassNode())]), False)
+            hdr = self.sb.hdr
             hdr.isWithinStore = True
             self.target = ExpressionBlock(hdr, shared, None)
             hdr.isWithinStore = False
             self.expr = ExpressionBlock(hdr, shared, None)
             self.body = SeqBlock(self, shared, None)
             self.orelse = None
-            self.minimized = False
-            self.minimized2 = False
         else:
+            self.sb = SubBlock(self, shared, node.body, False)
+            hdr = self.sb.hdr
             hdr.isWithinStore = True
             self.target = node.target.toBlock(hdr, self)
             hdr.isWithinStore = False
             self.expr = ExpressionBlock(hdr, shared, node.expr)
-            self.body = node.body.toBlock(self, self)
-            self.orelse = (None if (node.orelse == None) else node.orelse.toBlock(self, self))
-            self.minimized = False
-            self.minimized2 = False
+            self.orelse = None if (node.orelse == None) else Subblock(self, shared, node.orelse)
+        tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.target.grid(row=0, column=1)
         tk.Button(hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
-        tk.Button(hdr, text=":", command=self.minmax).grid(row=0, column=4, sticky=tk.W)
-        hdr.grid(row=0, column=0, sticky=tk.W)
-        self.body.grid(row=1, column=0, sticky=tk.W)
+        self.sb.grid(row=0, sticky=tk.W)
         self.isWithinLoop = False
-        if (self.orelse == None):
-            self.hdr2 = None
-        else:
-            self.hdr2 = HeaderBlock(self, shared)
-            tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-            tk.Button(self.hdr2, text=":", command=self.minmax2).grid(row=0, column=1, sticky=tk.W)
-            self.hdr2.grid(row=2, column=0, sticky=tk.W)
-            self.orelse.grid(row=3, column=0, sticky=tk.W)
+        if self.orelse != None:
+            hdr2 = HeaderBlock(self, shared)
+            tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            self.orelse.grid(row=1, sticky=tk.W)
 
     def genForm(self):
         self.setForm(ForForm(self.shared.confarea, self))
@@ -2078,43 +2071,19 @@ class ForBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def minmax(self):
-        if self.minimized:
-            self.body.grid(row=1, column=0, sticky=tk.W)
-            self.update()
-            self.minimized = False
-        else:
-            self.body.grid_forget()
-            self.minimized = True
-        self.scrollUpdate()
-
-    def minmax2(self):
-        if self.minimized2:
-            self.orelse.grid(row=3, column=0, sticky=tk.W)
-            self.update()
-            self.minimized2 = False
-        else:
-            self.orelse.grid_forget()
-            self.minimized2 = True
-        self.scrollUpdate()
-
     def addElse(self):
-        self.orelse = SeqBlock(self, self.shared, None)
-        self.hdr2 = HeaderBlock(self, self.shared)
-        tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        tk.Button(self.hdr2, text=":", width=0, command=self.minmax2).grid(row=0, column=1)
-        self.hdr2.grid(row=2, column=0, sticky=tk.W)
-        self.orelse.grid(row=3, column=0, sticky=tk.W)
-        self.setBlock(self.orelse.rows[0].what)
+        self.orelse = SubBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False)
+        hdr2 = self.orelse.hdr
+        tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        self.orelse.grid(row=1, sticky=tk.W)
+        self.setBlock(self.orelse.body.rows[0].what)
         self.needsSaving()
 
     def removeElse(self):
-        self.hdr2.grid_forget()
-        self.hdr2 = None
         self.orelse.grid_forget()
         self.orelse = None
         self.setBlock(self)
         self.needsSaving()
 
     def toNode(self):
-        return ForNode(self.target.toNode(), self.expr.toNode(), self.body.toNode(), (None if (self.orelse == None) else self.orelse.toNode()))
+        return ForNode(self.target.toNode(), self.expr.toNode(), self.sb.toNode(), (None if (self.orelse == None) else self.orelse.toNode()))
