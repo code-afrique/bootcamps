@@ -323,20 +323,30 @@ class PassForm(Form):
     def key(self, ev):
         if ev.type != "2" or len(ev.char) != 1:    # check if normal KeyPress
             return
-        if ev.char == 'i':
-            self.stmtIf()
-        elif ev.char == 'f':
-            self.stmtFor()
-        elif ev.char == 'w':
-            self.stmtWhile()
+        if ev.char == 'a':
+            self.stmtAssert()
         elif self.block.isWithinLoop and ev.char == 'b':
             self.stmtBreak()
-        elif self.block.isWithinDef and ev.char == 'r':
-            self.stmtReturn()
-        elif ev.char == 'd':
-            self.stmtDef()
         elif ev.char == 'c':
             self.stmtClass()
+        elif ev.char == 'd':
+            self.stmtDef()
+        elif ev.char == 'f':
+            self.stmtFor()
+        elif ev.char == 'g':
+            self.stmtGlobal()
+        elif ev.char == 'i':
+            self.stmtIf()
+        elif ev.char == 'p':
+            self.stmtPrint()
+        elif self.block.isWithinDef and ev.char == 'r':
+            self.stmtReturn()
+        elif ev.char == 't':
+            self.stmtTry()
+        elif ev.char == 'w':
+            self.stmtWhile()
+        elif self.block.isWithinDef and ev.char == 'y':
+            self.stmtYield()
         elif ev.char == '=':
             self.stmtAugassign('=')
         elif ev.char == '?':
