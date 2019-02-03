@@ -1202,12 +1202,11 @@ class PassBlock(Block):
 
     def stmtPrint(self):
         self.rowblk.what.grid_forget()
-        n = EvalNode(ExpressionNode(CallNode(ExpressionNode(NameNode("print")), [ExpressionNode(StringNode(""))], [])))
+        n = EvalNode(ExpressionNode(CallNode(ExpressionNode(NameNode("print")), [ExpressionNode(None)], [])))
         self.rowblk.what = n.toBlock(self.rowblk, self)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.expr.what.args[0].what)
+        self.setBlock(self.rowblk.what.expr.what.args[0])
         self.needsSaving()
-        self.shared.curForm.entry.focus()
 
     def stmtAssert(self):
         self.rowblk.what.grid_forget()
