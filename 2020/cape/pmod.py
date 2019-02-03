@@ -1,26 +1,25 @@
 from node import *
-
-__all__ = ['nodeEval']
+__all__ = ["nodeEval"]
 
 def Module(body):
     return SeqNode(body)
 
 def Lambda(lineno, col_offset, args, body):
-    argnames, defaults = args
+    (argnames, defaults) = args
     return ExpressionNode(LambdaNode(argnames, defaults, body))
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
-    argnames, defaults = args
+    (argnames, defaults) = args
     return RowNode(DefNode(name, argnames, defaults, SeqNode(body)), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
     return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body)), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
-    if vararg == None:
+    if (vararg == None):
         return (args, defaults)
     else:
-        return (args + ['*' + vararg], defaults)
+        return ((args + [("*" + vararg)]), defaults)
 
 def args(lineno, col_offset, arg, annotation):
     return arg
@@ -29,10 +28,10 @@ def Assign(lineno, col_offset, targets, value):
     return RowNode(AssignNode(targets, value), lineno)
 
 def AugAssign(lineno, col_offset, target, op, value):
-    return RowNode(AugassignNode(target, value, op + '='), lineno)
+    return RowNode(AugassignNode(target, value, (op + "=")), lineno)
 
 def Name(lineno, col_offset, id, ctx):
-    if id == "__CAPE_UNINITIALIZED__":
+    if (id == "__CAPE_UNINITIALIZED__"):
         return ExpressionNode(None)
     else:
         return ExpressionNode(NameNode(id))
@@ -56,31 +55,27 @@ def Bytes(lineno, col_offset, s):
     return ExpressionNode(BytesNode(s))
 
 def For(lineno, col_offset, target, iter, body, orelse):
-    return RowNode(ForNode(target, iter, SeqNode(body),
-        None if orelse == [] else SeqNode(orelse)), lineno)
+    return RowNode(ForNode(target, iter, SeqNode(body), (None if (orelse == []) else SeqNode(orelse))), lineno)
 
 def While(lineno, col_offset, test, body, orelse):
-    return RowNode(WhileNode(test, SeqNode(body),
-        None if orelse == [] else SeqNode(orelse)), lineno)
+    return RowNode(WhileNode(test, SeqNode(body), (None if (orelse == []) else SeqNode(orelse))), lineno)
 
 def If(lineno, col_offset, test, body, orelse):
-    if orelse == []:
+    if (orelse == []):
         return RowNode(IfNode([test], [SeqNode(body)]), lineno)
-    elif len(orelse) == 1:
+    elif (len(orelse) == 1):
         row = orelse[0]
         assert isinstance(row, RowNode)
         stmt = row.what
         if isinstance(stmt, IfNode):
-            return RowNode(IfNode([test] + stmt.conds, [SeqNode(body)] + stmt.bodies), lineno)
+            return RowNode(IfNode(([test] + stmt.conds), ([SeqNode(body)] + stmt.bodies)), lineno)
         else:
             return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)]), lineno)
     else:
         return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)]), lineno)
 
 def Try(lineno, col_offset, body, handlers, orelse, finalbody):
-    return RowNode(TryNode(SeqNode(body), handlers,
-        None if orelse == [] else SeqNode(orelse),
-        None if finalbody == [] else SeqNode(finalbody)), lineno)
+    return RowNode(TryNode(SeqNode(body), handlers, (None if (orelse == []) else SeqNode(orelse)), (None if (finalbody == []) else SeqNode(finalbody))), lineno)
 
 def ExceptHandler(lineno, col_offset, type, name, body):
     return (type, name, SeqNode(body))
@@ -89,7 +84,7 @@ def With(lineno, col_offset, items, body):
     return RowNode(WithNode(items, SeqNode(body)), lineno)
 
 def Compare(lineno, col_offset, left, ops, comparators):
-    return ExpressionNode(ListopNode([left] + comparators, ops))
+    return ExpressionNode(ListopNode(([left] + comparators), ops))
 
 def Is():
     return "is"
@@ -158,7 +153,7 @@ def Expression(body):
     return body
 
 def Interactive(body):
-    assert len(body) == 1
+    assert (len(body) == 1)
     return body[0]
 
 def Attribute(lineno, col_offset, value, attr, ctx):
@@ -177,10 +172,10 @@ def UnaryOp(lineno, col_offset, op, operand):
     return ExpressionNode(UnaryopNode(operand, op))
 
 def Starred(lineno, col_offset, value, ctx):
-    return ExpressionNode(UnaryopNode(value, '*'))
+    return ExpressionNode(UnaryopNode(value, "*"))
 
 def BoolOp(lineno, col_offset, op, values):
-    return ExpressionNode(ListopNode(values, [op] * (len(values) - 1)))
+    return ExpressionNode(ListopNode(values, ([op] * (len(values) - 1))))
 
 def alias(name, asname):
     return (name, asname)
@@ -189,19 +184,19 @@ def keyword(arg, value):
     return (arg, value)
 
 def attrify(components):
-    if len(components) == 1:
+    if (len(components) == 1):
         return NameNode(components[0])
     else:
-        return AttrNode(attrify(components[:-1]), NameNode(components[-1]))
+        return AttrNode(attrify(components[:(- 1)]), NameNode(components[(- 1)]))
 
 def Import(lineno, col_offset, names):
     [(name, asname)] = names
-    components = name.split('.')
-    return RowNode(ImportNode(attrify(components), None if asname == None else NameNode(asname)), lineno)
+    components = name.split(".")
+    return RowNode(ImportNode(attrify(components), (None if (asname == None) else NameNode(asname))), lineno)
 
 def ImportFrom(lineno, col_offset, module, names, level):
-    components = module.split('.')
-    return RowNode(ImportfromNode(attrify(components), [(NameNode(name), None if asname == None else NameNode(asname)) for name, asname in names]), lineno)
+    components = module.split(".")
+    return RowNode(ImportfromNode(attrify(components), [(NameNode(name), (None if (asname == None) else NameNode(asname))) for (name, asname) in names]), lineno)
 
 def Global(lineno, col_offset, names):
     return RowNode(GlobalNode([NameNode(n) for n in names]), lineno)
@@ -259,7 +254,6 @@ def comprehension(target, iter, ifs, is_async=0):
 
 def withitem(context_expr, optional_vars):
     return (context_expr, optional_vars)
-
 #####
 
 def GeneratorExp(lineno, col_offset, elt, generators):
@@ -269,7 +263,6 @@ def GeneratorExp(lineno, col_offset, elt, generators):
 def Yield(lineno, col_offset, value):
     assert False, "'yield' not yet implemented"
     return RowNode(PassNode(), lineno)
-
 #####
 
 def nodeEval(tree):

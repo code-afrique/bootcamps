@@ -1,4 +1,6 @@
+
 class Shared():
+
     def __init__(self):
         self.curForm = None
         self.curBlock = None

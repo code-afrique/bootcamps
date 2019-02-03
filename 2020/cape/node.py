@@ -1,6 +1,7 @@
 import io
 
 class Node():
+
     def toBlock(self, frame, block):
         print("toBlock not implemented by {}".format(self))
         return None
@@ -13,6 +14,7 @@ class Node():
             print("    ", end="", file=fd)
 
 class PassNode(Node):
+
     def __init__(self):
         super().__init__()
 
@@ -24,6 +26,7 @@ class PassNode(Node):
         print("pass", file=fd)
 
 class EmptyNode(Node):
+
     def __init__(self):
         super().__init__()
 
@@ -35,6 +38,7 @@ class EmptyNode(Node):
         print("", file=fd)
 
 class RowNode(Node):
+
     def __init__(self, what, lineno):
         super().__init__()
         self.what = what
@@ -52,17 +56,16 @@ class RowNode(Node):
         f = io.StringIO("")
         self.what.print(f, level)
         s = f.getvalue()
-
         # insert the comment, if any, after the first line
-        if '\n' in s and self.comment != None:
-            i = s.index('\n')
-            s = s[:i] + ('#' if isinstance(self.what, EmptyNode) else '\t#') + self.comment + s[i:]
-
-        if isinstance(self.what, DefNode) or isinstance(self.what, ClassNode):
+        if (("\n" in s) and (self.comment != None)):
+            i = s.index("\n")
+            s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "	#")) + self.comment) + s[i:])
+        if (isinstance(self.what, DefNode) or isinstance(self.what, ClassNode)):
             print(file=fd)
         print(s, file=fd, end="")
 
 class DefNode(Node):
+
     def __init__(self, name, args, defaults, body):
         super().__init__()
         self.name = name
@@ -79,18 +82,19 @@ class DefNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
-        d = len(self.args) - len(self.defaults)
+        d = (len(self.args) - len(self.defaults))
         for i in range(len(self.args)):
-            if i != 0:
+            if (i != 0):
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
-            if i >= d:
+            if (i >= d):
                 print("=", end="", file=fd)
-                self.defaults[i - d].print(fd, 0)
+                self.defaults[(i - d)].print(fd, 0)
         print("):", file=fd)
-        self.body.print(fd, level + 1)
+        self.body.print(fd, (level + 1))
 
 class LambdaNode(Node):
+
     def __init__(self, args, defaults, body):
         super().__init__()
         self.args = args
@@ -102,19 +106,20 @@ class LambdaNode(Node):
 
     def print(self, fd, level):
         print("(lambda ", end="", file=fd)
-        d = len(self.args) - len(self.defaults)
+        d = (len(self.args) - len(self.defaults))
         for i in range(len(self.args)):
-            if i != 0:
+            if (i != 0):
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
-            if i >= d:
+            if (i >= d):
                 print("=", end="", file=fd)
-                self.defaults[i - d].print(fd, 0)
+                self.defaults[(i - d)].print(fd, 0)
         print(": ", end="", file=fd)
         self.body.print(fd, 0)
         print(")", end="", file=fd)
 
 class ClassNode(Node):
+
     def __init__(self, name, bases, body):
         super().__init__()
         self.name = name
@@ -131,13 +136,14 @@ class ClassNode(Node):
         self.printIndent(fd, level)
         print("class {}(".format(self.name), end="", file=fd)
         for i in range(len(self.bases)):
-            if i != 0:
+            if (i != 0):
                 print(", ", end="", file=fd)
             self.bases[i].print(fd, 0)
         print("):", file=fd)
-        self.body.print(fd, level + 1)
+        self.body.print(fd, (level + 1))
 
 class IfNode(Node):
+
     def __init__(self, conds, bodies):
         super().__init__()
         self.conds = conds
@@ -149,26 +155,27 @@ class IfNode(Node):
     def findRow(self, lineno):
         for b in self.bodies:
             loc = b.findRow(lineno)
-            if loc != None:
+            if (loc != None):
                 return loc
         return None
 
     def print(self, fd, level):
         for i in range(len(self.bodies)):
             self.printIndent(fd, level)
-            if i == 0:
+            if (i == 0):
                 print("if ", end="", file=fd)
                 self.conds[i].print(fd, 0)
                 print(":", file=fd)
-            elif i < len(self.conds):
+            elif (i < len(self.conds)):
                 print("elif ", end="", file=fd)
                 self.conds[i].print(fd, 0)
                 print(":", file=fd)
             else:
                 print("else:", file=fd)
-            self.bodies[i].print(fd, level + 1)
+            self.bodies[i].print(fd, (level + 1))
 
 class TryNode(Node):
+
     def __init__(self, body, handlers, orelse, finalbody):
         super().__init__()
         self.body = body
@@ -181,48 +188,49 @@ class TryNode(Node):
 
     def findRow(self, lineno):
         loc = self.body.findRow(lineno)
-        if loc != None:
+        if (loc != None):
             return loc
-        for type, name, body in self.handlers:
+        for (type, name, body) in self.handlers:
             loc = body.findRow(lineno)
-            if loc != None:
+            if (loc != None):
                 return loc
-        if self.orelse != None:
+        if (self.orelse != None):
             loc = self.orelse.findRow(lineno)
-            if loc != None:
+            if (loc != None):
                 return loc
-        if self.finalbody != None:
+        if (self.finalbody != None):
             loc = self.finalbody.findRow(lineno)
-            if loc != None:
+            if (loc != None):
                 return loc
         return None
 
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("try:", file=fd)
-        self.body.print(fd, level + 1)
-        for type, name, body in self.handlers:
+        self.body.print(fd, (level + 1))
+        for (type, name, body) in self.handlers:
             self.printIndent(fd, level)
-            if type == None:
+            if (type == None):
                 print("except:", file=fd)
             else:
                 print("except ", end="", file=fd)
                 type.print(fd, 0)
-                if name != None:
+                if (name != None):
                     print(" as ", end="", file=fd)
                     name.print(fd, 0)
                 print(":", file=fd)
-            body.print(fd, level + 1)
-        if self.orelse != None:
+            body.print(fd, (level + 1))
+        if (self.orelse != None):
             self.printIndent(fd, level)
             print("else:", file=fd)
-            self.orelse.print(fd, level + 1)
-        if self.finalbody != None:
+            self.orelse.print(fd, (level + 1))
+        if (self.finalbody != None):
             self.printIndent(fd, level)
             print("finally:", file=fd)
-            self.finalbody.print(fd, level + 1)
+            self.finalbody.print(fd, (level + 1))
 
 class WithNode(Node):
+
     def __init__(self, items, body):
         super().__init__()
         self.items = items
@@ -238,19 +246,20 @@ class WithNode(Node):
         self.printIndent(fd, level)
         print("with ", end="", file=fd)
         first = True
-        for expr, var in self.items:
+        for (expr, var) in self.items:
             if first:
                 first = False
             else:
                 print(", ", end="", file=fd)
             expr.print(fd, 0)
-            if var != None:
+            if (var != None):
                 print(" as ", end="", file=fd)
                 var.print(fd, 0)
         print(":", file=fd)
-        self.body.print(fd, level + 1)
+        self.body.print(fd, (level + 1))
 
 class WhileNode(Node):
+
     def __init__(self, cond, body, orelse):
         super().__init__()
         self.cond = cond
@@ -262,7 +271,7 @@ class WhileNode(Node):
 
     def findRow(self, lineno):
         loc = self.body.findRow(lineno)
-        if loc == None and self.orelse != None:
+        if ((loc == None) and (self.orelse != None)):
             loc = self.orelse.findRow(lineno)
         return loc
 
@@ -271,13 +280,14 @@ class WhileNode(Node):
         print("while ", end="", file=fd)
         self.cond.print(fd, 0)
         print(":", file=fd)
-        self.body.print(fd, level + 1)
-        if self.orelse != None:
+        self.body.print(fd, (level + 1))
+        if (self.orelse != None):
             self.printIndent(fd, level)
             print("else:", file=fd)
-            self.orelse.print(fd, level + 1)
+            self.orelse.print(fd, (level + 1))
 
 class ForNode(Node):
+
     def __init__(self, var, expr, body, orelse):
         super().__init__()
         self.var = var
@@ -290,7 +300,7 @@ class ForNode(Node):
 
     def findRow(self, lineno):
         loc = self.body.findRow(lineno)
-        if loc == None and self.orelse != None:
+        if ((loc == None) and (self.orelse != None)):
             loc = self.orelse.findRow(lineno)
         return loc
 
@@ -301,13 +311,14 @@ class ForNode(Node):
         print(" in ", end="", file=fd)
         self.expr.print(fd, 0)
         print(":", file=fd)
-        self.body.print(fd, level + 1)
-        if self.orelse != None:
+        self.body.print(fd, (level + 1))
+        if (self.orelse != None):
             self.printIndent(fd, level)
             print("else:", file=fd)
-            self.orelse.print(fd, level + 1)
+            self.orelse.print(fd, (level + 1))
 
 class ReturnNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -317,7 +328,7 @@ class ReturnNode(Node):
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        if self.what == None:
+        if (self.what == None):
             print("return", file=fd)
         else:
             print("return ", end="", file=fd)
@@ -325,6 +336,7 @@ class ReturnNode(Node):
             print("", file=fd)
 
 class AssertNode(Node):
+
     def __init__(self, test, msg):
         super().__init__()
         self.test = test
@@ -337,12 +349,13 @@ class AssertNode(Node):
         self.printIndent(fd, level)
         print("assert ", end="", file=fd)
         self.test.print(fd, 0)
-        if self.msg != None:
+        if (self.msg != None):
             print(", ", end="", file=fd)
             self.msg.print(fd, 0)
         print("", file=fd)
 
 class BreakNode(Node):
+
     def __init__(self):
         super().__init__()
 
@@ -354,6 +367,7 @@ class BreakNode(Node):
         print("break", file=fd)
 
 class ContinueNode(Node):
+
     def __init__(self):
         super().__init__()
 
@@ -365,6 +379,7 @@ class ContinueNode(Node):
         print("continue", file=fd)
 
 class ImportNode(Node):
+
     def __init__(self, name, asname):
         super().__init__()
         self.name = name
@@ -377,12 +392,13 @@ class ImportNode(Node):
         self.printIndent(fd, level)
         print("import ", end="", file=fd)
         self.name.print(fd, 0)
-        if self.asname != None:
+        if (self.asname != None):
             print(" as ", end="", file=fd)
             self.asname.print(fd, 0)
         print("", file=fd)
 
 class ImportfromNode(Node):
+
     def __init__(self, module, names):
         super().__init__()
         self.module = module
@@ -403,12 +419,13 @@ class ImportfromNode(Node):
             else:
                 print(", ", end="", file=fd)
             name.print(fd, 0)
-            if asname != None:
+            if (asname != None):
                 print(" as ", end="", file=fd)
                 asname.print(fd, 0)
         print("", file=fd)
 
 class GlobalNode(Node):
+
     def __init__(self, names):
         super().__init__()
         self.names = names
@@ -420,12 +437,13 @@ class GlobalNode(Node):
         self.printIndent(fd, level)
         print("global ", end="", file=fd)
         for i in range(len(self.names)):
-            if i > 0:
+            if (i > 0):
                 print(", ", end="", file=fd)
             self.names[i].print(fd, 0)
         print("", file=fd)
 
 class DelNode(Node):
+
     def __init__(self, targets):
         super().__init__()
         self.targets = targets
@@ -437,12 +455,13 @@ class DelNode(Node):
         self.printIndent(fd, level)
         print("del ", end="", file=fd)
         for i in range(len(self.targets)):
-            if i > 0:
+            if (i > 0):
                 print(", ", end="", file=fd)
             self.targets[i].print(fd, 0)
         print("", file=fd)
 
 class IfelseNode(Node):
+
     def __init__(self, cond, ifTrue, ifFalse):
         super().__init__()
         self.cond = cond
@@ -462,6 +481,7 @@ class IfelseNode(Node):
         print(")", end="", file=fd)
 
 class AssignNode(Node):
+
     def __init__(self, targets, value):
         super().__init__()
         self.targets = targets
@@ -479,6 +499,7 @@ class AssignNode(Node):
         print("", file=fd)
 
 class AugassignNode(Node):
+
     def __init__(self, left, right, op):
         super().__init__()
         self.left = left
@@ -496,6 +517,7 @@ class AugassignNode(Node):
         print("", file=fd)
 
 class BinaryopNode(Node):
+
     def __init__(self, left, right, op):
         super().__init__()
         self.left = left
@@ -511,9 +533,10 @@ class BinaryopNode(Node):
         print(" {} ".format(self.op), end="", file=fd)
         self.right.print(fd, 0)
         print(")", end="", file=fd)
-
 # n values separated by n-1 operators
+
 class ListopNode(Node):
+
     def __init__(self, values, ops):
         super().__init__()
         self.values = values
@@ -533,6 +556,7 @@ class ListopNode(Node):
         print(")", end="", file=fd)
 
 class UnaryopNode(Node):
+
     def __init__(self, right, op):
         super().__init__()
         self.right = right
@@ -547,6 +571,7 @@ class UnaryopNode(Node):
         print(")", end="", file=fd)
 
 class SubscriptNode(Node):
+
     def __init__(self, array, slice):
         super().__init__()
         self.array = array
@@ -557,20 +582,21 @@ class SubscriptNode(Node):
 
     def print(self, fd, level):
         self.array.print(fd, 0)
-        isSlice, lower, upper, step = self.slice
+        (isSlice, lower, upper, step) = self.slice
         print("[", end="", file=fd)
-        if lower != None:
+        if (lower != None):
             lower.print(fd, 0)
         if isSlice:
             print(":", end="", file=fd)
-            if upper != None:
+            if (upper != None):
                 upper.print(fd, 0)
-            if step != None:
+            if (step != None):
                 print(":", end="", file=fd)
                 step.print(fd, 0)
         print("]", end="", file=fd)
 
 class CallNode(Node):
+
     def __init__(self, func, args, keywords):
         super().__init__()
         self.func = func
@@ -600,6 +626,7 @@ class CallNode(Node):
         print(")", end="", file=fd)
 
 class ListNode(Node):
+
     def __init__(self, entries):
         super().__init__()
         self.entries = entries
@@ -610,12 +637,13 @@ class ListNode(Node):
     def print(self, fd, level):
         print("[", end="", file=fd)
         for i in range(len(self.entries)):
-            if i != 0:
+            if (i != 0):
                 print(", ", end="", file=fd)
             self.entries[i].print(fd, 0)
         print("]", end="", file=fd)
 
 class ListcompNode(Node):
+
     def __init__(self, elt, generators):
         super().__init__()
         self.elt = elt
@@ -627,7 +655,7 @@ class ListcompNode(Node):
     def print(self, fd, level):
         print("[", end="", file=fd)
         self.elt.print(fd, 0)
-        for target, iter, ifs, is_async in self.generators:
+        for (target, iter, ifs, is_async) in self.generators:
             print(" for ", end="", file=fd)
             target.print(fd, 0)
             print(" in ", end="", file=fd)
@@ -638,6 +666,7 @@ class ListcompNode(Node):
         print("]", end="", file=fd)
 
 class DictNode(Node):
+
     def __init__(self, keys, values):
         super().__init__()
         self.keys = keys
@@ -649,7 +678,7 @@ class DictNode(Node):
     def print(self, fd, level):
         print("{", end="", file=fd)
         for i in range(len(self.keys)):
-            if i != 0:
+            if (i != 0):
                 print(", ", end="", file=fd)
             self.keys[i].print(fd, 0)
             print(": ", end="", file=fd)
@@ -657,6 +686,7 @@ class DictNode(Node):
         print("}", end="", file=fd)
 
 class TupleNode(Node):
+
     def __init__(self, entries):
         super().__init__()
         self.entries = entries
@@ -668,14 +698,15 @@ class TupleNode(Node):
         print("(", end="", file=fd)
         n = len(self.entries)
         for i in range(n):
-            if i != 0:
+            if (i != 0):
                 print(", ", end="", file=fd)
             self.entries[i].print(fd, 0)
-        if n == 1:
+        if (n == 1):
             print(",", end="", file=fd)
         print(")", end="", file=fd)
 
 class AttrNode(Node):
+
     def __init__(self, array, ref):
         super().__init__()
         self.array = array
@@ -690,6 +721,7 @@ class AttrNode(Node):
         self.ref.print(fd, 0)
 
 class EvalNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -703,6 +735,7 @@ class EvalNode(Node):
         print("", file=fd)
 
 class NumberNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -714,6 +747,7 @@ class NumberNode(Node):
         print(self.what, end="", file=fd)
 
 class ConstantNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -725,6 +759,7 @@ class ConstantNode(Node):
         print(self.what, end="", file=fd)
 
 class NameNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -736,6 +771,7 @@ class NameNode(Node):
         print(self.what, end="", file=fd)
 
 class StringNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -744,21 +780,22 @@ class StringNode(Node):
         return block.newStringBlock(frame, self)
 
     def print(self, fd, level):
-        print('"', end="", file=fd)
+        print("\"", end="", file=fd)
         for c in self.what:
-            if c == '\\':
-                print('\\\\', end="", file=fd)
-            elif c == '"':
-                print('\\"', end="", file=fd)
-            elif c == '\n':
-                print('\\n', end="", file=fd)
-            elif c == '\r':
-                print('\\r', end="", file=fd)
+            if (c == "\\"):
+                print("\\\\", end="", file=fd)
+            elif (c == "\""):
+                print("\\\"", end="", file=fd)
+            elif (c == "\n"):
+                print("\\n", end="", file=fd)
+            elif (c == "\r"):
+                print("\\r", end="", file=fd)
             else:
                 print(c, end="", file=fd)
-        print('"', end="", file=fd)
+        print("\"", end="", file=fd)
 
 class BytesNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -770,6 +807,7 @@ class BytesNode(Node):
         print(self.what, end="", file=fd)
 
 class ExpressionNode(Node):
+
     def __init__(self, what):
         super().__init__()
         self.what = what
@@ -781,6 +819,7 @@ class ExpressionNode(Node):
         self.what.print(fd, 0)
 
 class SeqNode(Node):
+
     def __init__(self, rows):
         super().__init__()
         self.rows = rows
@@ -790,10 +829,10 @@ class SeqNode(Node):
 
     def findRow(self, lineno):
         for i in range(len(self.rows)):
-            if self.rows[i].lineno >= lineno:
+            if (self.rows[i].lineno >= lineno):
                 return (self, i)
             r = self.rows[i].findRow(lineno)
-            if r != None:
+            if (r != None):
                 return r
         return None
 
