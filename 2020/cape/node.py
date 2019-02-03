@@ -39,7 +39,7 @@ class EmptyNode(Node):
 
 class RowNode(Node):
 
-    def __init__(self, what, lineno):
+    def __init__(self, what, lineno=0):
         super().__init__()
         self.what = what
         self.lineno = lineno
