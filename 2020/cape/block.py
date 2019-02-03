@@ -576,15 +576,14 @@ class SubBlock(Block):
 
     def minmax(self):
         if self.minimized:
-            self.body = self.node.toBlock(self, self)
+            if self.body == None:
+                self.body = self.node.toBlock(self, self)
             self.body.grid(row=1, column=0, columnspan=2, sticky=tk.W)
             self.update()
             self.minimized = False
             self.colon.configure(highlightbackground="white", text=":")
         else:
-            self.node = self.body.toNode()
             self.body.grid_forget()
-            self.body = None
             self.minimized = True
             self.colon.configure(highlightbackground="yellow", text="+")
         self.scrollUpdate()
