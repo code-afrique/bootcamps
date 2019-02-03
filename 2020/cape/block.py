@@ -1832,29 +1832,29 @@ class TryBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
-        self.bodyMinimized = False
-        hdr = HeaderBlock(self, shared)
-        tk.Button(hdr, text="try", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        tk.Button(hdr, text=":", command=(lambda : self.minmax(self.body))).grid(row=0, column=1, sticky=tk.W)
-        hdr.grid(row=0, column=0, sticky=tk.W)
-        if (node == None):
-            self.body = SeqBlock(self, shared, None)
-            self.body.grid(row=1, column=0, sticky=tk.W)
-            self.handlers = []
+
+        if node == None:
+            self.sb = SubBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False)
             self.orelse = None
             self.finalbody = None
         else:
-            self.body = node.body.toBlock(self, self)
-            self.body.grid(row=1, column=0, sticky=tk.W)
-            self.handlers = []
+            self.sb = SubBlock(self, shared, node.body, False)
+        hdr = self.sb.hdr
+        tk.Button(hdr, text="try", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        self.sb.grid(row=0, sticky=tk.W)
+
+        self.handlers = []
+        if node != None:
             for (type, name, body) in node.handlers:
-                hdr = HeaderBlock(self, shared)
-                self.handlers.append((hdr, (None if (type == None) else type.toBlock(hdr, self)), (None if (name == None) else name.toBlock(hdr, self)), body.toBlock(self, self)))
+                sb = SubBlock(self, shared, body, False)
+                hdr = sb.hdr
+                self.handlers.append((sb, (None if (type == None) else type.toBlock(hdr, self)), (None if (name == None) else NameBlock(hdr, shared, NameNode(name)))))
             row = 2
-            for (hdr, type, name, body) in self.handlers:
+            for (sb, type, name) in self.handlers:
+                hdr = sb.hdr
                 tk.Button(hdr, text="except", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                 column = 1
-                if (type != None):
+                if type != None:
                     type.grid(row=0, column=column)
                     column += 1
                     if (name != None):
@@ -1862,33 +1862,23 @@ class TryBlock(Block):
                         column += 1
                         name.grid(row=0, column=column)
                         column += 1
-                tk.Button(hdr, text=":", command=(lambda : self.minmax(self.body))).grid(row=0, column=column, sticky=tk.W)
-                hdr.grid(row=row, column=0, sticky=tk.W)
-                row += 1
-                body.grid(row=row, column=0, sticky=tk.W)
+                sb.grid(row=row, column=0, sticky=tk.W)
                 row += 1
             if (node.orelse == None):
                 self.orelse = None
             else:
-                hdr = HeaderBlock(self, shared)
+                self.orelse = SubBlock(self, shared, node.orelse, False)
+                hdr = self.orelse.hdr
                 tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                tk.Button(hdr, text=":", command=(lambda : self.minmax(self.body))).grid(row=0, column=1, sticky=tk.W)
-                hdr.grid(row=row, column=0, sticky=tk.W)
-                row += 1
-                self.orelse = node.orelse.toBlock(self, self)
-                self.orelse.grid(row=row, column=0, sticky=tk.W)
+                self.orelse.grid(row=row, sticky=tk.W)
                 row += 1
             if (node.finalbody == None):
                 self.finalbody = None
             else:
-                hdr = HeaderBlock(self, shared)
+                self.finalbody = SubBlock(self, shared, node.finalbody, False)
+                hdr = self.finalbody.hdr
                 tk.Button(hdr, text="finally", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                tk.Button(hdr, text=":", command=(lambda : self.minmax(self.body))).grid(row=0, column=1, sticky=tk.W)
-                hdr.grid(row=row, column=0, sticky=tk.W)
-                row += 1
-                self.finalbody = node.finalbody.toBlock(self, self)
                 self.finalbody.grid(row=row, column=0, sticky=tk.W)
-                row += 1
 
     def genForm(self):
         self.setForm(TryForm(self.shared.confarea, self))
@@ -1896,23 +1886,8 @@ class TryBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def minmax(self, body):
-        which = self.bodies.index(body)
-        if self.minimizeds[which]:
-            body.grid(row=1, column=0, sticky=tk.W)
-            self.update()
-            self.minimizeds[which] = False
-        else:
-            body.grid_forget()
-            self.minimizeds[which] = True
-        self.gridUpdate()    # ???
-        self.scrollUpdate()
-
-    def gridUpdate(self):
-        self.scrollUpdate()
-
     def toNode(self):
-        return TryNode(self.body.toNode(), [((None if (type == None) else type.toNode()), (None if (name == None) else name.toNode()), body.toNode()) for (hdr, type, name, body) in self.handlers], (None if (self.orelse == None) else self.orelse.toNode()), (None if (self.finalbody == None) else self.finalbody.toNode()))
+        return TryNode(self.sb.toNode(), [((None if (type == None) else type.toNode()), (None if (name == None) else name.toNode()), sb.toNode()) for (sb, type, name) in self.handlers], (None if (self.orelse == None) else self.orelse.toNode()), (None if (self.finalbody == None) else self.finalbody.toNode()))
 
 class WithBlock(Block):
 
