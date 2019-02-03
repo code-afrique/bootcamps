@@ -1959,6 +1959,7 @@ class WithBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.node = node
+        self.minimized = False
 
         hdr = HeaderBlock(self, self.shared)
         tk.Button(hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
