@@ -589,7 +589,7 @@ class IfForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'if' statement").grid(columnspan=2)
         tk.Message(self, width=350, font="Helvetica 14", text="An 'if' statement has an 'if' clause, zero or more 'elif' clauses, and optionally an 'else' clause'.").grid(row=1, columnspan=2)
-        if (len(block.conds) == len(block.bodies)):
+        if (len(block.conds) == len(block.sbs)):
             eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
         else:
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)

@@ -1761,21 +1761,20 @@ class IfBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
-            self.hdrs = [HeaderBlock(self, shared)]
-            self.minimizeds = [False]
-            tk.Button(self.hdrs[0], text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-            self.conds = [ExpressionBlock(self.hdrs[0], shared, None)]
+            self.sbs = [SubBlock(self, shared, SeqNode([RowNode(PassNode())]), False)]
+            hdr = self.sbs[0].hdr
+            tk.Button(hdr, text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            self.conds = [ExpressionBlock(hdr, shared, None)]
             self.conds[0].grid(row=0, column=1)
-            tk.Button(self.hdrs[0], text=":", command=self.cb).grid(row=0, column=2, sticky=tk.W)
-            self.bodies = [SeqBlock(self, shared, None)]
+            self.sbs[0].grid(row=0, sticky=tk.W)
         else:
-            self.bodies = [n.toBlock(self, self) for n in node.bodies]
-            self.hdrs = []
-            self.minimizeds = ([False] * len(self.bodies))
+            self.sbs = [SubBlock(self, shared, n, False) for n in node.bodies]
+
             self.conds = []
-            for i in range(len(self.bodies)):
+            for i in range(len(self.sbs)):
+                hdr = self.sbs[i].hdr
                 if (i < len(node.conds)):
-                    hdr = HeaderBlock(self, shared)
+                    hdr = self.sbs[i].hdr
                     cond = ExpressionBlock(hdr, shared, node.conds[i])
                     self.conds.append(cond)
                     if (i == 0):
@@ -1783,12 +1782,9 @@ class IfBlock(Block):
                     else:
                         tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
                     cond.grid(row=0, column=1)
-                    tk.Button(hdr, text=":", command=(lambda : self.minmax(self.bodies[i]))).grid(row=0, column=2, sticky=tk.W)
                 else:
-                    hdr = HeaderBlock(self, shared)
                     tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                    tk.Button(hdr, text=":", width=0, command=(lambda : self.minmax(self.bodies[(- 1)]))).grid(row=0, column=1)
-                self.hdrs.append(hdr)
+                self.sbs[i].grid(row=i, sticky=tk.W)
         self.gridUpdate()
 
     def genForm(self):
@@ -1797,63 +1793,40 @@ class IfBlock(Block):
     def cb(self):
         self.setBlock(self)
 
-    def minmax(self, body):
-        which = self.bodies.index(body)
-        if self.minimizeds[which]:
-            body.grid(row=1, column=0, sticky=tk.W)
-            self.update()
-            self.minimizeds[which] = False
-        else:
-            body.grid_forget()
-            self.minimizeds[which] = True
-        self.gridUpdate()    # ???
-        self.scrollUpdate()
-
     def addElse(self):
-        self.bodies.append(SeqBlock(self, self.shared, None))
-        hdr = HeaderBlock(self, self.shared)
+        sb = SubBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False)
+        self.sbs.append(sb)
+        hdr = sb.hdr
         tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        tk.Button(hdr, text=":", width=0, command=(lambda : self.minmax(self.bodies[(- 1)]))).grid(row=0, column=1)
-        self.hdrs.append(hdr)
-        self.minimizeds.append(False)
         self.gridUpdate()
+        self.setBlock(sb.body.rows[0].what)
         self.needsSaving()
 
     def removeElse(self):
-        self.bodies[(len(self.bodies) - 1)].grid_forget()
-        del self.bodies[(len(self.bodies) - 1)]
-        self.hdrs[(len(self.hdrs) - 1)].grid_forget()
-        del self.hdrs[(len(self.hdrs) - 1)]
+        self.sbs[-1].grid_forget()
+        del self.sbs[-1]
         self.setBlock(self)
         self.needsSaving()
 
     def insertElif(self):
-        hdr = HeaderBlock(self, self.shared)
+        sb = SubBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False)
+        self.sbs.insert(len(self.conds), sb)
+        hdr = sb.hdr
         tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         cond = ExpressionBlock(hdr, self.shared, None)
-        cond.grid(row=0, column=1)
-        body = SeqBlock(self, self.shared, None)
-        tk.Button(hdr, text=":", command=(lambda : self.minmax(body))).grid(row=0, column=2)
-        self.hdrs.insert(len(self.conds), hdr)
-        self.minimizeds.insert(len(self.conds), False)
-        self.bodies.insert(len(self.conds), body)
         self.conds.append(cond)
+        cond.grid(row=0, column=1)
         self.gridUpdate()
-        self.setBlock(self)
+        self.setBlock(sb.body.rows[0].what)
         self.needsSaving()
 
     def gridUpdate(self):
-        for i in range(len(self.bodies)):
-            if (i < len(self.hdrs)):
-                self.hdrs[i].grid(row=(2 * i), column=0, sticky=tk.W)
-            if self.minimizeds[i]:
-                self.bodies[i].grid_forget()
-            else:
-                self.bodies[i].grid(row=((2 * i) + 1), column=0, sticky=tk.W)
+        for i in range(len(self.sbs)):
+            self.sbs[i].grid(row=i, sticky=tk.W)
         self.scrollUpdate()
 
     def toNode(self):
-        return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.bodies])
+        return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.sbs])
 
 class TryBlock(Block):
 
@@ -2019,7 +1992,7 @@ class WhileBlock(Block):
         hdr2 = self.orelse.hdr
         tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.orelse.grid(row=1, column=0, sticky=tk.W)
-        # self.setBlock(self.orelse.rows[0].what)
+        self.setBlock(self.orelse.body.rows[0].what)
         self.needsSaving()
 
     def removeElse(self):
