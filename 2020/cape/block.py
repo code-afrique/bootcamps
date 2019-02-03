@@ -571,8 +571,7 @@ class SubBlock(Block):
         self.setForm(SubForm(self.shared.confarea, self))
 
     def goRight(self):
-        assert self.body != None
-        return self.body
+        return self if self.body == None else self.body
 
     def minmax(self):
         if self.minimized:
