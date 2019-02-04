@@ -20,14 +20,14 @@ class Scrollable(tk.Frame):
 
     def __init__(self, frame, shared, width=16):
         super().__init__(None)
-        self.canvas = shared.canvas = tk.Canvas(frame, width=725, height=475)
+        self.canvas = tk.Canvas(frame, width=725, height=475)
         self.canvas.isWithinDef = False	# ???
         self.canvas.isWithinLoop = False	# ???
         self.canvas.isWithinStore = False	# ???
         ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
         xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
         # self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
-        self.stuff = Block(self.canvas, shared)
+        self.stuff = shared.canvas = Block(self.canvas, shared)
         self.stuff.isTop = True
         self.stuff.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         ysb.grid(row=0, column=0, sticky=(tk.N + tk.S))

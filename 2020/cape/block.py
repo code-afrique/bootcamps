@@ -37,36 +37,98 @@ class Block(tk.Frame):
             self.shared.curBlock.configure(bd=self.shared.bd, highlightbackground=self.shared.hlb, highlightcolor=self.shared.hlc, highlightthickness=self.shared.hlt)
         self.shared.curBlock = b
         if b:
+            # save the properties of b that we're about the change
+            # so we can restore them later
             b.shared.bd = b.cget("bd")
             b.shared.hlb = b.cget("highlightbackground")
             b.shared.hlc = b.cget("highlightcolor")
             b.shared.hlt = b.cget("highlightthickness")
+
+            # change the properties
             b.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
             b.update()
+
+            # Generate a form for the new box
             b.genForm()
-            # See if we need to move the scrollbars
-            c = self.shared.canvas
-            box = self.getBoxWithin(c, b)
+
+            # See if we need to move the scrollbars to make sure the box
+            # is visible within the canvas.  self.shared.canvas points to
+            # to the entire image, while self.shared.canvas.parent is
+            # the visible region of the image.
+            #
+            # Considering only the y-axis: let Th be the total height, and
+            # Vh be the visible height.  The relative size of the scroller
+            # in the scrollbar is therefore Vh / Th.
+            # 
+            # If we set the bottom of scroller within the vertical scroll
+            # bar to 0, we see the range [ 0, Vh ].  If we set the top of
+            # the scroller to 1, we see the range [ Th - Vh, Th ].  This
+            # latter position corresponds to the bottom of the scroller
+            # being at position (Th - Vh) / Th.
+            #
+            # So to get point Vh / 2 in the middle, we set the scroll bar
+            # to 0, and to get point (2Th - Vh)/2 in the middle we set the
+            # scroll bar to (Th - Vh) / Th.
+            #
+            # Let (x1, y1) = (Vh / 2, 0), and let (x2, y2) =
+            # ((2Th - Vh) / 2, (Th - Vh) / Th).  The line that passes through
+            # both points is y = (y2 - y1) / (x2 - x1) * (x - x1) + y1.
+            # y2 - y1 = (Th - Vh) / Th.  x2 - x1 = Th - Vh.   So the slope
+            # is 1 / Th.  So the final equation is:
+            #   y = (x - Vh / 2) / Th
+
+            # this is the visible canvas.  self.shared.canvas is the entire
+            # image.
+            c = self.shared.canvas.parent
+
+            # these are the coordinates of the box within the visible area
+            bv = self.getBoxWithin(c, b)
+
+            # this is the size of the visible image
             cv = self.getBoxWithin(c, c)
-            # print("xy", box, cv)
-            if (not self.intersects(box, cv)):
-                x = (((box[2] * 1.0) / cv[2]) - 0.5)
-                y = (((box[3] * 1.0) / cv[3]) - 0.5)
-                if (x < 0):
-                    x = 0
-                if (y < 0):
-                    y = 0
-                c.xview(tk.MOVETO, x)
-                c.yview(tk.MOVETO, y)
+
+            if (not self.intersects(bv, cv)):
+                # these are the coordinates of the box within the entire image
+                bt = self.getBoxWithin(self.shared.canvas, b)
+
+                # this is the size of the entire image
+                ct = self.getBoxWithin(self.shared.canvas, self.shared.canvas)
+
+                # the halfway point of the box
+                px = (bt[0] + bt[2]) / 2.0
+                py = (bt[1] + bt[3]) / 2.0
+
+                # the desired setting of the scrollers
+                qx = (px - cv[2] / 2.0) / ct[2]
+                qy = (py - cv[3] / 2.0) / ct[3]
+
+                # don't overscroll
+                if qx < 0:
+                    qx = 0
+                if qx > 1:
+                    qx = 1
+                if qy < 0:
+                    qy = 0
+                if qy > 1:
+                    qy = 1
+
+                c.xview(tk.MOVETO, qx)
+                c.yview(tk.MOVETO, qy)
+
         self.scrollUpdate()
 
+    # see if box b1 intersects with box b2
     def intersects(self, b1, b2):
         return (not ((b1[2] < b2[0]) or (b1[0] > b2[2]) or (b1[3] < b2[1]) or (b1[1] > b2[3])))
 
+    # widget inner is a widget within widget outer.  Return the box inner with
+    # coordinates relative to outer
     def getBoxWithin(self, outer, inner):
         (x, y) = self.getCoord(outer, inner)
         return (x, y, (x + inner.winfo_width()), (y + inner.winfo_height()))
 
+    # widget inner is a widget within widget outer.  Return the coordinates
+    # of inner relative to outer
     def getCoord(self, outer, inner):
         if (outer is inner):
             return (0, 0)
