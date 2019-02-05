@@ -99,8 +99,8 @@ class Block(tk.Frame):
                 py = (bt[1] + bt[3]) / 2.0
 
                 # the desired setting of the scrollers
-                qx = (px - cv[2] / 2.0) / ct[2]
-                qy = (py - cv[3] / 2.0) / ct[3]
+                qx = (px - cv[2] / 2.0) / (ct[2] - ct[0])
+                qy = (py - cv[3] / 2.0) / (ct[3] - ct[1])
 
                 # don't overscroll
                 if qx < 0:
