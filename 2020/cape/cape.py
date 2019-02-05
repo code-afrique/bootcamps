@@ -7,6 +7,7 @@ import tkinter as tk
 import tkinter.messagebox
 import tkinter.filedialog
 import tokenize
+import queue
 import pparse
 import pmod
 import shared
@@ -116,6 +117,14 @@ class CAPE(tk.Frame):
         self.shared.confarea.grid(row=0, column=0, sticky=tk.N)
         self.progarea.grid(row=0, column=1, sticky=tk.NW)
         self.help()
+
+        self.evq = queue.Queue()
+        self.bind("<<RunErr>>", self.runerr)
+
+    def runerr(self, ev):
+        while not self.evq.empty():
+            ev = self.evq.get()
+            print("EV", ev)
 
     def printx(self):
         self.shared.cvtError = False
@@ -230,7 +239,7 @@ class CAPE(tk.Frame):
                 n.print(tmp, 0)
                 tmp.close()
                 t = tk.Toplevel(self)
-                c = console.Console(t)
+                c = console.Console(t, self, self.evq)
                 c.grid()
                 c.start_proc(path)
 
