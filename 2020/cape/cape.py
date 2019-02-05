@@ -123,8 +123,8 @@ class CAPE(tk.Frame):
 
     def runerr(self, ev):
         while not self.evq.empty():
-            ev = self.evq.get()
-            print("EV", ev)
+            (row, col, err) = self.evq.get()
+            # (sb, i) = n.findRow(lineno)
 
     def printx(self):
         self.shared.cvtError = False

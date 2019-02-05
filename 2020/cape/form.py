@@ -72,7 +72,7 @@ class SeqForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Sequence of statements").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of {} statements.".format(len(block.rows))).grid(sticky=tk.W)
 
-class SubForm(Form):
+class ClauseForm(Form):
 
     def __init__(self, parent, block):
         super().__init__(parent, block)
@@ -591,7 +591,7 @@ class IfForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'if' statement").grid(columnspan=2)
         tk.Message(self, width=350, font="Helvetica 14", text="An 'if' statement has an 'if' clause, zero or more 'elif' clauses, and optionally an 'else' clause'.").grid(row=1, columnspan=2)
-        if (len(block.conds) == len(block.sbs)):
+        if (len(block.conds) == len(block.clauses)):
             eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
         else:
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
