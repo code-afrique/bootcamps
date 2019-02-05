@@ -13,7 +13,7 @@ import pmod
 import shared
 from form import HelpForm, TextForm
 from node import RowNode, EmptyNode
-from block import Block, SeqBlock
+from block import Block, ModuleBlock
 import console
 
 class Scrollable(tk.Frame):
@@ -106,7 +106,7 @@ class CAPE(tk.Frame):
         # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         self.progarea.grid_propagate(0)
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
-        self.program = SeqBlock(self.shared.scrollable.stuff, shared, None)
+        self.program = ModuleBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
         # self.program.setBlock(self.program)
@@ -150,7 +150,7 @@ class CAPE(tk.Frame):
             return
         if (self.program != None):
             self.program.grid_forget()
-        self.program = SeqBlock(self.shared.scrollable.stuff, self.shared, None)
+        self.program = ModuleBlock(self.shared.scrollable.stuff, self.shared, None)
         self.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
         self.shared.saved = True

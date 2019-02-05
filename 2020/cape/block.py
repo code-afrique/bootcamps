@@ -197,6 +197,9 @@ class Block(tk.Frame):
     def goDown(self):
         return self
 
+    def newModuleBlock(self, parent, node):
+        return ModuleBlock(parent, self.shared, node)
+
     def newPassBlock(self, parent, node):
         return PassBlock(parent, self.shared, node)
 
@@ -688,6 +691,33 @@ class CompoundBlock(Block):
 
     def goRight(self):
         return self.clauses[0]
+
+class ModuleBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+
+        if (node == None):
+            self.clause = ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "Module Definition")
+        else:
+            self.clause = ClauseBlock(self, shared, node.body, False, "Module Definition")
+
+        hdr = self.clause.hdr
+        btn = tk.Button(hdr, text="module", fg="red", width=0, command=self.cb)
+        btn.grid(row=0, column=0)
+        self.clause.grid()
+
+    def goRight(self):
+        return self.clause
+
+    def genForm(self):
+        self.setForm(ModuleForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ModuleNode(self.clause.toNode())
 
 class ClassBlock(Block):
 
