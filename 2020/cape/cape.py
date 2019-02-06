@@ -108,6 +108,7 @@ class CAPE(tk.Frame):
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
         self.program = ModuleBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
+        self.program.setBlock(self.program.clauses[0].body.rows[0].what)
         self.shared.scrollable.scrollUpdate()
         # self.program.setBlock(self.program)
         # self.shared.confarea.place(x=0, y=0)

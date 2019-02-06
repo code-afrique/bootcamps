@@ -1156,7 +1156,6 @@ class ExpressionBlock(Block):
         self.shared.curForm.entry.focus()
 
     def exprName(self, v):
-        print("exprname", v)
         self.setValue(NameNode(v))
         self.shared.curForm.entry.focus()
 
@@ -1193,7 +1192,9 @@ class ExpressionBlock(Block):
         self.setValue(IfelseNode(ExpressionNode(None), ExpressionNode(None), ExpressionNode(None)))
 
     def gotKey(self, c):
-        if c.isidentifier():
+        if isinstance(self.what, NameBlock):
+            self.what.vname.set(self.what.vname.get() + c)
+        elif c.isidentifier():
             self.exprName(c)
         elif (c == "."):
             self.exprAttr()
@@ -1202,7 +1203,11 @@ class ExpressionBlock(Block):
         elif (c == "\177"):
             self.delExpr()
         elif (not self.isWithinStore):
-            if c.isdigit():
+            if isinstance(self.what, NumberBlock):
+                self.what.value.set(self.what.value.get() + c)
+            elif isinstance(self.what, StringBlock):
+                self.what.string.set(self.what.string.get() + c)
+            elif c.isdigit():
                 self.exprNumber(c)
             elif ((c == "\"") or (c == "'")):
                 self.exprString()
