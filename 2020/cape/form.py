@@ -391,7 +391,7 @@ class PassForm(Form):
             self.stmtCall()
         elif (ev.char == "\r"):
             self.stmtEmpty()
-        elif (ev.char == ""):
+        elif (ev.char == "\177"):
             self.deleteKey(ev)
 
 class ExpressionForm(Form):
@@ -501,39 +501,7 @@ class ExpressionForm(Form):
     def key(self, ev):
         if ((ev.type != "2") or (len(ev.char) != 1)):    # check if normal KeyPress
             return
-        if ev.char.isidentifier():
-            self.block.exprName(ev.char)
-        elif (ev.char == "."):
-            self.block.exprAttr()
-        elif (ev.char == "]"):
-            self.block.exprSubscript()
-        elif (ev.char == ""):
-            self.delExpr()
-        elif (not self.block.isWithinStore):
-            if ev.char.isdigit():
-                self.block.exprNumber(ev.char)
-            elif ((ev.char == "\"") or (ev.char == "'")):
-                self.block.exprString()
-            elif (ev.char == "("):
-                self.block.exprCall()
-            elif (ev.char == "["):
-                self.block.exprList()
-            elif (ev.char == "="):
-                self.block.exprBinaryop("==")
-            elif (ev.char == "!"):
-                self.block.exprBinaryop("!=")
-            elif (ev.char in "+-*/%<>"):
-                self.block.exprBinaryop(ev.char)
-            elif (ev.char == "&"):
-                self.block.exprBinaryop("and")
-            elif (ev.char == "|"):
-                self.block.exprBinaryop("or")
-            elif (ev.char == "~"):
-                self.block.exprUnaryop("not")
-            else:
-                print("key event {}".format(ev.char))
-        else:
-            print("limited expressions left of assignment operator".format(ev.char))
+        self.block.gotKey(ev.char)
 
 class DefClauseForm(Form):
 
@@ -999,6 +967,7 @@ class NameForm(Form):
         elif (not v.isidentifier()):
             tk.messagebox.showinfo("Format Error", "'{}' is not a valid variable name".format(v))
         else:
+            print("NAME", v)
             self.block.setName(v)
 
     def keyEnter(self, ev):

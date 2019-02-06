@@ -1156,6 +1156,7 @@ class ExpressionBlock(Block):
         self.shared.curForm.entry.focus()
 
     def exprName(self, v):
+        print("exprname", v)
         self.setValue(NameNode(v))
         self.shared.curForm.entry.focus()
 
@@ -1190,6 +1191,41 @@ class ExpressionBlock(Block):
 
     def exprIfelse(self):
         self.setValue(IfelseNode(ExpressionNode(None), ExpressionNode(None), ExpressionNode(None)))
+
+    def gotKey(self, c):
+        if c.isidentifier():
+            self.exprName(c)
+        elif (c == "."):
+            self.exprAttr()
+        elif (c == "]"):
+            self.exprSubscript()
+        elif (c == "\177"):
+            self.delExpr()
+        elif (not self.isWithinStore):
+            if c.isdigit():
+                self.exprNumber(c)
+            elif ((c == "\"") or (c == "'")):
+                self.exprString()
+            elif (c == "("):
+                self.exprCall()
+            elif (c == "["):
+                self.exprList()
+            elif (c == "="):
+                self.exprBinaryop("==")
+            elif (c == "!"):
+                self.exprBinaryop("!=")
+            elif (c in "+-*/%<>"):
+                self.exprBinaryop(c)
+            elif (c == "&"):
+                self.exprBinaryop("and")
+            elif (c == "|"):
+                self.exprBinaryop("or")
+            elif (c == "~"):
+                self.exprUnaryop("not")
+            else:
+                print("key event {}".format(c))
+        else:
+            print("limited expressions left of assignment operator".format(c))
 
     def paste(self):
         try:
@@ -1342,7 +1378,7 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = IfBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.clauses[0])
+        self.setBlock(self.rowblk.what.clauses[0].cond)
         self.needsSaving()
 
     def stmtWhile(self):
