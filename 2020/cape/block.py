@@ -26,9 +26,7 @@ class Block(tk.Frame):
         self.shared.curForm = f
         if f:
             f.grid(row=0, column=0, sticky=tk.E)
-
-            ## COMMENTED OUT BECAUSE IT BROKE DEALING WITH ERRORS FROM PYTHON WHILE RUNNING
-            # f.update()
+            f.update()
             f.catchKeys()
 
     def genForm(self):
@@ -51,7 +49,6 @@ class Block(tk.Frame):
             b.update()
 
             # Generate a form for the new box
-            
             b.genForm()
 
             # See if we need to move the scrollbars to make sure the box
