@@ -825,7 +825,8 @@ class SeqNode(Node):
 
     def findRow(self, lineno):
         for i in range(len(self.rows)):
-            if (self.rows[i].lineno >= lineno):
+            assert isinstance(self.rows[i], RowNode)
+            if not isinstance(self.rows[i].what, CompoundNode) and self.rows[i].lineno >= lineno:
                 return ("row", self, i)
             r = self.rows[i].findRow(lineno)
             if (r != None):

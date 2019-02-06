@@ -190,7 +190,7 @@ class CAPE(tk.Frame):
                 self.program.grid(sticky=tk.W)
                 self.shared.scrollable.scrollUpdate()
                 # verify that conversion has been done right
-                print("verify")
+                # print("verify")
                 tree2 = pparse.pparse(code, show_offsets=False)
                 n3 = self.program.toNode()
                 f3 = io.StringIO("")

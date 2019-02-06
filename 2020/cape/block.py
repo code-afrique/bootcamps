@@ -653,14 +653,19 @@ class ClauseBlock(Block):
         self.hdr = HeaderBlock(self, shared)
         self.colon = tk.Button(self.hdr, highlightbackground="yellow", text="+", command=self.minmax)
         self.body = None
+
         self.hdr.grid(row=0, column=0, sticky=tk.W)
         self.colon.grid(row=0, column=1000, sticky=tk.W)
+        tk.Button(self.hdr, textvariable=self.comment, fg="brown", command=self.listcmd).grid(row=0, column=1001, sticky=(tk.N + tk.W))
         self.minimized = True
         self.row = None
 
         # TODO.  May need to get rid of this
         if not minimized:
             self.minmax()
+
+    def listcmd(self):
+        self.setBlock(self)
 
     def genForm(self):
         self.setForm(ClauseForm(self.shared.confarea, self))
@@ -694,11 +699,19 @@ class ClauseBlock(Block):
             self.colon.configure(highlightbackground="yellow", text="+")
         self.scrollUpdate()
 
-    def toNode(self):
+    def getBody(self):
         if self.minimized:
             return self.body_node
         else:
             return self.body.toNode()
+
+    def toNode(self):
+        r = self.toNodeRaw()
+        c = self.comment.get()
+        if (c != ""):
+            assert (c[0] == "#")
+            r.comment = c[1:]
+        return r
 
 # A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
 # 'finally' clauses.
@@ -715,8 +728,8 @@ class BasicClauseBlock(ClauseBlock):
     def cb(self):
         self.setBlock(self)
 
-    def toNode(self):
-        return BasicClauseNode(self.type, super().toNode())
+    def toNodeRaw(self):
+        return BasicClauseNode(self.type, self.getBody())
 
 # An 'if' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
 # clauses.
@@ -742,8 +755,8 @@ class CondClauseBlock(ClauseBlock):
     # def goRight(self):
     #     return self.cond
 
-    def toNode(self):
-        return CondClauseNode(self.type, self.cond.toNode(), super().toNode())
+    def toNodeRaw(self):
+        return CondClauseNode(self.type, self.cond.toNode(), self.getBody())
 
 # A compound block consists of a list of clause blocks.
 class CompoundBlock(Block):
@@ -844,14 +857,14 @@ class ClassClauseBlock(ClauseBlock):
             column += 1
         self.eol.grid(row=0, column=column)
 
-    def toNode(self):
+    def toNodeRaw(self):
         v = self.cname.get()
         if (not v.isidentifier()):
             if (not self.shared.cvtError):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad class name")
                 self.shared.cvtError = True
-        return ClassClauseNode(v, [b.toNode() for b in self.bases], super().toNode())
+        return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody())
 
 class CallBlock(Block):
 
@@ -1984,14 +1997,14 @@ class DefClauseBlock(ClauseBlock):
         self.needsSaving()
         self.setBlock(self.body.rows[0].what)
 
-    def toNode(self):
+    def toNodeRaw(self):
         v = self.mname.get()
         if (not v.isidentifier()):
             if (not self.shared.cvtError):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], super().toNode())
+        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.getBody())
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
@@ -2212,8 +2225,8 @@ class ExceptClauseBlock(ClauseBlock):
     def cb(self):
         self.setBlock(self)
 
-    def toNode(self):
-        return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), super().toNode())
+    def toNodeRaw(self):
+        return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), self.getBody())
 
 class WithClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
@@ -2246,8 +2259,8 @@ class WithClauseBlock(ClauseBlock):
     def cb(self):
         self.setBlock(self)
 
-    def toNode(self):
-        return WithClauseNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], super().toNode())
+    def toNodeRaw(self):
+        return WithClauseNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], self.getBody())
 
 class ForClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
@@ -2277,5 +2290,5 @@ class ForClauseBlock(ClauseBlock):
     def cb(self):
         self.setBlock(self)
 
-    def toNode(self):
-        return ForClauseNode(self.target.toNode(), self.expr.toNode(), super().toNode())
+    def toNodeRaw(self):
+        return ForClauseNode(self.target.toNode(), self.expr.toNode(), self.getBody())
