@@ -74,7 +74,7 @@ class RowNode(Node):
         # insert the comment, if any, after the first line
         if (("\n" in s) and (self.comment != None)):
             i = s.index("\n")
-            s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "	#")) + self.comment) + s[i:])
+            s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "    #")) + self.comment) + s[i:])
         if (isinstance(self.what, DefNode) or isinstance(self.what, ClassNode)):
             print(file=fd)
         print(s, file=fd, end="")
@@ -157,37 +157,63 @@ class ClassNode(Node):
         print("):", file=fd)
         self.body.print(fd, (level + 1))
 
+class BasicClauseNode(Node):
+    def __init__(self, type, body):
+        super().__init__()
+        self.type = type
+        self.body = body
+
+    def toBlock(self, frame, block):
+        return block.newBasicClauseBlock(frame, self)
+
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        print("{}:".format(self.type), file=fd)
+        self.body.print(fd, (level + 1))
+
+class IfClauseNode(Node):
+    def __init__(self, type, cond, body):
+        super().__init__()
+        self.type = type
+        self.cond = cond
+        self.body = body
+
+    def toBlock(self, frame, block):
+        return block.newIfClauseBlock(frame, self)
+
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        print("{} ".format(self.type), end="", file=fd)
+        self.cond.print(fd, 0)
+        print(":", file=fd)
+        self.body.print(fd, (level + 1))
+
 class IfNode(Node):
 
-    def __init__(self, conds, bodies):
+    def __init__(self, clauses, hasElse):
         super().__init__()
-        self.conds = conds
-        self.bodies = bodies
+        self.clauses = clauses
+        self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newIfBlock(frame, self)
 
     def findRow(self, lineno):
-        for b in self.bodies:
-            loc = b.findRow(lineno)
+        for c in self.clauses:
+            loc = c.findRow(lineno)
             if (loc != None):
                 return loc
         return None
 
     def print(self, fd, level):
-        for i in range(len(self.bodies)):
-            self.printIndent(fd, level)
-            if (i == 0):
-                print("if ", end="", file=fd)
-                self.conds[i].print(fd, 0)
-                print(":", file=fd)
-            elif (i < len(self.conds)):
-                print("elif ", end="", file=fd)
-                self.conds[i].print(fd, 0)
-                print(":", file=fd)
-            else:
-                print("else:", file=fd)
-            self.bodies[i].print(fd, (level + 1))
+        for c in self.clauses:
+            c.print(fd, level)
 
 class TryNode(Node):
 

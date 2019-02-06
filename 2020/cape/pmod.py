@@ -62,17 +62,15 @@ def While(lineno, col_offset, test, body, orelse):
 
 def If(lineno, col_offset, test, body, orelse):
     if (orelse == []):
-        return RowNode(IfNode([test], [SeqNode(body)]), lineno)
-    elif (len(orelse) == 1):
+        return RowNode(IfNode([IfClauseNode("if", test, SeqNode(body))], False), lineno)
+    if (len(orelse) == 1):
         row = orelse[0]
         assert isinstance(row, RowNode)
         stmt = row.what
         if isinstance(stmt, IfNode):
-            return RowNode(IfNode(([test] + stmt.conds), ([SeqNode(body)] + stmt.bodies)), lineno)
-        else:
-            return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)]), lineno)
-    else:
-        return RowNode(IfNode([test], [SeqNode(body), SeqNode(orelse)]), lineno)
+            stmt.clauses[0].type = "elif"
+            return RowNode(IfNode([IfClauseNode("if", test, SeqNode(body))] + stmt.clauses, stmt.hasElse), lineno)
+    return RowNode(IfNode([IfClauseNode("if", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
 
 def Try(lineno, col_offset, body, handlers, orelse, finalbody):
     return RowNode(TryNode(SeqNode(body), handlers, (None if (orelse == []) else SeqNode(orelse)), (None if (finalbody == []) else SeqNode(finalbody))), lineno)

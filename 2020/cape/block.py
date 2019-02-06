@@ -215,6 +215,12 @@ class Block(tk.Frame):
     def newClassBlock(self, parent, node):
         return ClassBlock(parent, self.shared, node)
 
+    def newBasicClauseBlock(self, parent, node):
+        return BasicClauseBlock(parent, self.shared, node)
+
+    def newIfClauseBlock(self, parent, node):
+        return IfClauseBlock(parent, self.shared, node)
+
     def newIfBlock(self, parent, node):
         return IfBlock(parent, self.shared, node)
 
@@ -625,11 +631,12 @@ class ListopBlock(Block):
     def toNode(self):
         return ListopNode([v.toNode() for v in self.values], self.ops)
 
+# A clause block consists of a header and a body
 class ClauseBlock(Block):
     def __init__(self, parent, shared, node, minimized, title):
         super().__init__(parent, shared)
 
-        self.node = node
+        self.node = SeqNode([RowNode(PassNode())]) if node == None else node
         self.title = title
         self.hdr = HeaderBlock(self, shared)
         self.colon = tk.Button(self.hdr, highlightbackground="yellow", text="+", command=self.minmax)
@@ -637,9 +644,11 @@ class ClauseBlock(Block):
         self.hdr.grid(row=0, column=0, sticky=tk.W)
         self.colon.grid(row=0, column=1000, sticky=tk.W)
         self.minimized = True
+        self.row = None
+
+        # TODO.  May need to get rid of this
         if not minimized:
             self.minmax()
-        self.row = None
 
     def genForm(self):
         self.setForm(ClauseForm(self.shared.confarea, self))
@@ -679,6 +688,49 @@ class ClauseBlock(Block):
         else:
             return self.body.toNode()
 
+# A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
+# 'finally' clauses.
+class BasicClauseBlock(ClauseBlock):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node.body, False, "basic clause")
+        self.type = node.type
+        tk.Button(self.hdr, text=node.type, fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        self.hdr.grid(row=0, sticky=tk.W)
+
+    def genForm(self):
+        self.setForm(ClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return BasicClauseNode(self.type, self.body.toNode())
+
+# An 'if' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
+# clauses.
+class IfClauseBlock(ClauseBlock):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node.body, False, "if clause")
+        if node.cond == None:
+            self.cond = ExpressionBlock(self.hdr, shared, None)
+        else:
+            self.cond = node.cond.toBlock(self.hdr, self)
+        self.type = node.type
+        self.cond.grid(row=0, column=1)
+        tk.Button(self.hdr, text=self.type, fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        self.cond.grid(row=0, column=1)
+        self.hdr.grid(row=0, sticky=tk.W)
+
+    def genForm(self):
+        self.setForm(ClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return IfClauseNode(self.type, self.cond.toNode(), self.body.toNode())
+
+# A compound block consists of a list of clause blocks.
 class CompoundBlock(Block):
 
     def __init__(self, parent, shared):
@@ -1292,7 +1344,7 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = IfBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.conds[0])
+        self.setBlock(self.rowblk.what.clauses[0])
         self.needsSaving()
 
     def stmtWhile(self):
@@ -1754,6 +1806,9 @@ class RowBlock(Block):
             r.comment = c[1:]
         return r
 
+# The parent of a SeqBlock is always a ClauseBlock, which helps with navigating
+# There's something to be said to merge the concepts of SeqBlock and ClauseBlock, but
+# that might require creating ClauseNodes for all types of clauses.
 class SeqBlock(Block):
 
     def __init__(self, parent, shared, node):
@@ -1890,37 +1945,14 @@ class DefBlock(Block):
         return DefNode(v, self.args, [d.toNode() for d in self.defaults], self.clause.toNode())
 
 class IfBlock(CompoundBlock):
-    "\n        An if statement has N conditions and N (no else) or N+1 (with else) bodies.\n    "
-
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
-            self.clauses = [ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "'if' clause of an 'if' statement")]
-            hdr = self.clauses[0].hdr
-            tk.Button(hdr, text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-            self.conds = [ExpressionBlock(hdr, shared, None)]
-            self.conds[0].grid(row=0, column=1)
-            self.clauses[0].grid(row=0, sticky=tk.W)
+            self.clauses = [IfClauseBlock(self, shared, IfClauseNode("if", None, None))]
+            self.hasElse = False
         else:
-            self.clauses = [ClauseBlock(self, shared, n, False, "clause in 'if' statement") for n in node.bodies]
-            self.conds = []
-            for i in range(len(self.clauses)):
-                hdr = self.clauses[i].hdr
-                if (i < len(node.conds)):
-                    hdr = self.clauses[i].hdr
-                    cond = ExpressionBlock(hdr, shared, node.conds[i])
-                    self.conds.append(cond)
-                    if (i == 0):
-                        tk.Button(hdr, text="if", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                        self.clauses[i].title = "'if' clause in an 'if' statement"
-                    else:
-                        tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                        self.clauses[i].title = "'elif' clause in an 'if' statement"
-                    cond.grid(row=0, column=1)
-                else:
-                    tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                    self.clauses[i].title = "'else' clause in an 'if' statement"
-                self.clauses[i].grid(row=i, sticky=tk.W)
+            self.clauses = [IfClauseBlock(self, shared, n) if isinstance(n, IfClauseNode) else BasicClauseBlock(self, shared, n) for n in node.clauses]
+            self.hasElse = node.hasElse
         self.gridUpdate()
 
     def genForm(self):
@@ -1930,28 +1962,26 @@ class IfBlock(CompoundBlock):
         self.setBlock(self)
 
     def addElse(self):
-        clause = ClauseBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False, "'else' clause in an 'if' statement")
-        self.clauses.append(clause)
-        hdr = clause.hdr
-        tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.gridUpdate()
-        self.setBlock(clause.body.rows[0].what)
-        self.needsSaving()
+        if not self.hasElse:
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode("else", None))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
 
     def removeElse(self):
-        self.clauses[-1].grid_forget()
-        del self.clauses[-1]
-        self.setBlock(self)
-        self.needsSaving()
+        if self.hasElse:
+            self.clauses[-1].grid_forget()
+            del self.clauses[-1]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
 
     def insertElif(self):
-        clause = ClauseBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False, "'elif' clause in an 'if' statement")
-        self.clauses.insert(len(self.conds), clause)
-        hdr = clause.hdr
-        tk.Button(hdr, text="elif", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        cond = ExpressionBlock(hdr, self.shared, None)
-        self.conds.append(cond)
-        cond.grid(row=0, column=1)
+        clause = IfClauseBlock(self, self.shared, IfClauseNode("elif", None, None))
+        n = len(self.clauses)
+        self.clauses.insert(n - 1 if self.hasElse else n, clause)
         self.gridUpdate()
         self.setBlock(clause.body.rows[0].what)
         self.needsSaving()
@@ -1963,7 +1993,7 @@ class IfBlock(CompoundBlock):
         self.scrollUpdate()
 
     def toNode(self):
-        return IfNode([c.toNode() for c in self.conds], [b.toNode() for b in self.clauses])
+        return IfNode([c.toNode() for c in self.clauses], self.hasElse)
 
 class TryBlock(Block):
 
@@ -2129,7 +2159,6 @@ class ForBlock(CompoundBlock):
             self.target = ExpressionBlock(hdr, shared, None)
             hdr.isWithinStore = False
             self.expr = ExpressionBlock(hdr, shared, None)
-            self.body = SeqBlock(self, shared, None)
             self.orelse = None
         else:
             self.clause = ClauseBlock(self, shared, node.body, False, "'for' clause of a 'for' statement")
