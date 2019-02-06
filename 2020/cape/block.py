@@ -793,7 +793,7 @@ class ContainerBlock(CompoundBlock):
         self.setBlock(self)
 
     def toNode(self):
-        return ContainerNode(self.clauses[0].body.toNode())
+        return ContainerNode(self.clauses[0].toNode())
 
 class ClassBlock(Block):
 
@@ -1380,9 +1380,9 @@ class PassBlock(Block):
 
     def stmtWith(self):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = WithClauseBlock(self.rowblk, self.shared, None)
+        self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(WithClauseNode([], None)))
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what)
+        self.setBlock(self.rowblk.what.clauses[0])
         self.needsSaving()
 
     def stmtFor(self):
@@ -2126,7 +2126,10 @@ class TryBlock(Block):
 class WithClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, False, "with clause")
+        if node == None:
+            super().__init__(parent, shared, None, False, "with clause")
+        else:
+            super().__init__(parent, shared, node.body, False, "with clause")
 
         self.items = []
         tk.Button(self.hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
