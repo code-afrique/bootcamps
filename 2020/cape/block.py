@@ -733,8 +733,8 @@ class CondClauseBlock(ClauseBlock):
     def cb(self):
         self.setBlock(self)
 
-    def goRight(self):
-        return self.cond
+    # def goRight(self):
+    #     return self.cond
 
     def toNode(self):
         return CondClauseNode(self.type, self.cond.toNode(), super().toNode())
@@ -765,9 +765,6 @@ class ModuleBlock(CompoundBlock):
 
         self.clauses[0].grid()
 
-    def goRight(self):
-        return self.clauses[0]
-
     def genForm(self):
         self.setForm(ModuleForm(self.shared.confarea, self))
 
@@ -785,9 +782,6 @@ class ContainerBlock(CompoundBlock):
 
         self.clauses = [node.body.toBlock(self, self)]
         self.clauses[0].grid()
-
-    def goRight(self):
-        return self.clauses[0]
 
     def genForm(self):
         self.setForm(ContainerForm(self.shared.confarea, self))
@@ -817,9 +811,6 @@ class ClassClauseBlock(ClauseBlock):
 
         self.setHeader()
         self.hdr.grid()
-
-    def goRight(self):
-        return self.clause
 
     def genForm(self):
         self.setForm(ClassForm(self.shared.confarea, self))
