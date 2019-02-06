@@ -588,7 +588,7 @@ class DefClauseForm(Form):
                 return
             args.append(a)
         self.block.defUpdate(name, args)
-        self.focus_set()
+        # self.focus_set()
 
     def keyEnter(self, x):
         self.cb()

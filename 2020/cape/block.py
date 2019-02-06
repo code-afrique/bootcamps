@@ -1942,6 +1942,7 @@ class DefClauseBlock(ClauseBlock):
         self.args = args
         self.setHeader()
         self.needsSaving()
+        self.setBlock(self.body.rows[0].what)
 
     def toNode(self):
         v = self.mname.get()
