@@ -124,8 +124,11 @@ class CAPE(tk.Frame):
 
     def runerr(self, ev):
         while not self.evq.empty():
-            (row, col, err) = self.evq.get()
-            # (sb, i) = n.findLine(lineno)
+            (line, col, err) = self.evq.get()
+            print("ERROR", line, col, err)
+            if 0 <= line < len(self.shared.linebuf):
+                self.program.setBlock(self.shared.linebuf[line])
+            tk.messagebox.showinfo("Run Error", err)
 
     def printx(self):
         self.shared.cvtError = False
@@ -189,6 +192,7 @@ class CAPE(tk.Frame):
                 self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
                 self.program.grid(sticky=tk.W)
                 self.shared.scrollable.scrollUpdate()
+                self.program.setBlock(self.program.clauses[0].body)
                 # verify that conversion has been done right
                 # print("verify")
                 tree2 = pparse.pparse(code, show_offsets=False)
@@ -236,7 +240,9 @@ class CAPE(tk.Frame):
 
     def run(self):
         self.shared.cvtError = False
+        self.shared.startKeeping()
         n = self.program.toNode()
+        self.shared.stopKeeping()
         if self.shared.cvtError:
             print("===== Fix program first =====")
         else:

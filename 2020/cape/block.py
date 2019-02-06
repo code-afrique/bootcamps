@@ -17,14 +17,6 @@ class Block(tk.Frame):
         self.isWithinLoop = (False if (parent == None) else parent.isWithinLoop)
         self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
 
-    # All blocks consist of a number of rows.  Some rows are blocks themselves
-    # Each row currently translates in one line of output.  We use this fact
-    # to find the offending block in error messages by line number.
-    # findLine(n) returns (True, RowBlock) if the RowBlock is at row n
-    # of a SeqBlock, or (False, m) with the number of rows in this block.
-    def findLine(lineno):
-        return (True, self)
-
     def scrollUpdate(self):
         self.shared.scrollable.scrollUpdate()
 
@@ -34,7 +26,9 @@ class Block(tk.Frame):
         self.shared.curForm = f
         if f:
             f.grid(row=0, column=0, sticky=tk.E)
-            f.update()
+
+            ## COMMENTED OUT BECAUSE IT BROKE DEALING WITH ERRORS FROM PYTHON WHILE RUNNING
+            # f.update()
             f.catchKeys()
 
     def genForm(self):
@@ -57,6 +51,7 @@ class Block(tk.Frame):
             b.update()
 
             # Generate a form for the new box
+            
             b.genForm()
 
             # See if we need to move the scrollbars to make sure the box
@@ -706,6 +701,7 @@ class ClauseBlock(Block):
             return self.body.toNode()
 
     def toNode(self):
+        self.shared.keep(self)
         r = self.toNodeRaw()
         c = self.comment.get()
         if (c != ""):
@@ -1868,6 +1864,7 @@ class RowBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
+        self.shared.keep(self)
         r = RowNode(self.what.toNode(), 0)
         c = self.comment.get()
         if (c != ""):
