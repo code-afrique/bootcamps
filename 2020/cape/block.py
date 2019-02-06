@@ -209,8 +209,8 @@ class Block(tk.Frame):
     def newEmptyBlock(self, parent, node):
         return EmptyBlock(parent, self.shared, node)
 
-    def newDefBlock(self, parent, node):
-        return DefBlock(parent, self.shared, node)
+    def newDefClauseBlock(self, parent, node):
+        return DefClauseBlock(parent, self.shared, node)
 
     def newLambdaBlock(self, parent, node):
         return LambdaBlock(parent, self.shared, node)
@@ -1330,14 +1330,6 @@ class PassBlock(Block):
         self.setBlock(self.rowblk)
         self.needsSaving()
 
-    def stmtDef(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = DefBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what)
-        self.needsSaving()
-        self.shared.curForm.entry.focus()
-
     def stmtClass(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ClassBlock(self.rowblk, self.shared, None)
@@ -1377,6 +1369,14 @@ class PassBlock(Block):
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.cond)
         self.needsSaving()
+
+    def stmtDef(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(DefClauseNode("", [], [], None)))
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.clauses[0])
+        self.needsSaving()
+        self.shared.curForm.entry.focus()
 
     def stmtWith(self):
         self.rowblk.what.grid_forget()
@@ -1903,28 +1903,21 @@ class SeqBlock(Block):
     def toNode(self):
         return SeqNode([r.toNode() for r in self.rows])
 
-class DefBlock(Block):
+class DefClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.isWithinDef = True
+        parent.isWithinDef = True
+        super().__init__(parent, shared, node.body, node.body != None, "def clause")
         self.mname = tk.StringVar()
-
-        if (node == None):
-            self.clause = ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "Function Definition")
-            self.args = []
-            self.defaults = []
-        else:
-            self.clause = ClauseBlock(self, shared, node.body, True, "Function Definition")
-            self.mname.set(node.name)
-            self.args = node.args
-            self.defaults = [d.toBlock(self.clause.hdr, self) for d in node.defaults]
+        self.mname.set(node.name)
+        self.args = node.args
+        self.defaults = [d.toBlock(self.clause.hdr, self) for d in node.defaults]
 
         self.setHeader()
-        self.clause.grid()
+        self.hdr.grid()
 
     def setHeader(self):
-        hdr = self.clause.hdr
+        hdr = self.hdr
         btn = tk.Button(hdr, text="def", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
         self.name = tk.Button(hdr, textvariable=self.mname, fg="blue", command=self.cb)
@@ -1946,7 +1939,7 @@ class DefBlock(Block):
         tk.Button(hdr, text=")", command=self.cb).grid(row=0, column=column)
 
     def genForm(self):
-        f = DefForm(self.shared.confarea, self)
+        f = DefClauseForm(self.shared.confarea, self)
         self.setForm(f)
     # f.entry.focus()
 
@@ -1966,7 +1959,7 @@ class DefBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefNode(v, self.args, [d.toNode() for d in self.defaults], self.clause.toNode())
+        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.body.toNode())
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
@@ -2022,11 +2015,16 @@ class IfBlock(CompoundBlock):
 class WhileBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
+        self.isWithinLoop = True
         if (node == None):
             self.clauses = [IfClauseBlock(self, shared, IfClauseNode("while", None, None))]
+            self.isWithinLoop = False
             self.hasElse = False
         else:
-            self.clauses = [n.toBlock(self, self) for n in node.clauses]
+            self.clauses = [node.clauses[0].toBlock(self, self)]
+            self.isWithinLoop = False
+            if node.hasElse:
+                self.clauses.append([node.clauses[1].toBlock(self, self)])
             self.hasElse = node.hasElse
         self.gridUpdate()
 
@@ -2153,7 +2151,7 @@ class WithClauseBlock(ClauseBlock):
         self.hdr.grid()
 
     def genForm(self):
-        self.setForm(WithForm(self.shared.confarea, self))
+        self.setForm(WithClauseForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)

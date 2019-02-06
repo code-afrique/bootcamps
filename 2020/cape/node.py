@@ -90,11 +90,9 @@ class RowNode(Node):
         if (("\n" in s) and (self.comment != None)):
             i = s.index("\n")
             s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "    #")) + self.comment) + s[i:])
-        if (isinstance(self.what, DefNode) or isinstance(self.what, ClassNode)):
-            print(file=fd)
         print(s, file=fd, end="")
 
-class DefNode(Node):
+class DefClauseNode(Node):
 
     def __init__(self, name, args, defaults, body):
         super().__init__()
@@ -104,7 +102,7 @@ class DefNode(Node):
         self.body = body
 
     def toBlock(self, frame, block):
-        return block.newDefBlock(frame, self)
+        return block.newDefClauseBlock(frame, self)
 
     def findRow(self, lineno):
         return self.body.findRow(lineno)

@@ -10,7 +10,7 @@ def Lambda(lineno, col_offset, args, body):
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
     (argnames, defaults) = args
-    return RowNode(DefNode(name, argnames, defaults, SeqNode(body)), lineno)
+    return RowNode(ContainerNode(DefClauseNode(name, argnames, defaults, SeqNode(body))), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
     return RowNode(ClassNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body)), lineno)

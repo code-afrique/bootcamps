@@ -108,7 +108,7 @@ class EvalForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Evaluation Statement").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a statement that evaluates an expression").grid(sticky=tk.W)
 
-class WithForm(Form):
+class WithClauseForm(Form):
 
     def __init__(self, parent, block):
         super().__init__(parent, block)
@@ -231,8 +231,8 @@ class PassForm(Form):
         row += 1
         tk.Message(self, width=350, font="Helvetica 14", text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=row, columnspan=3)
         row += 1
-        statements = [("assert", self.stmtAssert), ("break", self.stmtBreak), ("class", self.stmtClass), ("continue", self.stmtContinue), ("def", self.stmtDef), ("del", self.stmtDel), ("for", self.stmtFor), ("global", self.stmtGlobal), ("if", self.stmtIf), ("import", self.stmtImport), ("print", self.stmtPrint), ("return", self.stmtReturn), ("try", self.stmtTry), ("with", self.stmtWith), ("yield", self.stmtYield)]
-        ncolumns = 3
+        statements = [("assert", self.stmtAssert), ("break", self.stmtBreak), ("class", self.stmtClass), ("continue", self.stmtContinue), ("def", self.stmtDef), ("del", self.stmtDel), ("for", self.stmtFor), ("global", self.stmtGlobal), ("if", self.stmtIf), ("import", self.stmtImport), ("print", self.stmtPrint), ("return", self.stmtReturn), ("try", self.stmtTry), ("while", self.stmtWhile), ("with", self.stmtWith), ("yield", self.stmtYield)]
+        ncolumns = 4
         n = len(statements)
         nrows = (((n + ncolumns) - 1) // ncolumns)
         r = 0
@@ -508,7 +508,7 @@ class ExpressionForm(Form):
         else:
             print("limited expressions left of assignment operator".format(ev.char))
 
-class DefForm(Form):
+class DefClauseForm(Form):
 
     def __init__(self, parent, block):
         super().__init__(parent, block)
