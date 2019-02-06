@@ -158,7 +158,7 @@ class Console(tk.Frame):
             Thread(target=self.reader, args=[self.popen.stdout, self.queue, "stdout"]).start()
             Thread(target=self.reader, args=[self.popen.stderr, self.queue, "stderr"]).start()
             while self.popen.poll() is None:
-                print("process still running")
+                # print("process still running")
                 time.sleep(0.1)
             self.status.set("Terminated")
             print("terminated process")
