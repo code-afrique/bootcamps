@@ -66,9 +66,24 @@ class ClauseNode(Node):
     def __init__(self, body):
         super().__init__()
         self.body = body
+        self.comment = None
 
+    # To a first approximation, all lines in the source are either empty lines, rows,
+    # or clause headers.  However, the Python parser does not give the line numbers for
+    # clause headers, so we approximate it by subtracting one from the first row in the clause
     def findRow(self, lineno):
+        assert isinstance(self.body, SeqNode)
+        hdrline = self.body.rows[0].lineno - 1
+        if (hdrline >= lineno):
+            return ("clause", self, 0)
         return self.body.findRow(lineno)
+
+    def printBody(self, fd, level):
+        if self.comment != None:
+            print(":\t#{}".format(self.comment), file=fd)
+        else:
+            print(":", file=fd)
+        self.body.print(fd, level + 1)
 
 class DefClauseNode(ClauseNode):
     def __init__(self, name, args, defaults, body):
@@ -91,8 +106,8 @@ class DefClauseNode(ClauseNode):
             if (i >= d):
                 print("=", end="", file=fd)
                 self.defaults[(i - d)].print(fd, 0)
-        print("):", file=fd)
-        self.body.print(fd, (level + 1))
+        print(")", end="", file=fd)
+        self.printBody(fd, level)
 
 class LambdaNode(Node):
 
@@ -136,8 +151,8 @@ class ClassClauseNode(ClauseNode):
             if (i != 0):
                 print(", ", end="", file=fd)
             self.bases[i].print(fd, 0)
-        print("):", file=fd)
-        self.body.print(fd, (level + 1))
+        print(")", end="", file=fd)
+        self.printBody(fd, level)
 
 class BasicClauseNode(ClauseNode):
     def __init__(self, type, body):
@@ -149,8 +164,8 @@ class BasicClauseNode(ClauseNode):
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("{}:".format(self.type), file=fd)
-        self.body.print(fd, (level + 1))
+        print("{}".format(self.type), end="", file=fd)
+        self.printBody(fd, level)
 
 class CondClauseNode(ClauseNode):
     def __init__(self, type, cond, body):
@@ -165,8 +180,7 @@ class CondClauseNode(ClauseNode):
         self.printIndent(fd, level)
         print("{} ".format(self.type), end="", file=fd)
         self.cond.print(fd, 0)
-        print(":", file=fd)
-        self.body.print(fd, (level + 1))
+        self.printBody(fd, level)
 
 class CompoundNode(Node):
     def __init__(self, clauses):
@@ -230,15 +244,14 @@ class ExceptClauseNode(ClauseNode):
     def print(self, fd, level):
         self.printIndent(fd, level)
         if (self.type == None):
-            print("except:", file=fd)
+            print("except", end="", file=fd)
         else:
             print("except ", end="", file=fd)
             self.type.print(fd, 0)
             if (self.name != None):
                 print(" as ", end="", file=fd)
                 self.name.print(fd, 0)
-            print(":", file=fd)
-        self.body.print(fd, (level + 1))
+        self.printBody(fd, level)
 
 class WithClauseNode(ClauseNode):
 
@@ -262,8 +275,7 @@ class WithClauseNode(ClauseNode):
             if (var != None):
                 print(" as ", end="", file=fd)
                 var.print(fd, 0)
-        print(":", file=fd)
-        self.body.print(fd, (level + 1))
+        self.printBody(fd, level)
 
 class WhileNode(CompoundNode):
 
@@ -299,8 +311,7 @@ class ForClauseNode(ClauseNode):
         self.target.print(fd, 0)
         print(" in ", end="", file=fd)
         self.expr.print(fd, 0)
-        print(":", file=fd)
-        self.body.print(fd, (level + 1))
+        self.printBody(fd, level)
 
 class ReturnNode(Node):
 
@@ -815,7 +826,7 @@ class SeqNode(Node):
     def findRow(self, lineno):
         for i in range(len(self.rows)):
             if (self.rows[i].lineno >= lineno):
-                return (self, i)
+                return ("row", self, i)
             r = self.rows[i].findRow(lineno)
             if (r != None):
                 return r

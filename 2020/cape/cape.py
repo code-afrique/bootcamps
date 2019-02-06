@@ -22,9 +22,9 @@ class Scrollable(tk.Frame):
     def __init__(self, frame, shared, width=16):
         super().__init__(None)
         self.canvas = tk.Canvas(frame, width=725, height=475)
-        self.canvas.isWithinDef = False	# ???
-        self.canvas.isWithinLoop = False	# ???
-        self.canvas.isWithinStore = False	# ???
+        self.canvas.isWithinDef = False    # ???
+        self.canvas.isWithinLoop = False    # ???
+        self.canvas.isWithinStore = False    # ???
         ysb = tk.Scrollbar(frame, width=width, orient=tk.VERTICAL)
         xsb = tk.Scrollbar(frame, width=width, orient=tk.HORIZONTAL)
         # self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
@@ -174,12 +174,16 @@ class CAPE(tk.Frame):
                 comments = self.extractComments(code)
                 for (lineno, text) in comments.items():
                     assert (text[0] == "#")
-                    (sb, i) = n.findRow(lineno)
-                    row = sb.rows[i]
-                    if (lineno < row.lineno):
-                        row = RowNode(EmptyNode(), lineno)
-                        sb.rows.insert(i, row)
-                    row.comment = text[1:]
+                    (type, b, i) = n.findRow(lineno)
+                    if type == "row":
+                        row = b.rows[i]
+                        if (lineno < row.lineno):
+                            row = RowNode(EmptyNode(), lineno)
+                            b.rows.insert(i, row)
+                        row.comment = text[1:]
+                    else:
+                        assert type == "clause"
+                        b.comment = text[1:]
                 if (self.program != None):
                     self.program.grid_forget()
                 self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)

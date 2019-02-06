@@ -645,7 +645,10 @@ class ClauseBlock(Block):
     def __init__(self, parent, shared, node, minimized, title):
         super().__init__(parent, shared)
 
-        self.node = SeqNode([RowNode(PassNode())]) if node == None else node
+        self.comment = tk.StringVar()
+        if node != None and node.comment != None:
+            self.comment.set(("#" + node.comment))
+        self.body_node = SeqNode([RowNode(PassNode())]) if node == None or node.body == None else node.body
         self.title = title
         self.hdr = HeaderBlock(self, shared)
         self.colon = tk.Button(self.hdr, highlightbackground="yellow", text="+", command=self.minmax)
@@ -680,7 +683,7 @@ class ClauseBlock(Block):
     def minmax(self):
         if self.minimized:
             if self.body == None:
-                self.body = self.node.toBlock(self, self)
+                self.body = self.body_node.toBlock(self, self)
             self.body.grid(row=1, column=0, columnspan=2, sticky=tk.W)
             self.update()
             self.minimized = False
@@ -693,7 +696,7 @@ class ClauseBlock(Block):
 
     def toNode(self):
         if self.minimized:
-            return self.node
+            return self.body_node
         else:
             return self.body.toNode()
 
@@ -701,7 +704,7 @@ class ClauseBlock(Block):
 # 'finally' clauses.
 class BasicClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, False, "{} clause".format(node.type))
+        super().__init__(parent, shared, node, False, "{} clause".format(node.type))
         self.type = node.type
         tk.Button(self.hdr, text=node.type, fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.hdr.grid(row=0, sticky=tk.W)
@@ -719,7 +722,7 @@ class BasicClauseBlock(ClauseBlock):
 # clauses.
 class CondClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, False, "{} clause".format(node.type))
+        super().__init__(parent, shared, node, False, "{} clause".format(node.type))
         if node.cond == None:
             self.cond = ExpressionBlock(self.hdr, shared, None)
         else:
@@ -794,9 +797,8 @@ class ContainerBlock(CompoundBlock):
         return ContainerNode(self.clauses[0].toNode())
 
 class ClassClauseBlock(ClauseBlock):
-
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, node.body != None, "def clause")
+        super().__init__(parent, shared, node, node.body != None, "def clause")
         self.cname = tk.StringVar()
         self.cname.set(node.name)
         btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
@@ -1934,10 +1936,9 @@ class SeqBlock(Block):
         return SeqNode([r.toNode() for r in self.rows])
 
 class DefClauseBlock(ClauseBlock):
-
     def __init__(self, parent, shared, node):
         parent.isWithinDef = True
-        super().__init__(parent, shared, node.body, node.body != None, "def clause")
+        super().__init__(parent, shared, node, node.body != None, "def clause")
         self.mname = tk.StringVar()
         self.mname.set(node.name)
         self.args = node.args
@@ -2183,9 +2184,8 @@ class TryBlock(CompoundBlock):
         return TryNode([c.toNode() for c in self.clauses], self.hasElse)
 
 class ExceptClauseBlock(ClauseBlock):
-
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, False, "except clause")
+        super().__init__(parent, shared, node, False, "except clause")
 
         tk.Button(self.hdr, text="except", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         column = 1
@@ -2216,12 +2216,8 @@ class ExceptClauseBlock(ClauseBlock):
         return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), super().toNode())
 
 class WithClauseBlock(ClauseBlock):
-
     def __init__(self, parent, shared, node):
-        if node == None:
-            super().__init__(parent, shared, None, False, "with clause")
-        else:
-            super().__init__(parent, shared, node.body, False, "with clause")
+        super().__init__(parent, shared, node, False, "with clause")
 
         self.items = []
         tk.Button(self.hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
@@ -2255,7 +2251,7 @@ class WithClauseBlock(ClauseBlock):
 
 class ForClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, False, "for clause")
+        super().__init__(parent, shared, node, False, "for clause")
 
         self.hdr.isWithinStore = True
         if node.target == None:
