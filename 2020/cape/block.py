@@ -1995,6 +1995,49 @@ class IfBlock(CompoundBlock):
     def toNode(self):
         return IfNode([c.toNode() for c in self.clauses], self.hasElse)
 
+class WhileBlock(CompoundBlock):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        if (node == None):
+            self.clauses = [IfClauseBlock(self, shared, IfClauseNode("while", None, None))]
+            self.hasElse = False
+        else:
+            self.clauses = [IfClauseBlock(self, shared, n) if isinstance(n, IfClauseNode) else BasicClauseBlock(self, shared, n) for n in node.clauses]
+            self.hasElse = node.hasElse
+        self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(WhileForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addElse(self):
+        if not self.hasElse:
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode("else", None))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
+
+    def removeElse(self):
+        if self.hasElse:
+            self.clauses[-1].grid_forget()
+            del self.clauses[-1]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
+
+    def gridUpdate(self):
+        super().gridUpdate()
+        for i in range(len(self.clauses)):
+            self.clauses[i].grid(row=i, sticky=tk.W)
+        self.scrollUpdate()
+
+    def toNode(self):
+        return WhileNode([c.toNode() for c in self.clauses], self.hasElse)
+
 class TryBlock(Block):
 
     def __init__(self, parent, shared, node):
@@ -2096,7 +2139,7 @@ class WithBlock(Block):
     def toNode(self):
         return WithNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], self.clause.toNode())
 
-class WhileBlock(Block):
+class XWhileBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)

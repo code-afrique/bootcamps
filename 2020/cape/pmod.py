@@ -58,7 +58,10 @@ def For(lineno, col_offset, target, iter, body, orelse):
     return RowNode(ForNode(target, iter, SeqNode(body), (None if (orelse == []) else SeqNode(orelse))), lineno)
 
 def While(lineno, col_offset, test, body, orelse):
-    return RowNode(WhileNode(test, SeqNode(body), (None if (orelse == []) else SeqNode(orelse))), lineno)
+    if orelse == []:
+        return RowNode(IfNode([IfClauseNode("while", test, SeqNode(body))], False), lineno)
+    else:
+        return RowNode(IfNode([IfClauseNode("while", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
 
 def If(lineno, col_offset, test, body, orelse):
     if (orelse == []):

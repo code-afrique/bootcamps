@@ -301,31 +301,24 @@ class WithNode(Node):
 
 class WhileNode(Node):
 
-    def __init__(self, cond, body, orelse):
+    def __init__(self, clauses, hasElse):
         super().__init__()
-        self.cond = cond
-        self.body = body
-        self.orelse = orelse
+        self.clauses = clauses
+        self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newWhileBlock(frame, self)
 
     def findRow(self, lineno):
-        loc = self.body.findRow(lineno)
-        if ((loc == None) and (self.orelse != None)):
-            loc = self.orelse.findRow(lineno)
-        return loc
+        for c in self.clauses:
+            loc = c.findRow(lineno)
+            if (loc != None):
+                return loc
+        return None
 
     def print(self, fd, level):
-        self.printIndent(fd, level)
-        print("while ", end="", file=fd)
-        self.cond.print(fd, 0)
-        print(":", file=fd)
-        self.body.print(fd, (level + 1))
-        if (self.orelse != None):
-            self.printIndent(fd, level)
-            print("else:", file=fd)
-            self.orelse.print(fd, (level + 1))
+        for c in self.clauses:
+            c.print(fd, level)
 
 class ForNode(Node):
 

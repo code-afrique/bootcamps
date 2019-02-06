@@ -645,10 +645,10 @@ class WhileForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'while' statement").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.").grid(row=1)
-        if (block.orelse == None):
-            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
-        else:
+        if block.hasElse:
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
+        else:
+            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
         eb.grid(row=2)
 
     def addElse(self):
