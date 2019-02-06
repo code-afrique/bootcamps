@@ -215,8 +215,8 @@ class Block(tk.Frame):
     def newLambdaBlock(self, parent, node):
         return LambdaBlock(parent, self.shared, node)
 
-    def newClassBlock(self, parent, node):
-        return ClassBlock(parent, self.shared, node)
+    def newClassClauseBlock(self, parent, node):
+        return ClassClauseBlock(parent, self.shared, node)
 
     def newBasicClauseBlock(self, parent, node):
         return BasicClauseBlock(parent, self.shared, node)
@@ -795,31 +795,25 @@ class ContainerBlock(CompoundBlock):
     def toNode(self):
         return ContainerNode(self.clauses[0].toNode())
 
-class ClassBlock(Block):
+class ClassClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
+        super().__init__(parent, shared, node.body, node.body != None, "def clause")
         self.cname = tk.StringVar()
-
-        if (node == None):
-            self.clause = ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "Class Definition")
-        else:
-            self.cname.set(node.name)
-            self.clause = ClauseBlock(self, shared, node.body, True, "Class Definition")
-
-        hdr = self.clause.hdr
-        btn = tk.Button(hdr, text="class", fg="red", width=0, command=self.cb)
+        self.cname.set(node.name)
+        btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
-        self.name = tk.Button(hdr, textvariable=self.cname, fg="blue", command=self.cb)
+        self.name = tk.Button(self.hdr, textvariable=self.cname, fg="blue", command=self.cb)
         self.name.grid(row=0, column=1)
-        tk.Button(hdr, text="(", command=self.cb).grid(row=0, column=2)
-        self.eol = tk.Button(hdr, text=")", command=self.cb)
+        tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
+        self.eol = tk.Button(self.hdr, text=")", command=self.cb)
         self.bases = []
         if (node != None):
             for base in node.bases:
                 self.addBaseClass(base)
+
         self.setHeader()
-        self.clause.grid()
+        self.hdr.grid()
 
     def goRight(self):
         return self.clause
@@ -836,19 +830,18 @@ class ClassBlock(Block):
 
     def addBaseClass(self, node):
         if (node == None):
-            base = ExpressionBlock(self.clause.hdr, self.shared, None)
+            base = ExpressionBlock(self.hdr, self.shared, None)
         else:
-            base = ExpressionBlock(self.clause.hdr, self.shared, node)
+            base = ExpressionBlock(self.hdr, self.shared, node)
         self.bases.append(base)
         self.setHeader()
         self.needsSaving()
 
     def setHeader(self):
-        hdr = self.clause.hdr
         column = 3
         for i in range(len(self.bases)):
             if (i != 0):
-                tk.Button(hdr, text=",", command=self.cb).grid(row=0, column=column)
+                tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
                 column += 1
             self.bases[i].grid(row=0, column=column)
             column += 1
@@ -861,7 +854,7 @@ class ClassBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad class name")
                 self.shared.cvtError = True
-        return ClassNode(v, [b.toNode() for b in self.bases], self.clause.toNode())
+        return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode())
 
 class CallBlock(Block):
 
@@ -1330,14 +1323,6 @@ class PassBlock(Block):
         self.setBlock(self.rowblk)
         self.needsSaving()
 
-    def stmtClass(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ClassBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what)
-        self.needsSaving()
-        self.shared.curForm.entry.focus()
-
     def stmtAugassign(self, op):
         self.rowblk.what.grid_forget()
         if (op == "="):
@@ -1373,6 +1358,14 @@ class PassBlock(Block):
     def stmtDef(self):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(DefClauseNode("", [], [], None)))
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.clauses[0])
+        self.needsSaving()
+        self.shared.curForm.entry.focus()
+
+    def stmtClass(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(ClassClauseNode("", [], None)))
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.clauses[0])
         self.needsSaving()

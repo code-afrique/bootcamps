@@ -227,9 +227,9 @@ class PassForm(Form):
         self.bind("<Key>", self.key)
         self.focus_set()
         row = 0
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="'pass' statement").grid(row=row, columnspan=3)
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="'pass' statement").grid(row=row, columnspan=4)
         row += 1
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=row, columnspan=3)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement").grid(row=row, columnspan=4)
         row += 1
         statements = [("assert", self.stmtAssert), ("break", self.stmtBreak), ("class", self.stmtClass), ("continue", self.stmtContinue), ("def", self.stmtDef), ("del", self.stmtDel), ("for", self.stmtFor), ("global", self.stmtGlobal), ("if", self.stmtIf), ("import", self.stmtImport), ("print", self.stmtPrint), ("return", self.stmtReturn), ("try", self.stmtTry), ("while", self.stmtWhile), ("with", self.stmtWith), ("yield", self.stmtYield)]
         ncolumns = 4
@@ -250,12 +250,12 @@ class PassForm(Form):
         assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
         assignops.grid(row=row, column=2, sticky=tk.W)
         row += 1
-        # tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row, columnspan=3, pady=10)
+        # tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row, columnspan=4, pady=10)
         # row += 1
-        tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=3, pady=10)
+        tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=4, pady=10)
         row += 1
-        tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid(columnspan=3)
-        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=3, pady=10)
+        tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid(columnspan=4)
+        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=4, pady=10)
 
     def stmtEmpty(self):
         self.block.stmtEmpty()

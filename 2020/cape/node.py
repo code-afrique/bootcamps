@@ -146,7 +146,7 @@ class LambdaNode(Node):
         self.body.print(fd, 0)
         print(")", end="", file=fd)
 
-class ClassNode(Node):
+class ClassClauseNode(Node):
 
     def __init__(self, name, bases, body):
         super().__init__()
@@ -155,7 +155,7 @@ class ClassNode(Node):
         self.body = body
 
     def toBlock(self, frame, block):
-        return block.newClassBlock(frame, self)
+        return block.newClassClauseBlock(frame, self)
 
     def findRow(self, lineno):
         return self.body.findRow(lineno)
