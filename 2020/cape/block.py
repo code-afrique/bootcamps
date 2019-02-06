@@ -2207,13 +2207,13 @@ class ForClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node.body, False, "for clause")
 
-        parent.isWithinStore = True
+        self.hdr.isWithinStore = True
         if node.target == None:
             self.target = ExpressionBlock(self.hdr, shared, None)
         else:
             self.target = node.target.toBlock(self.hdr, self)
 
-        parent.isWithinStore = False
+        self.hdr.isWithinStore = False
         if node.expr == None:
             self.expr = ExpressionBlock(self.hdr, shared, None)
         else:
