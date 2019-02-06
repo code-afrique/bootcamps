@@ -764,8 +764,7 @@ class ModuleBlock(CompoundBlock):
         if (node == None):
             self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode("module", None))]
         else:
-            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode("module", node.body))]
-
+            self.clauses = [c.toBlock(self, self) for c in node.clauses]
         self.clauses[0].grid()
 
     def genForm(self):
@@ -775,7 +774,7 @@ class ModuleBlock(CompoundBlock):
         self.setBlock(self)
 
     def toNode(self):
-        return ModuleNode(self.clauses[0].body.toNode())
+        return ModuleNode(self.clauses[0].toNode())
 
 # A container block is a compound block with a single clause in it.
 class ContainerBlock(CompoundBlock):

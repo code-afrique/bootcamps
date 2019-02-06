@@ -13,21 +13,6 @@ class Node():
         for i in range(level):
             print("    ", end="", file=fd)
 
-class ModuleNode():
-
-    def __init__(self, body):
-        super().__init__()
-        self.body = body
-
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
-
-    def toBlock(self, frame, block):
-        return block.newModuleBlock(frame, self)
-
-    def print(self, fd, level):
-        self.body.print(fd, level)
-
 class PassNode(Node):
 
     def __init__(self):
@@ -198,6 +183,14 @@ class CompoundNode(Node):
     def print(self, fd, level):
         for c in self.clauses:
             c.print(fd, level)
+
+class ModuleNode(CompoundNode):
+
+    def __init__(self, body):
+        super().__init__([body])
+
+    def toBlock(self, frame, block):
+        return block.newModuleBlock(frame, self)
 
 class ContainerNode(CompoundNode):
 
