@@ -99,6 +99,15 @@ class ClauseForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements with a header.").grid(sticky=tk.W)
 
+class CondClauseForm(Form):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements executed conditionally.").grid(sticky=tk.W)
+
 class EvalForm(Form):
 
     def __init__(self, parent, block):

@@ -187,7 +187,7 @@ class BasicClauseNode(Node):
         print("{}:".format(self.type), file=fd)
         self.body.print(fd, (level + 1))
 
-class IfClauseNode(Node):
+class CondClauseNode(Node):
     def __init__(self, type, cond, body):
         super().__init__()
         self.type = type
@@ -195,7 +195,7 @@ class IfClauseNode(Node):
         self.body = body
 
     def toBlock(self, frame, block):
-        return block.newIfClauseBlock(frame, self)
+        return block.newCondClauseBlock(frame, self)
 
     def findRow(self, lineno):
         return self.body.findRow(lineno)

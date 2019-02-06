@@ -59,21 +59,21 @@ def For(lineno, col_offset, target, iter, body, orelse):
 
 def While(lineno, col_offset, test, body, orelse):
     if orelse == []:
-        return RowNode(WhileNode([IfClauseNode("while", test, SeqNode(body))], False), lineno)
+        return RowNode(WhileNode([CondClauseNode("while", test, SeqNode(body))], False), lineno)
     else:
-        return RowNode(WhileNode([IfClauseNode("while", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
+        return RowNode(WhileNode([CondClauseNode("while", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
 
 def If(lineno, col_offset, test, body, orelse):
     if (orelse == []):
-        return RowNode(IfNode([IfClauseNode("if", test, SeqNode(body))], False), lineno)
+        return RowNode(IfNode([CondClauseNode("if", test, SeqNode(body))], False), lineno)
     if (len(orelse) == 1):
         row = orelse[0]
         assert isinstance(row, RowNode)
         stmt = row.what
         if isinstance(stmt, IfNode):
             stmt.clauses[0].type = "elif"
-            return RowNode(IfNode([IfClauseNode("if", test, SeqNode(body))] + stmt.clauses, stmt.hasElse), lineno)
-    return RowNode(IfNode([IfClauseNode("if", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
+            return RowNode(IfNode([CondClauseNode("if", test, SeqNode(body))] + stmt.clauses, stmt.hasElse), lineno)
+    return RowNode(IfNode([CondClauseNode("if", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
 
 def Try(lineno, col_offset, body, handlers, orelse, finalbody):
     return RowNode(TryNode(SeqNode(body), handlers, (None if (orelse == []) else SeqNode(orelse)), (None if (finalbody == []) else SeqNode(finalbody))), lineno)

@@ -221,8 +221,8 @@ class Block(tk.Frame):
     def newBasicClauseBlock(self, parent, node):
         return BasicClauseBlock(parent, self.shared, node)
 
-    def newIfClauseBlock(self, parent, node):
-        return IfClauseBlock(parent, self.shared, node)
+    def newCondClauseBlock(self, parent, node):
+        return CondClauseBlock(parent, self.shared, node)
 
     def newIfBlock(self, parent, node):
         return IfBlock(parent, self.shared, node)
@@ -695,7 +695,7 @@ class ClauseBlock(Block):
 # 'finally' clauses.
 class BasicClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, False, "basic clause")
+        super().__init__(parent, shared, node.body, False, "{} clause".format(node.type))
         self.type = node.type
         tk.Button(self.hdr, text=node.type, fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.hdr.grid(row=0, sticky=tk.W)
@@ -707,13 +707,13 @@ class BasicClauseBlock(ClauseBlock):
         self.setBlock(self)
 
     def toNode(self):
-        return BasicClauseNode(self.type, self.body.toNode())
+        return BasicClauseNode(self.type, super().toNode())
 
 # An 'if' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
 # clauses.
-class IfClauseBlock(ClauseBlock):
+class CondClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node.body, False, "if clause")
+        super().__init__(parent, shared, node.body, False, "{} clause".format(node.type))
         if node.cond == None:
             self.cond = ExpressionBlock(self.hdr, shared, None)
         else:
@@ -725,7 +725,7 @@ class IfClauseBlock(ClauseBlock):
         self.hdr.grid(row=0, sticky=tk.W)
 
     def genForm(self):
-        self.setForm(ClauseForm(self.shared.confarea, self))
+        self.setForm(CondClauseForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -734,7 +734,7 @@ class IfClauseBlock(ClauseBlock):
         return self.cond
 
     def toNode(self):
-        return IfClauseNode(self.type, self.cond.toNode(), self.body.toNode())
+        return CondClauseNode(self.type, self.cond.toNode(), super().toNode())
 
 # A compound block consists of a list of clause blocks.
 class CompoundBlock(Block):
@@ -854,7 +854,7 @@ class ClassClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad class name")
                 self.shared.cvtError = True
-        return ClassNode(v, [b.toNode() for b in self.bases], self.body.toNode())
+        return ClassNode(v, [b.toNode() for b in self.bases], super().toNode())
 
 class CallBlock(Block):
 
@@ -1952,13 +1952,13 @@ class DefClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.body.toNode())
+        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], super().toNode())
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
-            self.clauses = [IfClauseBlock(self, shared, IfClauseNode("if", None, None))]
+            self.clauses = [CondClauseBlock(self, shared, CondClauseNode("if", None, None))]
             self.hasElse = False
         else:
             self.clauses = [n.toBlock(self, self) for n in node.clauses]
@@ -1989,7 +1989,7 @@ class IfBlock(CompoundBlock):
             self.needsSaving()
 
     def insertElif(self):
-        clause = IfClauseBlock(self, self.shared, IfClauseNode("elif", None, None))
+        clause = CondClauseBlock(self, self.shared, CondClauseNode("elif", None, None))
         n = len(self.clauses)
         self.clauses.insert(n - 1 if self.hasElse else n, clause)
         self.gridUpdate()
@@ -2010,7 +2010,7 @@ class WhileBlock(CompoundBlock):
         super().__init__(parent, shared)
         self.isWithinLoop = True
         if (node == None):
-            self.clauses = [IfClauseBlock(self, shared, IfClauseNode("while", None, None))]
+            self.clauses = [CondClauseBlock(self, shared, CondClauseNode("while", None, None))]
             self.isWithinLoop = False
             self.hasElse = False
         else:
@@ -2150,7 +2150,7 @@ class WithClauseBlock(ClauseBlock):
         self.setBlock(self)
 
     def toNode(self):
-        return WithClauseNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], self.body.toNode())
+        return WithClauseNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], super().toNode())
 
 class ForBlock(CompoundBlock):
 
