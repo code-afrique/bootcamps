@@ -105,7 +105,7 @@ class CAPE(tk.Frame):
         self.progarea = tk.Frame(frame, width=750, height=500)
         # self.progarea = Block(frame, shared)
         # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
-        self.progarea.grid_propagate(0)
+        # self.progarea.grid_propagate(0)
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
         self.program = ModuleBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
@@ -127,13 +127,19 @@ class CAPE(tk.Frame):
 
         self.evq = queue.Queue()
         self.bind("<<RunErr>>", self.runerr)
+        # self.master.after(100, self.checkQueue)
+
+    # I'm doing this because event generation seems to have problems
+    def checkQueue(self):
+        self.runerr(None)
+        self.master.after(100, self.checkQueue)
 
     def runerr(self, ev):
         while not self.evq.empty():
             (line, col, err) = self.evq.get()
             print("ERROR", line, col, err)
-            if 0 <= line < len(self.shared.linebuf):
-                self.program.setBlock(self.shared.linebuf[line])
+            # if 0 <= line < len(self.shared.linebuf):
+            #   self.program.setBlock(self.shared.linebuf[line])
             # tk.messagebox.showinfo("Run Error", err)
             self.errormsgs.delete('1.0', tk.END)
             self.errormsgs.insert(tk.INSERT, err)

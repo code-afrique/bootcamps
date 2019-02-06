@@ -56,6 +56,47 @@ class Console(tk.Frame):
 
         self.bottom.pack(side="bottom", fill="both")
 
+        self.queue = Queue(1024)
+        self.open = { "stdout": True, "stderr": True }
+        self.master.after(100, self.processQueue)
+        self.errStr = ""
+
+    def processQueue(self):
+        while not self.queue.empty():
+            (tag, c) = self.queue.get()
+            if c == None:
+                print("CLOSE", tag)
+                self.open[tag] = False
+            else:
+                self.show(c.decode("utf-8"), tag)
+                if tag == "stderr":
+                    self.errStr += c.decode("utf-8")
+        if self.open["stdout"] or self.open["stderr"]:
+            self.master.after(100, self.processQueue)
+        else:
+            errFile = None
+            errLine = None
+            errCol = None
+            errDescr = None
+            with io.StringIO(self.errStr) as fd:
+                for line in fd:
+                    mo = re.match(r' *File "([^"]+)", line (\d+).*', line, re.S|re.I)
+                    if mo:
+                        errFile = mo.group(1)
+                        errLine = int(mo.group(2))
+                        errCol = None
+                    elif errFile != None:
+                        mo = re.match(r'^( *)\^.*$', line)
+                        if mo:
+                            errCol = len(mo.group(1))
+                        else:
+                            mo = re.match(r'^\w+Error: .*$', line)
+                            if mo:
+                                errDescr = line
+            if errDescr != None:
+                self.evq.put((errLine, errCol, errDescr))
+                self.main.event_generate("<<RunErr>>", when="tail")
+
     def entryEnter(self, ev):
         m = self.entry.get() + '\n'
         self.entry.delete(0, tk.END)
@@ -79,7 +120,6 @@ class Console(tk.Frame):
     def start_proc(self, command):
         """Starts a new thread and calls process"""
         self.command = command
-        # self.process is called by the Thread's run method
         threading.Thread(target=self.execute).start()
 
     def stop(self):
@@ -103,6 +143,7 @@ class Console(tk.Frame):
                     break
                 queue.put((tag, c))
                 if queue.qsize() > 256:
+                    print("reader: wait for queue to clear a bit")
                     time.sleep(0.1)
         finally:
             queue.put((tag, None))
@@ -111,48 +152,16 @@ class Console(tk.Frame):
         """Keeps inserting line by line into self.text
         the output of the execution of self.command"""
         try:
+            print("start process")
             self.popen = Popen(['python', '-u', self.command], stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0)
 
-            q = Queue(1024)
-            Thread(target=self.reader, args=[self.popen.stdout, q, "stdout"]).start()
-            Thread(target=self.reader, args=[self.popen.stderr, q, "stderr"]).start()
-            d = { "stdout": True, "stderr": True }
-            errStr = ""
-            while d["stdout"] or d["stderr"]:
-                (tag, c) = q.get()
-                if c == None:
-                    d[tag] = False
-                else:
-                    self.show(c.decode("utf-8"), tag)
-                    if tag == "stderr":
-                        errStr += c.decode("utf-8")
+            Thread(target=self.reader, args=[self.popen.stdout, self.queue, "stdout"]).start()
+            Thread(target=self.reader, args=[self.popen.stderr, self.queue, "stderr"]).start()
             while self.popen.poll() is None:
                 print("process still running")
                 time.sleep(0.1)
             self.status.set("Terminated")
-
-            errFile = None
-            errLine = None
-            errCol = None
-            errDescr = None
-            with io.StringIO(errStr) as fd:
-                for line in fd:
-                    mo = re.match(r' *File "([^"]+)", line (\d+).*', line, re.S|re.I)
-                    if mo:
-                        errFile = mo.group(1)
-                        errLine = int(mo.group(2))
-                        errCol = None
-                    elif errFile != None:
-                        mo = re.match(r'^( *)\^.*$', line)
-                        if mo:
-                            errCol = len(mo.group(1))
-                        else:
-                            mo = re.match(r'^\w+Error: .*$', line)
-                            if mo:
-                                errDescr = line
-            if errDescr != None:
-                self.evq.put((errLine, errCol, errDescr))
-                self.main.event_generate("<<RunErr>>", when="tail")
+            print("terminated process")
         except FileNotFoundError:
             self.show("Can't find python\n\n", "stderr")
         finally:
