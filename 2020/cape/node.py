@@ -92,14 +92,17 @@ class RowNode(Node):
             s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "    #")) + self.comment) + s[i:])
         print(s, file=fd, end="")
 
-class DefClauseNode(Node):
-
-    def __init__(self, name, args, defaults, body):
+class ClauseNode(Node):
+    def __init__(self, body):
         super().__init__()
+        self.body = body
+
+class DefClauseNode(ClauseNode):
+    def __init__(self, name, args, defaults, body):
+        super().__init__(body)
         self.name = name
         self.args = args
         self.defaults = defaults
-        self.body = body
 
     def toBlock(self, frame, block):
         return block.newDefClauseBlock(frame, self)
@@ -146,13 +149,12 @@ class LambdaNode(Node):
         self.body.print(fd, 0)
         print(")", end="", file=fd)
 
-class ClassClauseNode(Node):
+class ClassClauseNode(ClauseNode):
 
     def __init__(self, name, bases, body):
-        super().__init__()
+        super().__init__(body)
         self.name = name
         self.bases = bases
-        self.body = body
 
     def toBlock(self, frame, block):
         return block.newClassClauseBlock(frame, self)
@@ -170,11 +172,10 @@ class ClassClauseNode(Node):
         print("):", file=fd)
         self.body.print(fd, (level + 1))
 
-class BasicClauseNode(Node):
+class BasicClauseNode(ClauseNode):
     def __init__(self, type, body):
-        super().__init__()
+        super().__init__(body)
         self.type = type
-        self.body = body
 
     def toBlock(self, frame, block):
         return block.newBasicClauseBlock(frame, self)
@@ -187,12 +188,11 @@ class BasicClauseNode(Node):
         print("{}:".format(self.type), file=fd)
         self.body.print(fd, (level + 1))
 
-class CondClauseNode(Node):
+class CondClauseNode(ClauseNode):
     def __init__(self, type, cond, body):
-        super().__init__()
+        super().__init__(body)
         self.type = type
         self.cond = cond
-        self.body = body
 
     def toBlock(self, frame, block):
         return block.newCondClauseBlock(frame, self)
@@ -249,11 +249,11 @@ class TryNode(Node):
         for c in self.clauses:
             c.print(fd, level)
 
-class ExceptClauseNode(Node):
+class ExceptClauseNode(ClauseNode):
     def __init__(self, type, name, body):
+        super().__init__(body)
         self.type = type
         self.name = name
-        self.body = body
 
     def findRow(self, lineno):
         return self.body.findRow(lineno)
@@ -274,12 +274,11 @@ class ExceptClauseNode(Node):
             print(":", file=fd)
         self.body.print(fd, (level + 1))
 
-class WithClauseNode(Node):
+class WithClauseNode(ClauseNode):
 
     def __init__(self, items, body):
-        super().__init__()
+        super().__init__(body)
         self.items = items
-        self.body = body
 
     def toBlock(self, frame, block):
         return block.newWithClauseBlock(frame, self)
@@ -345,13 +344,12 @@ class ForNode(Node):
         for c in self.clauses:
             c.print(fd, level)
 
-class ForClauseNode(Node):
+class ForClauseNode(ClauseNode):
 
     def __init__(self, target, expr, body):
-        super().__init__()
+        super().__init__(body)
         self.target = target
         self.expr = expr
-        self.body = body
 
     def toBlock(self, frame, block):
         return block.newForClauseBlock(frame, self)
