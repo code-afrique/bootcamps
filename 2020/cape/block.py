@@ -197,6 +197,9 @@ class Block(tk.Frame):
     def goDown(self):
         return self
 
+    def newContainerBlock(self, parent, node):
+        return ContainerBlock(parent, self.shared, node)
+
     def newModuleBlock(self, parent, node):
         return ModuleBlock(parent, self.shared, node)
 
@@ -227,8 +230,8 @@ class Block(tk.Frame):
     def newTryBlock(self, parent, node):
         return TryBlock(parent, self.shared, node)
 
-    def newWithBlock(self, parent, node):
-        return WithBlock(parent, self.shared, node)
+    def newWithClauseBlock(self, parent, node):
+        return WithClauseBlock(parent, self.shared, node)
 
     def newWhileBlock(self, parent, node):
         return WhileBlock(parent, self.shared, node)
@@ -770,6 +773,27 @@ class ModuleBlock(CompoundBlock):
 
     def toNode(self):
         return ModuleNode(self.clauses[0].body.toNode())
+
+# A container block is a compound block with a single clause.  Examples are class, def,
+# and with statements
+class ContainerBlock(CompoundBlock):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+
+        self.clauses = [node.body.toBlock(self, self)]
+        self.clauses[0].grid()
+
+    def goRight(self):
+        return self.clauses[0]
+
+    def genForm(self):
+        self.setForm(ContainerForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ContainerNode(self.clauses[0].body.toNode())
 
 class ClassBlock(Block):
 
@@ -1356,7 +1380,7 @@ class PassBlock(Block):
 
     def stmtWith(self):
         self.rowblk.what.grid_forget()
-        self.rowblk.what = WithBlock(self.rowblk, self.shared, None)
+        self.rowblk.what = WithClauseBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what)
         self.needsSaving()
@@ -1951,7 +1975,7 @@ class IfBlock(CompoundBlock):
             self.clauses = [IfClauseBlock(self, shared, IfClauseNode("if", None, None))]
             self.hasElse = False
         else:
-            self.clauses = [IfClauseBlock(self, shared, n) if isinstance(n, IfClauseNode) else BasicClauseBlock(self, shared, n) for n in node.clauses]
+            self.clauses = [n.toBlock(self, self) for n in node.clauses]
             self.hasElse = node.hasElse
         self.gridUpdate()
 
@@ -2002,7 +2026,7 @@ class WhileBlock(CompoundBlock):
             self.clauses = [IfClauseBlock(self, shared, IfClauseNode("while", None, None))]
             self.hasElse = False
         else:
-            self.clauses = [IfClauseBlock(self, shared, n) if isinstance(n, IfClauseNode) else BasicClauseBlock(self, shared, n) for n in node.clauses]
+            self.clauses = [n.toBlock(self, self) for n in node.clauses]
             self.hasElse = node.hasElse
         self.gridUpdate()
 
@@ -2099,36 +2123,31 @@ class TryBlock(Block):
     def toNode(self):
         return TryNode(self.clause.toNode(), [((None if (type == None) else type.toNode()), (None if (name == None) else name.toNode()), clause.toNode()) for (clause, type, name) in self.handlers], (None if (self.orelse == None) else self.orelse.toNode()), (None if (self.finalbody == None) else self.finalbody.toNode()))
 
-class WithBlock(Block):
+class WithClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
+        super().__init__(parent, shared, node.body, False, "with clause")
 
         self.items = []
-        if node == None:
-            self.clause = ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "main clause of a 'with' statement")
-        else:
-            self.clause = ClauseBlock(self, shared, node.body, False, "main clause of a 'with' statement")
-        hdr = self.clause.hdr
-        tk.Button(hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
 
         column = 1
         if node != None:
             for (expr, var) in node.items:
-                b = expr.toBlock(hdr, self)
+                b = expr.toBlock(self.hdr, self)
                 b.grid(row=0, column=column)
                 column += 1
                 if var == None:
                     v = None
                 else:
-                    tk.Button(hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
+                    tk.Button(self.hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
                     column += 1
-                    v = var.toBlock(hdr, self)
+                    v = var.toBlock(self.hdr, self)
                     v.grid(row=0, column=column)
                     column += 1
                 self.items.append((b, v))
 
-        self.clause.grid()
+        self.hdr.grid()
 
     def genForm(self):
         self.setForm(WithForm(self.shared.confarea, self))
@@ -2137,7 +2156,7 @@ class WithBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        return WithNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], self.clause.toNode())
+        return WithClauseNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], self.body.toNode())
 
 class ForBlock(CompoundBlock):
 

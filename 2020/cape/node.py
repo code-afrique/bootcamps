@@ -13,6 +13,21 @@ class Node():
         for i in range(level):
             print("    ", end="", file=fd)
 
+class ContainerNode():
+
+    def __init__(self, body):
+        super().__init__()
+        self.body = body
+
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
+
+    def toBlock(self, frame, block):
+        return block.newContainerBlock(frame, self)
+
+    def print(self, fd, level):
+        self.body.print(fd, level)
+
 class ModuleNode():
 
     def __init__(self, body):
@@ -270,7 +285,7 @@ class TryNode(Node):
             print("finally:", file=fd)
             self.finalbody.print(fd, (level + 1))
 
-class WithNode(Node):
+class WithClauseNode(Node):
 
     def __init__(self, items, body):
         super().__init__()
@@ -278,7 +293,7 @@ class WithNode(Node):
         self.body = body
 
     def toBlock(self, frame, block):
-        return block.newWithBlock(frame, self)
+        return block.newWithClauseBlock(frame, self)
 
     def findRow(self, lineno):
         return self.body.findRow(lineno)

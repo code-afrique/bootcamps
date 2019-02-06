@@ -59,9 +59,9 @@ def For(lineno, col_offset, target, iter, body, orelse):
 
 def While(lineno, col_offset, test, body, orelse):
     if orelse == []:
-        return RowNode(IfNode([IfClauseNode("while", test, SeqNode(body))], False), lineno)
+        return RowNode(WhileNode([IfClauseNode("while", test, SeqNode(body))], False), lineno)
     else:
-        return RowNode(IfNode([IfClauseNode("while", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
+        return RowNode(WhileNode([IfClauseNode("while", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
 
 def If(lineno, col_offset, test, body, orelse):
     if (orelse == []):
@@ -82,7 +82,7 @@ def ExceptHandler(lineno, col_offset, type, name, body):
     return (type, name, SeqNode(body))
 
 def With(lineno, col_offset, items, body):
-    return RowNode(WithNode(items, SeqNode(body)), lineno)
+    return RowNode(ContainerNode(WithClauseNode(items, SeqNode(body))), lineno)
 
 def Compare(lineno, col_offset, left, ops, comparators):
     return ExpressionNode(ListopNode(([left] + comparators), ops))
