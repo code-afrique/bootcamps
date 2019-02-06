@@ -224,6 +224,9 @@ class Block(tk.Frame):
     def newCondClauseBlock(self, parent, node):
         return CondClauseBlock(parent, self.shared, node)
 
+    def newForClauseBlock(self, parent, node):
+        return ForClauseBlock(parent, self.shared, node)
+
     def newIfBlock(self, parent, node):
         return IfBlock(parent, self.shared, node)
 
@@ -1352,7 +1355,14 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = WhileBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.cond)
+        self.setBlock(self.rowblk.what.clauses[0])
+        self.needsSaving()
+
+    def stmtFor(self):
+        self.rowblk.what.grid_forget()
+        self.rowblk.what = ForBlock(self.rowblk, self.shared, None)
+        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.setBlock(self.rowblk.what.clauses[0])
         self.needsSaving()
 
     def stmtDef(self):
@@ -1376,13 +1386,6 @@ class PassBlock(Block):
         self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(WithClauseNode([], None)))
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
         self.setBlock(self.rowblk.what.clauses[0])
-        self.needsSaving()
-
-    def stmtFor(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ForBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.target)
         self.needsSaving()
 
     def stmtReturn(self):
@@ -2053,6 +2056,54 @@ class WhileBlock(CompoundBlock):
     def toNode(self):
         return WhileNode([c.toNode() for c in self.clauses], self.hasElse)
 
+class ForBlock(CompoundBlock):
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.isWithinLoop = True
+        if (node == None):
+            self.clauses = [ForClauseBlock(self, shared, ForClauseNode(None, None, None))]
+            self.isWithinLoop = False
+            self.hasElse = False
+        else:
+            self.clauses = [node.clauses[0].toBlock(self, self)]
+            self.isWithinLoop = False
+            if node.hasElse:
+                self.clauses.append([node.clauses[1].toBlock(self, self)])
+            self.hasElse = node.hasElse
+        self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(ForForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addElse(self):
+        if not self.hasElse:
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode("else", None))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
+
+    def removeElse(self):
+        if self.hasElse:
+            self.clauses[-1].grid_forget()
+            del self.clauses[-1]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
+
+    def gridUpdate(self):
+        super().gridUpdate()
+        for i in range(len(self.clauses)):
+            self.clauses[i].grid(row=i, sticky=tk.W)
+        self.scrollUpdate()
+
+    def toNode(self):
+        return ForNode([c.toNode() for c in self.clauses], self.hasElse)
+
 class TryBlock(Block):
 
     def __init__(self, parent, shared, node):
@@ -2152,58 +2203,33 @@ class WithClauseBlock(ClauseBlock):
     def toNode(self):
         return WithClauseNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], super().toNode())
 
-class ForBlock(CompoundBlock):
-
+class ForClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
+        super().__init__(parent, shared, node.body, False, "for clause")
 
-        self.isWithinLoop = True
-        if (node == None):
-            self.clause = ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "'for' clause of a 'for' statement")
-            hdr = self.clause.hdr
-            hdr.isWithinStore = True
-            self.target = ExpressionBlock(hdr, shared, None)
-            hdr.isWithinStore = False
-            self.expr = ExpressionBlock(hdr, shared, None)
-            self.orelse = None
+        parent.isWithinStore = True
+        if node.target == None:
+            self.target = ExpressionBlock(self.hdr, shared, None)
         else:
-            self.clause = ClauseBlock(self, shared, node.body, False, "'for' clause of a 'for' statement")
-            hdr = self.clause.hdr
-            hdr.isWithinStore = True
-            self.target = node.target.toBlock(hdr, self)
-            hdr.isWithinStore = False
-            self.expr = ExpressionBlock(hdr, shared, node.expr)
-            self.orelse = None if (node.orelse == None) else Subblock(self, shared, node.orelse, "'else' clause of aa 'for' statement")
-        tk.Button(hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+            self.target = node.target.toBlock(self.hdr, self)
+
+        parent.isWithinStore = False
+        if node.expr == None:
+            self.expr = ExpressionBlock(self.hdr, shared, None)
+        else:
+            self.expr = ExpressionBlock(self.hdr, shared, node.expr)
+
+        tk.Button(self.hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
         self.target.grid(row=0, column=1)
-        tk.Button(hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
+        tk.Button(self.hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
-        self.clause.grid(row=0, sticky=tk.W)
-        self.isWithinLoop = False
-        if self.orelse != None:
-            hdr2 = HeaderBlock(self, shared)
-            tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-            self.orelse.grid(row=1, sticky=tk.W)
+        self.hdr.grid(row=0, sticky=tk.W)
 
     def genForm(self):
-        self.setForm(ForForm(self.shared.confarea, self))
+        self.setForm(ForClauseForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
 
-    def addElse(self):
-        self.orelse = ClauseBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False, "'else' clause of a 'for' statement")
-        hdr2 = self.orelse.hdr
-        tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.orelse.grid(row=1, sticky=tk.W)
-        self.setBlock(self.orelse.body.rows[0].what)
-        self.needsSaving()
-
-    def removeElse(self):
-        self.orelse.grid_forget()
-        self.orelse = None
-        self.setBlock(self)
-        self.needsSaving()
-
     def toNode(self):
-        return ForNode(self.target.toNode(), self.expr.toNode(), self.clause.toNode(), (None if (self.orelse == None) else self.orelse.toNode()))
+        return ForClauseNode(self.target.toNode(), self.expr.toNode(), super.toNode())

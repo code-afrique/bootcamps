@@ -55,7 +55,10 @@ def Bytes(lineno, col_offset, s):
     return ExpressionNode(BytesNode(s))
 
 def For(lineno, col_offset, target, iter, body, orelse):
-    return RowNode(ForNode(target, iter, SeqNode(body), (None if (orelse == []) else SeqNode(orelse))), lineno)
+    if orelse == []:
+        return RowNode(ForNode([ForClauseNode(target, iter, SeqNode(body))], False), lineno)
+    else:
+        return RowNode(ForNode([ForClauseNode(target, iter, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
 
 def While(lineno, col_offset, test, body, orelse):
     if orelse == []:

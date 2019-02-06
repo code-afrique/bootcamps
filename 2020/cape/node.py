@@ -335,21 +335,38 @@ class WhileNode(Node):
 
 class ForNode(Node):
 
-    def __init__(self, target, expr, body, orelse):
+    def __init__(self, clauses, hasElse):
         super().__init__()
-        self.target = target
-        self.expr = expr
-        self.body = body
-        self.orelse = orelse
+        self.clauses = clauses
+        self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newForBlock(frame, self)
 
     def findRow(self, lineno):
-        loc = self.body.findRow(lineno)
-        if ((loc == None) and (self.orelse != None)):
-            loc = self.orelse.findRow(lineno)
-        return loc
+        for c in self.clauses:
+            loc = c.findRow(lineno)
+            if (loc != None):
+                return loc
+        return None
+
+    def print(self, fd, level):
+        for c in self.clauses:
+            c.print(fd, level)
+
+class ForClauseNode(Node):
+
+    def __init__(self, target, expr, body):
+        super().__init__()
+        self.target = target
+        self.expr = expr
+        self.body = body
+
+    def toBlock(self, frame, block):
+        return block.newForClauseBlock(frame, self)
+
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -359,10 +376,6 @@ class ForNode(Node):
         self.expr.print(fd, 0)
         print(":", file=fd)
         self.body.print(fd, (level + 1))
-        if (self.orelse != None):
-            self.printIndent(fd, level)
-            print("else:", file=fd)
-            self.orelse.print(fd, (level + 1))
 
 class ReturnNode(Node):
 

@@ -108,6 +108,15 @@ class CondClauseForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements executed conditionally.").grid(sticky=tk.W)
 
+class ForClauseForm(Form):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements within a for loop").grid(sticky=tk.W)
+
 class EvalForm(Form):
 
     def __init__(self, parent, block):
@@ -643,10 +652,10 @@ class ForForm(Form):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'for' statement").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
-        if (block.orelse == None):
-            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
-        else:
+        if (block.hasElse):
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
+        else:
+            eb = tk.Button(self, text="Add 'else' clause", command=self.addElse)
         eb.grid(row=2)
 
     def addElse(self):
