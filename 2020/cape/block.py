@@ -744,20 +744,17 @@ class CompoundBlock(Block):
     def goRight(self):
         return self.clauses[0]
 
-class ModuleBlock(Block):
+class ModuleBlock(CompoundBlock):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
 
         if (node == None):
-            self.clause = ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "Module Definition")
+            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode("module", None))]
         else:
-            self.clause = ClauseBlock(self, shared, node.body, False, "Module Definition")
+            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode("module", node.body))]
 
-        hdr = self.clause.hdr
-        btn = tk.Button(hdr, text="module", fg="red", width=0, command=self.cb)
-        btn.grid(row=0, column=0)
-        self.clause.grid()
+        self.clauses[0].grid()
 
     def goRight(self):
         return self.clause
@@ -769,7 +766,7 @@ class ModuleBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        return ModuleNode(self.clause.toNode())
+        return ModuleNode(self.clauses[0].body.toNode())
 
 class ClassBlock(Block):
 
@@ -2138,56 +2135,6 @@ class WithBlock(Block):
 
     def toNode(self):
         return WithNode([(e.toNode(), None if v == None else v.toNode()) for (e, v) in self.items], self.clause.toNode())
-
-class XWhileBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.isWithinLoop = True
-        if (node == None):
-            self.clause = ClauseBlock(self, shared, SeqNode([RowNode(PassNode())]), False, "'while' clause of a 'while' statement")
-            hdr = self.clause.hdr
-            self.cond = ExpressionBlock(hdr, self.shared, None)
-            self.orelse = None
-        else:
-            self.clause = ClauseBlock(self, shared, node.body, False, "'while' clause of a 'while' statement")
-            hdr = self.clause.hdr
-            self.cond = ExpressionBlock(hdr, self.shared, node.cond)
-            if node.orelse == None:
-                self.orelse = None
-            else:
-                self.orelse = ClauseBlock(self, shared, node.orelse, False, "'else' clause of a 'while' statement")
-        self.cond.grid(row=0, column=1)
-        tk.Button(hdr, text="while", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.clause.grid(row=0, sticky=tk.W)
-        self.isWithinLoop = False
-        if (self.orelse != None):
-            hdr2 = self.orelse.hdr
-            tk.Button(self.hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-            self.orelse.grid(row=1, sticky=tk.W)
-
-    def genForm(self):
-        self.setForm(WhileForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def addElse(self):
-        self.orelse = ClauseBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False, "'else' clause of a 'while' statement")
-        hdr2 = self.orelse.hdr
-        tk.Button(hdr2, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.orelse.grid(row=1, column=0, sticky=tk.W)
-        self.setBlock(self.orelse.body.rows[0].what)
-        self.needsSaving()
-
-    def removeElse(self):
-        self.orelse.grid_forget()
-        self.orelse = None
-        self.setBlock(self)
-        self.needsSaving()
-
-    def toNode(self):
-        return WhileNode(self.cond.toNode(), self.clause.toNode(), (None if (self.orelse == None) else self.orelse.toNode()))
 
 class ForBlock(CompoundBlock):
 
