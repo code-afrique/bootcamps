@@ -227,6 +227,9 @@ class Block(tk.Frame):
     def newForClauseBlock(self, parent, node):
         return ForClauseBlock(parent, self.shared, node)
 
+    def newExceptClauseBlock(self, parent, node):
+        return ExceptClauseBlock(parent, self.shared, node)
+
     def newIfBlock(self, parent, node):
         return IfBlock(parent, self.shared, node)
 
@@ -848,7 +851,7 @@ class ClassClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad class name")
                 self.shared.cvtError = True
-        return ClassNode(v, [b.toNode() for b in self.bases], super().toNode())
+        return ClassClauseNode(v, [b.toNode() for b in self.bases], super().toNode())
 
 class CallBlock(Block):
 
@@ -2095,57 +2098,16 @@ class ForBlock(CompoundBlock):
     def toNode(self):
         return ForNode([c.toNode() for c in self.clauses], self.hasElse)
 
-class TryBlock(Block):
-
+class TryBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, borderwidth=1)
-
-        if node == None:
-            self.clause = ClauseBlock(self, self.shared, SeqNode([RowNode(PassNode())]), False, "'try' clause in a 'try' statement")
-            self.orelse = None
-            self.finalbody = None
+        super().__init__(parent, shared)
+        if (node == None):
+            self.clauses = [BasicClauseBlock(self, shared, BasicClauseNode("try", None))]
+            self.hasElse = False
         else:
-            self.clause = ClauseBlock(self, shared, node.body, False, "'try' clause in a 'try' statement")
-        hdr = self.clause.hdr
-        tk.Button(hdr, text="try", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.clause.grid(row=0, sticky=tk.W)
-
-        self.handlers = []
-        if node != None:
-            for (type, name, body) in node.handlers:
-                clause = ClauseBlock(self, shared, body, False, "'except' clause in a 'try' statement")
-                hdr = clause.hdr
-                self.handlers.append((clause, (None if (type == None) else type.toBlock(hdr, self)), (None if (name == None) else NameBlock(hdr, shared, NameNode(name)))))
-            row = 2
-            for (clause, type, name) in self.handlers:
-                hdr = clause.hdr
-                tk.Button(hdr, text="except", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                column = 1
-                if type != None:
-                    type.grid(row=0, column=column)
-                    column += 1
-                    if (name != None):
-                        tk.Button(hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
-                        column += 1
-                        name.grid(row=0, column=column)
-                        column += 1
-                clause.grid(row=row, column=0, sticky=tk.W)
-                row += 1
-            if (node.orelse == None):
-                self.orelse = None
-            else:
-                self.orelse = ClauseBlock(self, shared, node.orelse, False, "'else' clause in a 'try' statement")
-                hdr = self.orelse.hdr
-                tk.Button(hdr, text="else", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                self.orelse.grid(row=row, sticky=tk.W)
-                row += 1
-            if (node.finalbody == None):
-                self.finalbody = None
-            else:
-                self.finalbody = ClauseBlock(self, shared, node.finalbody, False, "'finally' clause in a 'try' statement")
-                hdr = self.finalbody.hdr
-                tk.Button(hdr, text="finally", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-                self.finalbody.grid(row=row, column=0, sticky=tk.W)
+            self.clauses = [n.toBlock(self, self) for n in node.clauses]
+            self.hasElse = node.hasElse
+        self.gridUpdate()
 
     def genForm(self):
         self.setForm(TryForm(self.shared.confarea, self))
@@ -2153,8 +2115,64 @@ class TryBlock(Block):
     def cb(self):
         self.setBlock(self)
 
+    def addElse(self):
+        if not self.hasElse:
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode("else", None))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
+
+    def removeElse(self):
+        if self.hasElse:
+            self.clauses[-1].grid_forget()
+            del self.clauses[-1]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
+
+    def gridUpdate(self):
+        super().gridUpdate()
+        for i in range(len(self.clauses)):
+            self.clauses[i].grid(row=i, sticky=tk.W)
+        self.scrollUpdate()
+
     def toNode(self):
-        return TryNode(self.clause.toNode(), [((None if (type == None) else type.toNode()), (None if (name == None) else name.toNode()), clause.toNode()) for (clause, type, name) in self.handlers], (None if (self.orelse == None) else self.orelse.toNode()), (None if (self.finalbody == None) else self.finalbody.toNode()))
+        return TryNode([c.toNode() for c in self.clauses], self.hasElse)
+
+class ExceptClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node.body, False, "except clause")
+
+        tk.Button(self.hdr, text="except", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        column = 1
+        if node.type == None:
+            self.type = None
+            self.name = None
+        else:
+            self.type = node.type.toBlock(self, self)
+            self.type.grid(row=0, column=column)
+            column += 1
+            if node.name == None:
+                self.name = None
+            else:
+                tk.Button(hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                self.name = node.name.toBlock(self, self)
+                self.name.grid(row=0, column=column)
+                column += 1
+        self.hdr.grid()
+
+    def genForm(self):
+        self.setForm(ExceptClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), super().toNode())
 
 class WithClauseBlock(ClauseBlock):
 

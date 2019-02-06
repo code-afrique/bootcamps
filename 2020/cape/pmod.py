@@ -79,10 +79,15 @@ def If(lineno, col_offset, test, body, orelse):
     return RowNode(IfNode([CondClauseNode("if", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
 
 def Try(lineno, col_offset, body, handlers, orelse, finalbody):
-    return RowNode(TryNode(SeqNode(body), handlers, (None if (orelse == []) else SeqNode(orelse)), (None if (finalbody == []) else SeqNode(finalbody))), lineno)
+    clauses = [BasicClauseNode("try", SeqNode(body))] + handlers
+    if orelse != []:
+        clauses.append(BasicClauseNode("else", SeqNode(orelse)))
+    if finalbody != []:
+        clauses.append(BasicClauseNode("finally", SeqNode(finalbody)))
+    return RowNode(TryNode(clauses, orelse != []), lineno)
 
 def ExceptHandler(lineno, col_offset, type, name, body):
-    return (type, name, SeqNode(body))
+    return ExceptClauseNode(type, name, SeqNode(body))
 
 def With(lineno, col_offset, items, body):
     return RowNode(ContainerNode(WithClauseNode(items, SeqNode(body))), lineno)

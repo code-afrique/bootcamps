@@ -230,58 +230,46 @@ class IfNode(Node):
 
 class TryNode(Node):
 
-    def __init__(self, body, handlers, orelse, finalbody):
+    def __init__(self, clauses, hasElse):
         super().__init__()
-        self.body = body
-        self.handlers = handlers
-        self.orelse = orelse
-        self.finalbody = finalbody
+        self.clauses = clauses
+        self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newTryBlock(frame, self)
 
     def findRow(self, lineno):
-        loc = self.body.findRow(lineno)
-        if (loc != None):
-            return loc
-        for (type, name, body) in self.handlers:
-            loc = body.findRow(lineno)
-            if (loc != None):
-                return loc
-        if (self.orelse != None):
-            loc = self.orelse.findRow(lineno)
-            if (loc != None):
-                return loc
-        if (self.finalbody != None):
-            loc = self.finalbody.findRow(lineno)
+        for c in self.clauses:
+            loc = c.findRow(lineno)
             if (loc != None):
                 return loc
         return None
 
     def print(self, fd, level):
+        for c in self.clauses:
+            c.print(fd, level)
+
+class ExceptClauseNode(Node):
+    def __init__(self, type, name, body):
+        self.type = type
+        self.name = name
+        self.body = body
+
+    def toBlock(self, frame, block):
+        return block.newExceptClauseBlock(frame, self)
+
+    def print(self, fd, level):
         self.printIndent(fd, level)
-        print("try:", file=fd)
+        if (self.type == None):
+            print("except:", file=fd)
+        else:
+            print("except ", end="", file=fd)
+            self.type.print(fd, 0)
+            if (self.name != None):
+                print(" as ", end="", file=fd)
+                self.name.print(fd, 0)
+            print(":", file=fd)
         self.body.print(fd, (level + 1))
-        for (type, name, body) in self.handlers:
-            self.printIndent(fd, level)
-            if (type == None):
-                print("except:", file=fd)
-            else:
-                print("except ", end="", file=fd)
-                type.print(fd, 0)
-                if (name != None):
-                    print(" as ", end="", file=fd)
-                    name.print(fd, 0)
-                print(":", file=fd)
-            body.print(fd, (level + 1))
-        if (self.orelse != None):
-            self.printIndent(fd, level)
-            print("else:", file=fd)
-            self.orelse.print(fd, (level + 1))
-        if (self.finalbody != None):
-            self.printIndent(fd, level)
-            print("finally:", file=fd)
-            self.finalbody.print(fd, (level + 1))
 
 class WithClauseNode(Node):
 
