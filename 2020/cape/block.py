@@ -2241,4 +2241,4 @@ class ForClauseBlock(ClauseBlock):
         self.setBlock(self)
 
     def toNode(self):
-        return ForClauseNode(self.target.toNode(), self.expr.toNode(), super.toNode())
+        return ForClauseNode(self.target.toNode(), self.expr.toNode(), super().toNode())
