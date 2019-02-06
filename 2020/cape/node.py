@@ -198,47 +198,39 @@ class CondClauseNode(ClauseNode):
         print(":", file=fd)
         self.body.print(fd, (level + 1))
 
-class IfNode(Node):
-
-    def __init__(self, clauses, hasElse):
+class CompoundNode(Node):
+    def __init__(self, clauses):
         super().__init__()
         self.clauses = clauses
+
+    def findRow(self, lineno):
+        for c in self.clauses:
+            loc = c.findRow(lineno)
+            if (loc != None):
+                return loc
+        return None
+
+    def print(self, fd, level):
+        for c in self.clauses:
+            c.print(fd, level)
+
+class IfNode(CompoundNode):
+
+    def __init__(self, clauses, hasElse):
+        super().__init__(clauses)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newIfBlock(frame, self)
 
-    def findRow(self, lineno):
-        for c in self.clauses:
-            loc = c.findRow(lineno)
-            if (loc != None):
-                return loc
-        return None
-
-    def print(self, fd, level):
-        for c in self.clauses:
-            c.print(fd, level)
-
-class TryNode(Node):
+class TryNode(CompoundNode):
 
     def __init__(self, clauses, hasElse):
-        super().__init__()
-        self.clauses = clauses
+        super().__init__(clauses)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newTryBlock(frame, self)
-
-    def findRow(self, lineno):
-        for c in self.clauses:
-            loc = c.findRow(lineno)
-            if (loc != None):
-                return loc
-        return None
-
-    def print(self, fd, level):
-        for c in self.clauses:
-            c.print(fd, level)
 
 class ExceptClauseNode(ClauseNode):
     def __init__(self, type, name, body):
@@ -287,47 +279,23 @@ class WithClauseNode(ClauseNode):
         print(":", file=fd)
         self.body.print(fd, (level + 1))
 
-class WhileNode(Node):
+class WhileNode(CompoundNode):
 
     def __init__(self, clauses, hasElse):
-        super().__init__()
-        self.clauses = clauses
+        super().__init__(clauses)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newWhileBlock(frame, self)
 
-    def findRow(self, lineno):
-        for c in self.clauses:
-            loc = c.findRow(lineno)
-            if (loc != None):
-                return loc
-        return None
-
-    def print(self, fd, level):
-        for c in self.clauses:
-            c.print(fd, level)
-
-class ForNode(Node):
+class ForNode(CompoundNode):
 
     def __init__(self, clauses, hasElse):
-        super().__init__()
-        self.clauses = clauses
+        super().__init__(clauses)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newForBlock(frame, self)
-
-    def findRow(self, lineno):
-        for c in self.clauses:
-            loc = c.findRow(lineno)
-            if (loc != None):
-                return loc
-        return None
-
-    def print(self, fd, level):
-        for c in self.clauses:
-            c.print(fd, level)
 
 class ForClauseNode(ClauseNode):
 
