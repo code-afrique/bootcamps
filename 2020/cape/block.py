@@ -777,13 +777,12 @@ class ModuleBlock(CompoundBlock):
     def toNode(self):
         return ModuleNode(self.clauses[0].body.toNode())
 
-# A container block is a compound block with a single clause.  Examples are class, def,
-# and with statements
+# A container block is a compound block with a single clause in it.
 class ContainerBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
 
-        self.clauses = [node.body.toBlock(self, self)]
+        self.clauses = [c.toBlock(self, self) for c in node.clauses]
         self.clauses[0].grid()
 
     def genForm(self):
