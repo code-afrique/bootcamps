@@ -2,7 +2,7 @@ from node import *
 __all__ = ["nodeEval"]
 
 def Module(body):
-    return ModuleNode(SeqNode(body))
+    return ModuleNode(BasicClauseNode("module", SeqNode(body)))
 
 def Lambda(lineno, col_offset, args, body):
     (argnames, defaults) = args

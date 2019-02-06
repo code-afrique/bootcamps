@@ -720,7 +720,7 @@ class BasicClauseBlock(ClauseBlock):
         super().__init__(parent, shared, node, False, "{} clause".format(node.type))
         self.type = node.type
         tk.Button(self.hdr, text=node.type, fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.hdr.grid(row=0, sticky=tk.W)
+        self.hdr.grid()
 
     def genForm(self):
         self.setForm(ClauseForm(self.shared.confarea, self))
@@ -2282,7 +2282,7 @@ class ForClauseBlock(ClauseBlock):
         self.target.grid(row=0, column=1)
         tk.Button(self.hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
         self.expr.grid(row=0, column=3)
-        self.hdr.grid(row=0, sticky=tk.W)
+        self.hdr.grid()
 
     def genForm(self):
         self.setForm(ForClauseForm(self.shared.confarea, self))

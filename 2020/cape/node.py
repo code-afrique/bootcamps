@@ -163,9 +163,12 @@ class BasicClauseNode(ClauseNode):
         return block.newBasicClauseBlock(frame, self)
 
     def print(self, fd, level):
-        self.printIndent(fd, level)
-        print("{}".format(self.type), end="", file=fd)
-        self.printBody(fd, level)
+        if self.type == "module":
+            self.body.print(fd, level)
+        else:
+            self.printIndent(fd, level)
+            print("{}".format(self.type), end="", file=fd)
+            self.printBody(fd, level)
 
 class CondClauseNode(ClauseNode):
     def __init__(self, type, cond, body):
