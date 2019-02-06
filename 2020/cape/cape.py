@@ -125,7 +125,7 @@ class CAPE(tk.Frame):
     def runerr(self, ev):
         while not self.evq.empty():
             (row, col, err) = self.evq.get()
-            # (sb, i) = n.findRow(lineno)
+            # (sb, i) = n.findLine(lineno)
 
     def printx(self):
         self.shared.cvtError = False
@@ -174,7 +174,7 @@ class CAPE(tk.Frame):
                 comments = self.extractComments(code)
                 for (lineno, text) in comments.items():
                     assert (text[0] == "#")
-                    (type, b, i) = n.findRow(lineno)
+                    (type, b, i) = n.findLine(lineno)
                     if type == "row":
                         row = b.rows[i]
                         if (lineno < row.lineno):

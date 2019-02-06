@@ -6,7 +6,7 @@ class Node():
         print("toBlock not implemented by {}".format(self))
         return None
 
-    def findRow(self, lineno):
+    def findLine(self, lineno):
         return None
 
     def printIndent(self, fd, level):
@@ -48,8 +48,8 @@ class RowNode(Node):
     def toBlock(self, frame, block):
         return block.newRowBlock(frame, self)
 
-    def findRow(self, lineno):
-        return self.what.findRow(lineno)
+    def findLine(self, lineno):
+        return self.what.findLine(lineno)
 
     def print(self, fd, level):
         # first print into a string buffer
@@ -71,12 +71,12 @@ class ClauseNode(Node):
     # To a first approximation, all lines in the source are either empty lines, rows,
     # or clause headers.  However, the Python parser does not give the line numbers for
     # clause headers, so we approximate it by subtracting one from the first row in the clause
-    def findRow(self, lineno):
+    def findLine(self, lineno):
         assert isinstance(self.body, SeqNode)
         hdrline = self.body.rows[0].lineno - 1
         if (hdrline >= lineno):
             return ("clause", self, 0)
-        return self.body.findRow(lineno)
+        return self.body.findLine(lineno)
 
     def printBody(self, fd, level):
         if self.comment != None:
@@ -190,9 +190,9 @@ class CompoundNode(Node):
         super().__init__()
         self.clauses = clauses
 
-    def findRow(self, lineno):
+    def findLine(self, lineno):
         for c in self.clauses:
-            loc = c.findRow(lineno)
+            loc = c.findLine(lineno)
             if (loc != None):
                 return loc
         return None
@@ -826,12 +826,12 @@ class SeqNode(Node):
     def toBlock(self, frame, block):
         return block.newSeqBlock(frame, self)
 
-    def findRow(self, lineno):
+    def findLine(self, lineno):
         for i in range(len(self.rows)):
             assert isinstance(self.rows[i], RowNode)
             if not isinstance(self.rows[i].what, CompoundNode) and self.rows[i].lineno >= lineno:
                 return ("row", self, i)
-            r = self.rows[i].findRow(lineno)
+            r = self.rows[i].findLine(lineno)
             if (r != None):
                 return r
         return None
