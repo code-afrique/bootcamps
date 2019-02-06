@@ -727,6 +727,9 @@ class IfClauseBlock(ClauseBlock):
     def cb(self):
         self.setBlock(self)
 
+    def goRight(self):
+        return self.cond
+
     def toNode(self):
         return IfClauseNode(self.type, self.cond.toNode(), self.body.toNode())
 
@@ -757,7 +760,7 @@ class ModuleBlock(CompoundBlock):
         self.clauses[0].grid()
 
     def goRight(self):
-        return self.clause
+        return self.clauses[0]
 
     def genForm(self):
         self.setForm(ModuleForm(self.shared.confarea, self))
