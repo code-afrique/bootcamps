@@ -6,6 +6,7 @@ import io
 import tkinter as tk
 import tkinter.messagebox
 import tkinter.filedialog
+import tkinter.scrolledtext
 import tokenize
 import queue
 import pparse
@@ -94,7 +95,7 @@ class CAPE(tk.Frame):
         "\n        # menubar = tk.Frame(self, borderwidth=1, relief=tk.SUNKEN, style=\"Custom.TFrame\")\n        menubar = tk.Frame(self)\n        tk.Button(menubar, text=\"Import\", command=self.load).grid(row=0, column=0, sticky=tk.W)\n        tk.Button(menubar, text=\"Export\", command=self.save).grid(row=0, column=1, sticky=tk.W)\n        tk.Button(menubar, text=\"Code\", command=self.text).grid(row=0, column=2, sticky=tk.W)\n        tk.Button(menubar, text=\"Run\", command=self.run).grid(row=0, column=3, sticky=tk.W)\n        tk.Button(menubar, text=\"Help\", command=self.help).grid(row=0, column=4, sticky=tk.W)\n        tk.Button(menubar, text=\"Quit\", command=self.quit).grid(row=0, column=5, sticky=tk.W)\n        menubar.configure(bd=2, highlightbackground=\"green\", highlightcolor=\"green\", highlightthickness=2)\n        menubar.grid(row=0, column=0, sticky=tk.W, columnspan=2)\n        "
         frame = tk.Frame(self, width=1200, height=500)
         frame.grid(row=1, column=0, sticky=tk.W)
-        frame.grid_propagate(0)
+        # frame.grid_propagate(0)
         # frame.configure(bd=2, highlightbackground="purple", highlightcolor="purple", highlightthickness=2)
         # self.shared.confarea = tk.Frame(frame, width=400, height=475, bd=10, highlightbackground="green", highlightcolor="green", highlightthickness=3)
         self.shared.confarea = tk.Frame(frame, width=400, height=475)
@@ -115,8 +116,13 @@ class CAPE(tk.Frame):
         # self.progarea.place(x=400, y=0)
         # self.shared.confarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
         # self.progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
+
+        self.errormsgs = tk.scrolledtext.ScrolledText(frame, wrap=tk.WORD, width=100, height=3, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+        self.errormsgs.insert(tk.INSERT, "Hello World")
+
         self.shared.confarea.grid(row=0, column=0, sticky=tk.N)
         self.progarea.grid(row=0, column=1, sticky=tk.NW)
+        self.errormsgs.grid(row=1, columnspan=2, sticky=tk.SW + tk.NE)
         self.help()
 
         self.evq = queue.Queue()
@@ -128,7 +134,9 @@ class CAPE(tk.Frame):
             print("ERROR", line, col, err)
             if 0 <= line < len(self.shared.linebuf):
                 self.program.setBlock(self.shared.linebuf[line])
-            tk.messagebox.showinfo("Run Error", err)
+            # tk.messagebox.showinfo("Run Error", err)
+            self.errormsgs.delete('1.0', tk.END)
+            self.errormsgs.insert(tk.INSERT, err)
 
     def printx(self):
         self.shared.cvtError = False
@@ -239,6 +247,7 @@ class CAPE(tk.Frame):
                 self.shared.saved = True
 
     def run(self):
+        self.errormsgs.delete('1.0', tk.END)
         self.shared.cvtError = False
         self.shared.startKeeping()
         n = self.program.toNode()
@@ -315,12 +324,12 @@ def top(root):
     s = shared.Shared()
     tl = CAPE(root, s)
     tl.grid()
-    tl.grid_propagate(0)
+    # tl.grid_propagate(0)
 
 def main():
     root = tk.Tk()
     root.title("Code Afrique Python Editor")
-    root.geometry("1250x550")
+    root.geometry("1175x600")
     top(root)
     root.mainloop()
 if (__name__ == "__main__"):
