@@ -1386,7 +1386,7 @@ class PassBlock(Block):
         self.rowblk.what.grid_forget()
         self.rowblk.what = ReturnBlock(self.rowblk, self.shared, None)
         self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.expr)
+        self.setBlock(self.rowblk.what)
         self.needsSaving()
 
     def stmtDel(self):
@@ -1519,6 +1519,7 @@ class ReturnBlock(Block):
     def returnValue(self):
         self.expr = ExpressionBlock(self, self.shared, None)
         self.expr.grid(row=0, column=1)
+        self.setBlock(self.expr)
 
     def toNode(self):
         return ReturnNode((None if (self.expr == None) else self.expr.toNode()))
