@@ -255,6 +255,9 @@ class ExceptClauseNode(Node):
         self.name = name
         self.body = body
 
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
+
     def toBlock(self, frame, block):
         return block.newExceptClauseBlock(frame, self)
 

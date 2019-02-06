@@ -153,6 +153,7 @@ class CAPE(tk.Frame):
             self.program.grid_forget()
         self.program = ModuleBlock(self.shared.scrollable.stuff, self.shared, None)
         self.program.grid(sticky=tk.W)
+        self.program.setBlock(self.program.clauses[0].body.rows[0].what)
         self.shared.scrollable.scrollUpdate()
         self.shared.saved = True
 
