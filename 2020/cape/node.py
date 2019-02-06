@@ -97,6 +97,9 @@ class ClauseNode(Node):
         super().__init__()
         self.body = body
 
+    def findRow(self, lineno):
+        return self.body.findRow(lineno)
+
 class DefClauseNode(ClauseNode):
     def __init__(self, name, args, defaults, body):
         super().__init__(body)
@@ -106,9 +109,6 @@ class DefClauseNode(ClauseNode):
 
     def toBlock(self, frame, block):
         return block.newDefClauseBlock(frame, self)
-
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -159,9 +159,6 @@ class ClassClauseNode(ClauseNode):
     def toBlock(self, frame, block):
         return block.newClassClauseBlock(frame, self)
 
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
-
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("class {}(".format(self.name), end="", file=fd)
@@ -180,9 +177,6 @@ class BasicClauseNode(ClauseNode):
     def toBlock(self, frame, block):
         return block.newBasicClauseBlock(frame, self)
 
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
-
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("{}:".format(self.type), file=fd)
@@ -196,9 +190,6 @@ class CondClauseNode(ClauseNode):
 
     def toBlock(self, frame, block):
         return block.newCondClauseBlock(frame, self)
-
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -255,9 +246,6 @@ class ExceptClauseNode(ClauseNode):
         self.type = type
         self.name = name
 
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
-
     def toBlock(self, frame, block):
         return block.newExceptClauseBlock(frame, self)
 
@@ -282,9 +270,6 @@ class WithClauseNode(ClauseNode):
 
     def toBlock(self, frame, block):
         return block.newWithClauseBlock(frame, self)
-
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -353,9 +338,6 @@ class ForClauseNode(ClauseNode):
 
     def toBlock(self, frame, block):
         return block.newForClauseBlock(frame, self)
-
-    def findRow(self, lineno):
-        return self.body.findRow(lineno)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
