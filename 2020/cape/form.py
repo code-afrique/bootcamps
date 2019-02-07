@@ -10,7 +10,6 @@ class Form(tk.Frame):
         self.block = block
         self.isExpression = False
         self.isStatement = False
-        self.catchKeys()
 
     def deleteKey(self, event):
         self.block.cut(False)
