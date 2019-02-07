@@ -103,28 +103,26 @@ class ClauseForm(Form):
         pass
 
     def insertComments(self, row=0, column=0, columnspan=1):
-        tk.Label(self, text="Inline Comment: ").grid(row=row, column=column)
-        self.commentR = tk.Entry(self)
+        frame = tk.Frame(self)
+        frame.grid(row=row, column=column, columnspan=columnspan)
+
+        tk.Label(frame, text="Inline Comment: ").grid(row=0, column=0)
+        self.commentR = tk.Entry(frame)
         self.commentR.bind("<Return>", self.keyEnter)
         c = self.block.commentR.get()
         self.commentR.insert(tk.END, c[1:])
-        self.commentR.grid(row=row, column=column + 1, columnspan=2)
-        row += 1
+        self.commentR.grid(row=0, column=1)
 
-        tk.Label(self, text="Multiline Comment (displayed above statement): ").grid(row=row, columnspan=3)
-        row += 1
+        tk.Label(frame, text="Multiline Comment (displayed above statement): ").grid(row=1, columnspan=2)
 
-        self.commentU = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+        self.commentU = tk.scrolledtext.ScrolledText(frame, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
         if self.block.commentU != None:
             c = self.block.commentU.get("1.0", tk.END)
             self.commentU.insert(tk.END, c)
-        self.commentU.grid(row=row, columnspan=3)
-        row += 1
+        self.commentU.grid(row=2, columnspan=2)
 
-        enter = tk.Button(self, text="Enter", command=self.cb)
-        enter.grid(row=row, column=column+2)
-
-        return row
+        enter = tk.Button(frame, text="Enter", command=self.cb)
+        enter.grid(row=3, column=1)
 
     def setComments(self):
         cu = "" if self.commentU.compare("end-1c", "==", "1.0") else self.commentU.get("1.0", tk.END)
@@ -138,8 +136,14 @@ class CondClauseForm(ClauseForm):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements executed conditionally.").grid(sticky=tk.W)
-
         self.insertComments(row=3)
+
+    def cb(self):
+        self.setComments()
+        # self.focus_set()
+
+    def keyEnter(self, x):
+        self.cb()
 
 class ForClauseForm(ClauseForm):
 
@@ -149,6 +153,14 @@ class ForClauseForm(ClauseForm):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements within a for loop").grid(sticky=tk.W)
+        self.insertComments(row=3)
+
+    def cb(self):
+        self.setComments()
+        # self.focus_set()
+
+    def keyEnter(self, x):
+        self.cb()
 
 class ExceptClauseForm(ClauseForm):
 
@@ -158,6 +170,14 @@ class ExceptClauseForm(ClauseForm):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements within an except clause of a try statement").grid(sticky=tk.W)
+        self.insertComments(row=3)
+
+    def cb(self):
+        self.setComments()
+        # self.focus_set()
+
+    def keyEnter(self, x):
+        self.cb()
 
 class EvalForm(Form):
 
@@ -176,6 +196,14 @@ class WithClauseForm(ClauseForm):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="With Statement").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a with statement.").grid(sticky=tk.W)
+        self.insertComments(row=3)
+
+    def cb(self):
+        self.setComments()
+        # self.focus_set()
+
+    def keyEnter(self, x):
+        self.cb()
 
 class FrameForm(Form):
 
@@ -564,13 +592,14 @@ class DefClauseForm(ClauseForm):
         self.ndefaults = 0
         for arg in block.args:
             self.addArg(arg)
+
         ma = tk.Button(self, text="+ Add argument", command=self.newArg)
         ma.grid(row=100, column=0)
         # enter = tk.Button(self, text="Enter", command=self.cb)
         # enter.grid(row=100, column=1, sticky=tk.E)
         self.ndefaults = len(block.defaults)
 
-        self.insertComments(row=101)
+        self.insertComments(row=101, columnspan=2)
 
     def newArg(self):
         self.addArg("")
