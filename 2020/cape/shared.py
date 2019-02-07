@@ -19,7 +19,11 @@ class Shared():
 
     def keep(self, b):
         if self.keeping:
+            index = len(self.linebuf)
             self.linebuf.append(b)
+            return index
+        else:
+            return 0
 
     def stopKeeping(self):
         assert self.keeping

@@ -44,7 +44,7 @@ class EmptyNode(Node):
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("", file=fd)
+        print("#EMPTY", file=fd)
 
 class RowNode(Node):
 
@@ -54,6 +54,7 @@ class RowNode(Node):
         self.lineno = lineno
         self.commentU = ""
         self.commentR = None
+        self.index = 0
  
     def merge(self, q):
         self.what.merge(q)
@@ -71,6 +72,13 @@ class RowNode(Node):
             self.printIndent(fd, level)
             print("#{}".format(line), end="", file=fd)
 
+        """
+        if isinstance(self.what, ClauseNode):
+            self.commentR = None
+        else:
+            self.commentR = "{}".format(self.index)
+        """
+
         if self.commentR == None:
             self.what.print(fd, level)
         else:
@@ -79,7 +87,7 @@ class RowNode(Node):
             self.what.print(f, level)
             s = f.getvalue()
             # insert the comment, if any, after the first line
-            if (("\n" in s) and (self.commentR != None)):
+            if "\n" in s:
                 i = s.index("\n")
                 s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "    #")) + self.commentR) + s[i:])
             print(s, file=fd, end="")
@@ -90,6 +98,8 @@ class ClauseNode(Node):
         self.body = body
         self.commentU = ""
         self.commentR = None
+        self.lineno = 0
+        self.index = 0
 
     def findLine(self, lineno):
         assert isinstance(self.body, SeqNode)
@@ -105,10 +115,14 @@ class ClauseNode(Node):
             print("#{}".format(line), end="", file=fd)
 
     def printBody(self, fd, level):
-        if self.commentR != None:
-            print(":\t#{}".format(self.commentR), file=fd)
-        else:
+        """
+        self.commentR = "{}".format(self.index)
+        """
+
+        if self.commentR == None:
             print(":", file=fd)
+        else:
+            print(":\t#{}".format(self.commentR), file=fd)
         self.body.print(fd, level + 1)
 
 class DefClauseNode(ClauseNode):

@@ -23,7 +23,7 @@ class Scrollable(tk.Frame):
 
     def __init__(self, frame, shared, width=16):
         super().__init__(None)
-        self.canvas = tk.Canvas(frame, width=725, height=475)
+        self.canvas = tk.Canvas(frame, width=725, height=445)
         self.canvas.isWithinDef = False    # ???
         self.canvas.isWithinLoop = False    # ???
         self.canvas.isWithinStore = False    # ???
@@ -32,7 +32,7 @@ class Scrollable(tk.Frame):
         # self.canvas.configure(bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
         self.stuff = shared.canvas = Block(self.canvas, shared)
         self.stuff.isTop = True
-        self.stuff.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
+        # self.stuff.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         ysb.grid(row=0, column=0, sticky=(tk.N + tk.S))
         self.canvas.grid(row=0, column=1)
         xsb.grid(row=1, column=1, sticky=(tk.W + tk.E))
@@ -92,33 +92,22 @@ class CAPE(tk.Frame):
         help.add_command(label="Getting Started", command=self.help)
         menu.add_cascade(label=" Help", menu=help)
         parent.config(menu=menu)
-        self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
-        "\n        # menubar = tk.Frame(self, borderwidth=1, relief=tk.SUNKEN, style=\"Custom.TFrame\")\n        menubar = tk.Frame(self)\n        tk.Button(menubar, text=\"Import\", command=self.load).grid(row=0, column=0, sticky=tk.W)\n        tk.Button(menubar, text=\"Export\", command=self.save).grid(row=0, column=1, sticky=tk.W)\n        tk.Button(menubar, text=\"Code\", command=self.text).grid(row=0, column=2, sticky=tk.W)\n        tk.Button(menubar, text=\"Run\", command=self.run).grid(row=0, column=3, sticky=tk.W)\n        tk.Button(menubar, text=\"Help\", command=self.help).grid(row=0, column=4, sticky=tk.W)\n        tk.Button(menubar, text=\"Quit\", command=self.quit).grid(row=0, column=5, sticky=tk.W)\n        menubar.configure(bd=2, highlightbackground=\"green\", highlightcolor=\"green\", highlightthickness=2)\n        menubar.grid(row=0, column=0, sticky=tk.W, columnspan=2)\n        "
-        frame = tk.Frame(self, width=1200, height=500)
-        frame.grid(row=1, column=0, sticky=tk.W)
-        # frame.grid_propagate(0)
-        # frame.configure(bd=2, highlightbackground="purple", highlightcolor="purple", highlightthickness=2)
-        # self.shared.confarea = tk.Frame(frame, width=400, height=475, bd=10, highlightbackground="green", highlightcolor="green", highlightthickness=3)
-        self.shared.confarea = tk.Frame(frame, width=400, height=475)
-        # self.shared.confarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
+        # self.configure(bd=2, highlightbackground="blue", highlightcolor="blue", highlightthickness=2)
+
+        self.shared.confarea = tk.Frame(self, width=400, height=475)
+
+        self.shared.confarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         self.shared.confarea.grid_propagate(0)
-        # self.progarea = tk.Frame(frame, width=750, height=500, highlightbackground="green", highlightcolor="green", highlightthickness=3)
-        self.progarea = tk.Frame(frame, width=750, height=500)
-        # self.progarea = Block(frame, shared)
-        # progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
-        # self.progarea.grid_propagate(0)
+
+        self.progarea = tk.Frame(self, width=750, height=475)
+        self.progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
         self.program = ModuleBlock(self.shared.scrollable.stuff, shared, None)
         self.program.grid(sticky=tk.W)
         self.program.setBlock(self.program.clauses[0].body.rows[0].what)
         self.shared.scrollable.scrollUpdate()
-        # self.program.setBlock(self.program)
-        # self.shared.confarea.place(x=0, y=0)
-        # self.progarea.place(x=400, y=0)
-        # self.shared.confarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
-        # self.progarea.pack(side=tk.LEFT, anchor=tk.NW, fill=tk.BOTH, expand=tk.YES)
 
-        self.errormsgs = tk.scrolledtext.ScrolledText(frame, wrap=tk.WORD, width=100, height=3, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+        self.errormsgs = tk.scrolledtext.ScrolledText(self, wrap=tk.WORD, width=100, height=3, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
         self.errormsgs.insert(tk.INSERT, "Hello World")
 
         self.shared.confarea.grid(row=0, column=0, sticky=tk.N)
@@ -130,7 +119,6 @@ class CAPE(tk.Frame):
         self.bind("<<RunErr>>", self.runerr)
         # self.master.after(100, self.checkQueue)
 
-    # I'm doing this because event generation seems to have problems
     def checkQueue(self):
         self.runerr(None)
         self.master.after(100, self.checkQueue)
@@ -142,8 +130,22 @@ class CAPE(tk.Frame):
             # if 0 <= line < len(self.shared.linebuf):
             #   self.program.setBlock(self.shared.linebuf[line])
             # tk.messagebox.showinfo("Run Error", err)
-            self.errormsgs.delete('1.0', tk.END)
-            self.errormsgs.insert(tk.INSERT, err)
+            self.displayErr(line, err)
+
+    def displayErr(self, lineno, err):
+        self.errormsgs.delete('1.0', tk.END)
+        self.errormsgs.insert(tk.INSERT, err)
+
+        (type, b, i) = self.node.findLine(lineno)
+        if type == "row":
+            # print("ROW", lineno, i)
+            row = b.rows[i]
+        else:
+            # print("CLAUSE", lineno, i)
+            assert type == "clause"
+            row = b
+        blk = self.shared.linebuf[int(row.commentR)]
+        self.program.setBlock(blk)
 
     def printx(self):
         self.shared.cvtError = False
@@ -275,17 +277,53 @@ class CAPE(tk.Frame):
     def run(self):
         self.errormsgs.delete('1.0', tk.END)
         self.shared.cvtError = False
+
+        # convert blocks to nodes
         self.shared.startKeeping()
         n = self.program.toNode()
         self.shared.stopKeeping()
+
         if self.shared.cvtError:
             print("===== Fix program first =====")
         else:
+            # convert nodes to code
+            f = io.StringIO("")
+            n.print(f, 0)
+            code = f.getvalue()
+
+            # now parse the code again
+            tree = pparse.pparse(code, show_offsets=True)
+            self.node = pmod.nodeEval(tree)
+
+            # extract keywords and comments
+            keywords, comments = self.extract(code)
+
+            # find the line numbers corresponding to keywords
+            self.node.merge(keywords)
+
+            # now we can merge comments back into the AST, sort of
+            for (lineno, text) in comments.items():
+                assert (text[0] == "#")
+                (type, b, i) = self.node.findLine(lineno)
+                if type == "row":
+                    # print("ROW", lineno, i)
+                    row = b.rows[i]
+                    lin = row.lineno
+                else:
+                    # print("CLAUSE", lineno, i)
+                    assert type == "clause"
+                    row = b
+                    lin = i
+                if (lineno < lin):
+                    row.commentU += text[1:] + '\n'
+                else:
+                    row.commentR = text[1:]
+
             (fd, path) = tempfile.mkstemp(dir=".", suffix=".py")
             with os.fdopen(fd, "w") as tmp:
                 n.print(tmp, 0)
                 tmp.close()
-                t = tk.Toplevel(self)
+                t = tk.Toplevel(self.master)
                 c = console.Console(t, self, self.evq)
                 c.grid()
                 c.start_proc(path)

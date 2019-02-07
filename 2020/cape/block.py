@@ -34,7 +34,7 @@ class Block(tk.Frame):
 
     def setForm(self, f):
         if (self.shared.curForm != None):
-            self.shared.curForm.grid_forget()
+            self.shared.curForm.destroy()
         self.shared.curForm = f
         if f:
             f.grid(row=0, column=0, sticky=tk.E)
@@ -732,15 +732,14 @@ class ClauseBlock(Block):
         r = self.toNodeRaw()
         r.commentU = self.commentU.get()
 
-        # TODO fix the following
-        n = r.commentU.count('\n')
-        for i in range(n + 1):
-            self.shared.keep(self)
-
-        c = self.commentR.get()
-        if (c != ""):
-            assert (c[0] == "#")
-            r.commentR = c[1:]
+        if self.shared.keeping:
+            r.index = self.shared.keep(self)
+            r.commentR = "{}".format(r.index)
+        else:
+            c = self.commentR.get()
+            if (c != ""):
+                assert (c[0] == "#")
+                r.commentR = c[1:]
         return r
 
 # A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
@@ -1919,16 +1918,17 @@ class RowBlock(Block):
         r = RowNode(self.what.toNode(), 0)
         r.commentU = self.commentU.get()
 
-        if not isinstance(r.what, ClauseNode):
-            # TODO fix the following
-            n = r.commentU.count('\n')
-            for i in range(n + 1):
-                self.shared.keep(self)
-
-        c = self.commentR.get()
-        if (c != ""):
-            assert (c[0] == "#")
-            r.commentR = c[1:]
+        if self.shared.keeping:
+            if isinstance(self.what, ClauseBlock):
+                r.commentR = None
+            else:
+                r.index = self.shared.keep(self)
+                r.commentR = "{}".format(r.index)
+        else:
+            c = self.commentR.get()
+            if (c != ""):
+                assert (c[0] == "#")
+                r.commentR = c[1:]
         return r
 
 # The parent of a SeqBlock is always a ClauseBlock, which helps with navigating

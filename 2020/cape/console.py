@@ -11,8 +11,11 @@ from threading import Thread
 from queue import Queue
 
 class Console(tk.Frame):
-    def __init__(self, master, main, evq, *args, **kwargs):
-        tk.Frame.__init__(self, master, *args, **kwargs)
+    def __init__(self, master, main, evq):
+        tk.Frame.__init__(self, master)
+
+        # master.protocol("WM_DELETE_WINDOW", self.on_close)
+        # master.bind("<Destroy>", self.on_destroy)
 
         self.main = main
         self.evq = evq
@@ -33,15 +36,16 @@ class Console(tk.Frame):
         # It seems not to work when Text is disabled...
         # self.text.bind("<<Modified>>", lambda: self.text.frame.see(tk.END))
 
-        self.text.pack(expand=True, fill="both")
+        self.text.grid(row=0, column=0)
 
         input = tk.Frame(self)
-        tk.Label(input, text="Input:").pack(side=tk.LEFT)
+        tk.Label(input, text="Input:").grid(row=0, column=0, sticky=tk.W)
         self.entry = tk.Entry(input)
         self.entry.bind('<Return>', self.entryEnter)
-        self.entry.pack(expand=True, fill="both")
+        self.entry.grid(row=0, column=1, sticky=tk.E+tk.W)
         self.entry.focus_set()
-        input.pack(expand=True, fill=tk.BOTH)
+        input.grid_columnconfigure(1, weight=1)
+        input.grid(row=1, column=0, sticky=tk.E+tk.W)
 
         self.popen = None     # will hold a reference to a Popen object
 
@@ -50,16 +54,21 @@ class Console(tk.Frame):
         self.status = tk.StringVar()
         self.status.set("Executing")
         self.executer = tk.Label(self.bottom, textvariable=self.status)
-        self.executer.pack(side="left", padx=5, pady=2)
+        self.executer.grid(row=0, column=0, sticky=tk.W)
         self.stopper = tk.Button(self.bottom, text="Stop", command=self.stop)
-        self.stopper.pack(side="left", padx=5, pady=2)
+        self.stopper.grid(row=0, column=1, sticky=tk.W)
 
-        self.bottom.pack(side="bottom", fill="both")
+        self.bottom.grid(row=2, column=0, sticky=tk.W)
 
         self.queue = Queue(1024)
         self.open = { "stdout": True, "stderr": True }
-        self.master.after(100, self.processQueue)
         self.errStr = ""
+
+    def on_close(self):
+        print("CLOSING")
+
+    def on_destroy(self, ev):
+        print("DESTROYED")
 
     def processQueue(self):
         while not self.queue.empty():
@@ -121,6 +130,7 @@ class Console(tk.Frame):
         """Starts a new thread and calls process"""
         self.command = command
         threading.Thread(target=self.execute).start()
+        self.processQueue()
 
     def stop(self):
         """Stops an eventual running process"""
@@ -135,18 +145,18 @@ class Console(tk.Frame):
             self.status.set("Terminating")
             self.stopped = True
 
-    def reader(self, pipe, queue, tag):
+    def reader(self, pipe, tag):
         try:
             while not self.stopped:
                 c = pipe.read(1)
                 if c == b'' or c == '':
                     break
-                queue.put((tag, c))
-                if queue.qsize() > 256:
+                self.queue.put((tag, c))
+                if self.queue.qsize() > 256:
                     print("reader: wait for queue to clear a bit")
                     time.sleep(0.1)
         finally:
-            queue.put((tag, None))
+            self.queue.put((tag, None))
 
     def execute(self):
         """Keeps inserting line by line into self.text
@@ -155,8 +165,8 @@ class Console(tk.Frame):
             print("start process")
             self.popen = Popen(['python', '-u', self.command], stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0)
 
-            Thread(target=self.reader, args=[self.popen.stdout, self.queue, "stdout"]).start()
-            Thread(target=self.reader, args=[self.popen.stderr, self.queue, "stderr"]).start()
+            Thread(target=self.reader, args=[self.popen.stdout, "stdout"]).start()
+            Thread(target=self.reader, args=[self.popen.stderr, "stderr"]).start()
             while self.popen.poll() is None:
                 # print("process still running")
                 time.sleep(0.1)
