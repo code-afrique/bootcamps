@@ -1,4 +1,5 @@
 import io
+import keyword
 
 class Node():
 
@@ -18,6 +19,11 @@ class PassNode(Node):
     def __init__(self):
         super().__init__()
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "pass"
+        self.lineno = line
+
     def toBlock(self, frame, block):
         return block.newPassBlock(frame, self)
 
@@ -29,6 +35,9 @@ class EmptyNode(Node):
 
     def __init__(self):
         super().__init__()
+
+    def merge(self, q):
+        pass
 
     def toBlock(self, frame, block):
         return block.newEmptyBlock(frame, self)
@@ -43,7 +52,11 @@ class RowNode(Node):
         super().__init__()
         self.what = what
         self.lineno = lineno
-        self.comment = None
+        self.commentU = ""
+        self.commentR = None
+ 
+    def merge(self, q):
+        self.what.merge(q)
 
     def toBlock(self, frame, block):
         return block.newRowBlock(frame, self)
@@ -52,35 +65,42 @@ class RowNode(Node):
         return self.what.findLine(lineno)
 
     def print(self, fd, level):
-        # first print into a string buffer
-        f = io.StringIO("")
-        self.what.print(f, level)
-        s = f.getvalue()
-        # insert the comment, if any, after the first line
-        if (("\n" in s) and (self.comment != None)):
-            i = s.index("\n")
-            s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "    #")) + self.comment) + s[i:])
-        print(s, file=fd, end="")
+        # first print the comments that are above this row
+        f = io.StringIO(self.commentU)
+        for line in f:
+            self.printIndent(fd, level)
+            print("#{}".format(line), end="", file=fd)
+
+        if self.commentR == None:
+            self.what.print(fd, level)
+        else:
+            # print into a string buffer
+            f = io.StringIO("")
+            self.what.print(f, level)
+            s = f.getvalue()
+            # insert the comment, if any, after the first line
+            if (("\n" in s) and (self.commentR != None)):
+                i = s.index("\n")
+                s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "    #")) + self.commentR) + s[i:])
+            print(s, file=fd, end="")
 
 class ClauseNode(Node):
     def __init__(self, body):
         super().__init__()
         self.body = body
-        self.comment = None
+        self.commentU = ""
+        self.commentR = None
 
-    # To a first approximation, all lines in the source are either empty lines, rows,
-    # or clause headers.  However, the Python parser does not give the line numbers for
-    # clause headers, so we approximate it by subtracting one from the first row in the clause
     def findLine(self, lineno):
         assert isinstance(self.body, SeqNode)
-        hdrline = self.body.rows[0].lineno - 1
-        if (hdrline >= lineno):
-            return ("clause", self, 0)
+        if not isinstance(self, BasicClauseNode) or self.type != "module":
+            if (self.lineno >= lineno):
+                return ("clause", self, self.lineno)
         return self.body.findLine(lineno)
 
     def printBody(self, fd, level):
-        if self.comment != None:
-            print(":\t#{}".format(self.comment), file=fd)
+        if self.commentR != None:
+            print(":\t#{}".format(self.commentR), file=fd)
         else:
             print(":", file=fd)
         self.body.print(fd, level + 1)
@@ -91,6 +111,14 @@ class DefClauseNode(ClauseNode):
         self.name = name
         self.args = args
         self.defaults = defaults
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "def"
+        self.lineno = line
+        for d in self.defaults:
+            d.merge(q)
+        self.body.merge(q)
 
     def toBlock(self, frame, block):
         return block.newDefClauseBlock(frame, self)
@@ -117,6 +145,14 @@ class LambdaNode(Node):
         self.defaults = defaults
         self.body = body
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "lambda"
+        self.lineno = line
+        for d in self.defaults:
+            d.merge(q)
+        self.body.merge(q)
+
     def toBlock(self, frame, block):
         return block.newLambdaBlock(frame, self)
 
@@ -141,6 +177,12 @@ class ClassClauseNode(ClauseNode):
         self.name = name
         self.bases = bases
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "class"
+        self.lineno = line
+        self.body.merge(q)
+
     def toBlock(self, frame, block):
         return block.newClassClauseBlock(frame, self)
 
@@ -158,6 +200,12 @@ class BasicClauseNode(ClauseNode):
     def __init__(self, type, body):
         super().__init__(body)
         self.type = type
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == self.type
+        self.lineno = line
+        self.body.merge(q)
 
     def toBlock(self, frame, block):
         return block.newBasicClauseBlock(frame, self)
@@ -179,6 +227,14 @@ class CondClauseNode(ClauseNode):
     def toBlock(self, frame, block):
         return block.newCondClauseBlock(frame, self)
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        # print("cc", kw, self.type, line)
+        assert kw == self.type
+        self.lineno = line
+        self.cond.merge(q)
+        self.body.merge(q)
+
     def print(self, fd, level):
         self.printIndent(fd, level)
         print("{} ".format(self.type), end="", file=fd)
@@ -189,6 +245,10 @@ class CompoundNode(Node):
     def __init__(self, clauses):
         super().__init__()
         self.clauses = clauses
+
+    def merge(self, q):
+        for c in self.clauses:
+            c.merge(q)
 
     def findLine(self, lineno):
         for c in self.clauses:
@@ -241,6 +301,15 @@ class ExceptClauseNode(ClauseNode):
         self.type = type
         self.name = name
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "except"
+        self.lineno = line
+        if self.type != None and self.name != None:
+            (kw2, line2, col2) = q.get()
+            assert kw2 == "as"
+        self.body.merge(q)
+
     def toBlock(self, frame, block):
         return block.newExceptClauseBlock(frame, self)
 
@@ -264,6 +333,17 @@ class WithClauseNode(ClauseNode):
 
     def toBlock(self, frame, block):
         return block.newWithClauseBlock(frame, self)
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "with"
+        self.lineno = line
+        for (expr, var) in self.items:
+            expr.merge(q)
+            if var != None:
+                (kw2, line2, col2) = q.get()
+                assert kw2 == "as"
+        self.body.merge(q)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
@@ -305,6 +385,16 @@ class ForClauseNode(ClauseNode):
         self.target = target
         self.expr = expr
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "for"
+        self.lineno = line
+        self.target.merge(q)
+        (kw2, line2, col2) = q.get()
+        assert kw2 == "in"
+        self.expr.merge(q)
+        self.body.merge(q)
+
     def toBlock(self, frame, block):
         return block.newForClauseBlock(frame, self)
 
@@ -321,6 +411,13 @@ class ReturnNode(Node):
     def __init__(self, what):
         super().__init__()
         self.what = what
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "return"
+        self.lineno = line
+        if self.what != None:
+            self.what.merge(q)
 
     def toBlock(self, frame, block):
         return block.newReturnBlock(frame, self)
@@ -341,6 +438,12 @@ class AssertNode(Node):
         self.test = test
         self.msg = msg
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "assert"
+        self.lineno = line
+        self.test.merge(q)
+
     def toBlock(self, frame, block):
         return block.newAssertBlock(frame, self)
 
@@ -358,6 +461,11 @@ class BreakNode(Node):
     def __init__(self):
         super().__init__()
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "break"
+        self.lineno = line
+
     def toBlock(self, frame, block):
         return block.newBreakBlock(frame, self)
 
@@ -369,6 +477,11 @@ class ContinueNode(Node):
 
     def __init__(self):
         super().__init__()
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "continue"
+        self.lineno = line
 
     def toBlock(self, frame, block):
         return block.newContinueBlock(frame, self)
@@ -383,6 +496,14 @@ class ImportNode(Node):
         super().__init__()
         self.name = name
         self.asname = asname
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "import"
+        self.lineno = line
+        if self.asname != None:
+            (kw2, line2, col2) = q.get()
+            assert kw2 == "as"
 
     def toBlock(self, frame, block):
         return block.newImportBlock(frame, self)
@@ -402,6 +523,13 @@ class ImportfromNode(Node):
         super().__init__()
         self.module = module
         self.names = names
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "from"
+        self.lineno = line
+        (kw2, line2, col2) = q.get()
+        assert kw2 == "import"
 
     def toBlock(self, frame, block):
         return block.newImportfromBlock(frame, self)
@@ -429,6 +557,11 @@ class GlobalNode(Node):
         super().__init__()
         self.names = names
 
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "global"
+        self.lineno = line
+
     def toBlock(self, frame, block):
         return block.newGlobalBlock(frame, self)
 
@@ -446,6 +579,13 @@ class DelNode(Node):
     def __init__(self, targets):
         super().__init__()
         self.targets = targets
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "del"
+        self.lineno = line
+        for t in self.targets:
+            t.merge(q)
 
     def toBlock(self, frame, block):
         return block.newDelBlock(frame, self)
@@ -467,6 +607,15 @@ class IfelseNode(Node):
         self.ifTrue = ifTrue
         self.ifFalse = ifFalse
 
+    def merge(self, q):
+        self.ifTrue.merge(q)
+        (kw, line, col) = q.get()
+        assert kw == "if"
+        self.cond.merge(q)
+        (kw2, line2, col2) = q.get()
+        assert kw2 == "else"
+        self.ifFalse.merge(q)
+
     def toBlock(self, frame, block):
         return block.newIfelseBlock(frame, self)
 
@@ -485,6 +634,11 @@ class AssignNode(Node):
         super().__init__()
         self.targets = targets
         self.value = value
+
+    def merge(self, q):
+        for t in self.targets:
+            t.merge(q)
+        self.value.merge(q)
 
     def toBlock(self, frame, block):
         return block.newAssignBlock(frame, self)
@@ -505,6 +659,10 @@ class AugassignNode(Node):
         self.right = right
         self.op = op
 
+    def merge(self, q):
+        self.left.merge(q)
+        self.right.merge(q)
+
     def toBlock(self, frame, block):
         return block.newAugassignBlock(frame, self)
 
@@ -523,6 +681,14 @@ class BinaryopNode(Node):
         self.right = right
         self.op = op
 
+    def merge(self, q):
+        self.left.merge(q)
+        if keyword.iskeyword(self.op):
+            (kw, line, col) = q.get()
+            assert kw == self.op
+            self.lineno = line
+        self.right.merge(q)
+
     def toBlock(self, frame, block):
         return block.newBinaryopBlock(frame, self)
 
@@ -540,6 +706,16 @@ class ListopNode(Node):
         super().__init__()
         self.values = values
         self.ops = ops
+
+    def merge(self, q):
+        i = 0
+        n = len(self.ops)
+        for i in range(n):
+            self.values[i].merge(q)
+            if keyword.iskeyword(self.ops[i]):
+                (kw, line, col) = q.get()
+                assert kw == self.ops[i]
+        self.values[n].merge(q)
 
     def toBlock(self, frame, block):
         return block.newListopBlock(frame, self)
@@ -561,6 +737,13 @@ class UnaryopNode(Node):
         self.right = right
         self.op = op
 
+    def merge(self, q):
+        if keyword.iskeyword(self.op):
+            (kw, line, col) = q.get()
+            assert kw == self.op
+            self.lineno = line
+        self.right.merge(q)
+
     def toBlock(self, frame, block):
         return block.newUnaryopBlock(frame, self)
 
@@ -575,6 +758,16 @@ class SubscriptNode(Node):
         super().__init__()
         self.array = array
         self.slice = slice
+
+    def merge(self, q):
+        self.array.merge(q)
+        (isSlice, lower, upper, step) = self.slice
+        if lower != None:
+            lower.merge(q)
+        if upper != None:
+            upper.merge(q)
+        if step != None:
+            step.merge(q)
 
     def toBlock(self, frame, block):
         return block.newSubscriptBlock(frame, self)
@@ -601,6 +794,13 @@ class CallNode(Node):
         self.func = func
         self.args = args
         self.keywords = keywords
+
+    def merge(self, q):
+        self.func.merge(q)
+        for arg in self.args:
+            arg.merge(q)
+        for (arg, val) in self.keywords:
+            val.merge(q)
 
     def toBlock(self, frame, block):
         return block.newCallBlock(frame, self)
@@ -630,6 +830,10 @@ class ListNode(Node):
         super().__init__()
         self.entries = entries
 
+    def merge(self, q):
+        for e in self.entries:
+            e.merge(q)
+
     def toBlock(self, frame, block):
         return block.newListBlock(frame, self)
 
@@ -647,6 +851,20 @@ class ListcompNode(Node):
         super().__init__()
         self.elt = elt
         self.generators = generators
+
+    def merge(self, q):
+        self.elt.merge(q)
+        for (target, iter, ifs, is_async) in self.generators:
+            (kw, line, col) = q.get()
+            assert kw == "for"
+            target.merge(q)
+            (kw2, line2, col2) = q.get()
+            assert kw2 == "in"
+            iter.merge(q)
+            for i in ifs:
+                (kw3, line3, col3) = q.get()
+                assert kw2 == "if"
+                i.merge(q)
 
     def toBlock(self, frame, block):
         return block.newListcompBlock(frame, self)
@@ -671,6 +889,11 @@ class DictNode(Node):
         self.keys = keys
         self.values = values
 
+    def merge(self, q):
+        for i in range(len(self.keys)):
+            self.keys[i].merge(q)
+            self.values[i].merge(q)
+
     def toBlock(self, frame, block):
         return block.newDictBlock(frame, self)
 
@@ -689,6 +912,10 @@ class TupleNode(Node):
     def __init__(self, entries):
         super().__init__()
         self.entries = entries
+
+    def merge(self, q):
+        for e in self.entries:
+            e.merge(q)
 
     def toBlock(self, frame, block):
         return block.newTupleBlock(frame, self)
@@ -711,6 +938,10 @@ class AttrNode(Node):
         self.array = array
         self.ref = ref
 
+    def merge(self, q):
+        self.array.merge(q)
+        self.ref.merge(q)
+
     def toBlock(self, frame, block):
         return block.newAttrBlock(frame, self)
 
@@ -724,6 +955,9 @@ class EvalNode(Node):
     def __init__(self, what):
         super().__init__()
         self.what = what
+
+    def merge(self, q):
+        self.what.merge(q)
 
     def toBlock(self, frame, block):
         return block.newEvalBlock(frame, self)
@@ -739,6 +973,9 @@ class NumberNode(Node):
         super().__init__()
         self.what = what
 
+    def merge(self, q):
+        pass
+
     def toBlock(self, frame, block):
         return block.newNumberBlock(frame, self)
 
@@ -750,6 +987,12 @@ class ConstantNode(Node):
     def __init__(self, what):
         super().__init__()
         self.what = what
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        # print("const", kw, self.what, line)
+        assert kw == self.what
+        self.lineno = line
 
     def toBlock(self, frame, block):
         return block.newConstantBlock(frame, self)
@@ -763,6 +1006,9 @@ class NameNode(Node):
         super().__init__()
         self.what = what
 
+    def merge(self, q):
+        pass
+
     def toBlock(self, frame, block):
         return block.newNameBlock(frame, self)
 
@@ -774,6 +1020,9 @@ class StringNode(Node):
     def __init__(self, what):
         super().__init__()
         self.what = what
+
+    def merge(self, q):
+        pass
 
     def toBlock(self, frame, block):
         return block.newStringBlock(frame, self)
@@ -799,6 +1048,9 @@ class BytesNode(Node):
         super().__init__()
         self.what = what
 
+    def merge(self, q):
+        pass
+
     def toBlock(self, frame, block):
         return block.newBytesBlock(frame, self)
 
@@ -811,6 +1063,9 @@ class ExpressionNode(Node):
         super().__init__()
         self.what = what
 
+    def merge(self, q):
+        self.what.merge(q)
+
     def toBlock(self, frame, block):
         return block.newExpressionBlock(frame, self)
 
@@ -818,10 +1073,13 @@ class ExpressionNode(Node):
         self.what.print(fd, 0)
 
 class SeqNode(Node):
-
     def __init__(self, rows):
         super().__init__()
         self.rows = rows
+
+    def merge(self, q):
+        for r in self.rows:
+            r.merge(q)
 
     def toBlock(self, frame, block):
         return block.newSeqBlock(frame, self)

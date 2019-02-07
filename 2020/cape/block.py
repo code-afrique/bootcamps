@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.messagebox
+import tkinter.scrolledtext
 import io
 from form import *
 from node import *
@@ -16,6 +17,17 @@ class Block(tk.Frame):
         self.isWithinDef = (False if (parent == None) else parent.isWithinDef)
         self.isWithinLoop = (False if (parent == None) else parent.isWithinLoop)
         self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
+
+    # get the width and height of a multiline comment
+    def bb(self, comment):
+        width = height = 0
+        f = io.StringIO(comment)
+        for line in f:
+            n = len(line) - 1
+            if n > width:
+                width = n
+            height += 1
+        return (width, height)
 
     def scrollUpdate(self):
         self.shared.scrollable.scrollUpdate()
@@ -327,8 +339,15 @@ class Block(tk.Frame):
     def newSeqBlock(self, parent, rows):
         return SeqBlock(parent, self.shared, rows)
 
-class HeaderBlock(Block):
+class FrameBlock(Block):
+    def __init__(self, parent, shared):
+        super().__init__(parent, shared)
 
+    def genForm(self):
+        f = FrameForm(self.shared.confarea, self)
+        self.setForm(f)
+
+class HeaderBlock(Block):
     def __init__(self, parent, shared):
         super().__init__(parent, shared)
 
@@ -637,18 +656,30 @@ class ClauseBlock(Block):
     def __init__(self, parent, shared, node, minimized, title):
         super().__init__(parent, shared)
 
-        self.comment = tk.StringVar()
-        if node != None and node.comment != None:
-            self.comment.set(("#" + node.comment))
+        self.commentU = tk.StringVar()
+        self.commentR = tk.StringVar()
+        if node != None:
+            if node.commentU != "":
+                self.commentU.set(node.commentU)
+            if node.commentR != None:
+                self.commentR.set(("#" + node.commentR))
+
+        comment = self.commentU.get()
+        if comment != "":
+            (width, height) = self.bb(comment)
+            c = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            c.insert(tk.INSERT, comment[:-1])
+            c.grid(row=0, sticky=tk.W)
+
         self.body_node = SeqNode([RowNode(PassNode())]) if node == None or node.body == None else node.body
         self.title = title
         self.hdr = HeaderBlock(self, shared)
         self.colon = tk.Button(self.hdr, highlightbackground="yellow", text="+", command=self.minmax)
         self.body = None
 
-        self.hdr.grid(row=0, column=0, sticky=tk.W)
-        self.colon.grid(row=0, column=1000, sticky=tk.W)
-        tk.Button(self.hdr, textvariable=self.comment, fg="brown", command=self.listcmd).grid(row=0, column=1001, sticky=(tk.N + tk.W))
+        self.hdr.grid(row=1, column=0, sticky=tk.W)
+        self.colon.grid(row=1, column=1000, sticky=tk.W)
+        tk.Button(self.hdr, textvariable=self.commentR, fg="brown", command=self.listcmd).grid(row=1, column=1001, sticky=(tk.N + tk.W))
         self.minimized = True
         self.row = None
 
@@ -681,7 +712,7 @@ class ClauseBlock(Block):
         if self.minimized:
             if self.body == None:
                 self.body = self.body_node.toBlock(self, self)
-            self.body.grid(row=1, column=0, columnspan=2, sticky=tk.W)
+            self.body.grid(row=2, column=0, columnspan=2, sticky=tk.W)
             self.update()
             self.minimized = False
             self.colon.configure(highlightbackground="white", text=":")
@@ -700,10 +731,10 @@ class ClauseBlock(Block):
     def toNode(self):
         self.shared.keep(self)
         r = self.toNodeRaw()
-        c = self.comment.get()
+        c = self.commentR.get()
         if (c != ""):
             assert (c[0] == "#")
-            r.comment = c[1:]
+            r.commentR = c[1:]
         return r
 
 # A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
@@ -712,7 +743,7 @@ class BasicClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, False, "{} clause".format(node.type))
         self.type = node.type
-        tk.Button(self.hdr, text=node.type, fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr, text=node.type, fg="red", width=0, command=self.cb).grid(row=1, column=0)
         self.hdr.grid()
 
     def genForm(self):
@@ -734,10 +765,10 @@ class CondClauseBlock(ClauseBlock):
         else:
             self.cond = node.cond.toBlock(self.hdr, self)
         self.type = node.type
-        self.cond.grid(row=0, column=1)
-        tk.Button(self.hdr, text=self.type, fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.cond.grid(row=0, column=1)
-        self.hdr.grid(row=0, sticky=tk.W)
+        self.cond.grid(row=1, column=1)
+        tk.Button(self.hdr, text=self.type, fg="red", width=0, command=self.cb).grid(row=1, column=0)
+        self.cond.grid(row=1, column=1)
+        self.hdr.grid(row=1, sticky=tk.W)
 
     def genForm(self):
         self.setForm(CondClauseForm(self.shared.confarea, self))
@@ -808,10 +839,10 @@ class ClassClauseBlock(ClauseBlock):
         self.cname = tk.StringVar()
         self.cname.set(node.name)
         btn = tk.Button(self.hdr, text="class", fg="red", width=0, command=self.cb)
-        btn.grid(row=0, column=0)
+        btn.grid(row=1, column=0)
         self.name = tk.Button(self.hdr, textvariable=self.cname, fg="blue", command=self.cb)
-        self.name.grid(row=0, column=1)
-        tk.Button(self.hdr, text="(", command=self.cb).grid(row=0, column=2)
+        self.name.grid(row=1, column=1)
+        tk.Button(self.hdr, text="(", command=self.cb).grid(row=1, column=2)
         self.eol = tk.Button(self.hdr, text=")", command=self.cb)
         self.bases = []
         if (node != None):
@@ -844,11 +875,11 @@ class ClassClauseBlock(ClauseBlock):
         column = 3
         for i in range(len(self.bases)):
             if (i != 0):
-                tk.Button(self.hdr, text=",", command=self.cb).grid(row=0, column=column)
+                tk.Button(self.hdr, text=",", command=self.cb).grid(row=1, column=column)
                 column += 1
-            self.bases[i].grid(row=0, column=column)
+            self.bases[i].grid(row=1, column=column)
             column += 1
-        self.eol.grid(row=0, column=column)
+        self.eol.grid(row=1, column=column)
 
     def toNodeRaw(self):
         v = self.cname.get()
@@ -1779,17 +1810,34 @@ class RowBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
         self.row = None
-        self.comment = tk.StringVar()
+        self.commentU = tk.StringVar()
+        self.commentR = tk.StringVar()
         menu = tk.Button(self, text="-", width=3, command=self.listcmd)
         menu.grid(row=0, column=0, sticky=tk.W)
+
+        frame = FrameBlock(self, shared)
         if (node == None):
-            self.what = PassBlock(self, self.shared, None)
+            self.what = PassBlock(frame, self.shared, None)
         else:
-            self.what = node.what.toBlock(self, self)
-        self.what.grid(row=0, column=1, sticky=tk.W)
-        if ((node != None) and (node.comment != None)):
-            self.comment.set(("#" + node.comment))
-        tk.Button(self, textvariable=self.comment, fg="brown", command=self.listcmd).grid(row=0, column=2, sticky=(tk.N + tk.W))
+            self.what = node.what.toBlock(frame, self)
+            if node.commentR != None:
+                self.commentR.set(("#" + node.commentR))
+            if node.commentU != "":
+                self.commentU.set(node.commentU)
+
+        comment = self.commentU.get()
+        if comment != "":
+            (width, height) = self.bb(comment)
+            c = tk.Text(frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            c.insert(tk.INSERT, comment[:-1])
+            c.grid(row=0, columnspan=2, sticky=tk.W)
+
+        self.what.grid(row=1, column=0, sticky=tk.W)
+
+        if self.commentR.get() != "":
+            tk.Button(frame, textvariable=self.commentR, fg="brown", command=self.listcmd).grid(row=1, column=1, sticky=(tk.N + tk.W))
+
+        frame.grid(row=0, column=1, sticky=tk.W)
 
     def goRight(self):
         return (self if (self.what == None) else self.what)
@@ -1808,9 +1856,9 @@ class RowBlock(Block):
 
     def setComment(self, comment):
         if (comment == ""):
-            self.comment.set("")
+            self.commentR.set("")
         else:
-            self.comment.set(("#" + comment))
+            self.commentR.set(("#" + comment))
 
     def genForm(self):
         self.setForm(RowForm(self.shared.confarea, self))
@@ -1863,10 +1911,13 @@ class RowBlock(Block):
     def toNode(self):
         self.shared.keep(self)
         r = RowNode(self.what.toNode(), 0)
-        c = self.comment.get()
+        c = self.commentU.get()
+        if (c != ""):
+            r.commentU = c
+        c = self.commentR.get()
         if (c != ""):
             assert (c[0] == "#")
-            r.comment = c[1:]
+            r.commentR = c[1:]
         return r
 
 # The parent of a SeqBlock is always a ClauseBlock, which helps with navigating
@@ -1949,7 +2000,7 @@ class DefClauseBlock(ClauseBlock):
         self.mname = tk.StringVar()
         self.mname.set(node.name)
         self.args = node.args
-        self.defaults = [d.toBlock(self.clause.hdr, self) for d in node.defaults]
+        self.defaults = [d.toBlock(self.hdr, self) for d in node.defaults]
 
         self.setHeader()
         self.hdr.grid()
@@ -1957,24 +2008,24 @@ class DefClauseBlock(ClauseBlock):
     def setHeader(self):
         hdr = self.hdr
         btn = tk.Button(hdr, text="def", fg="red", width=0, command=self.cb)
-        btn.grid(row=0, column=0)
+        btn.grid(row=1, column=0)
         self.name = tk.Button(hdr, textvariable=self.mname, fg="blue", command=self.cb)
-        self.name.grid(row=0, column=1)
-        tk.Button(hdr, text="(", command=self.cb).grid(row=0, column=2)
+        self.name.grid(row=1, column=1)
+        tk.Button(hdr, text="(", command=self.cb).grid(row=1, column=2)
         column = 3
         d = (len(self.args) - len(self.defaults))
         for i in range(len(self.args)):
             if (i != 0):
-                tk.Button(hdr, text=",", command=self.cb).grid(row=0, column=column)
+                tk.Button(hdr, text=",", command=self.cb).grid(row=1, column=column)
                 column += 1
-            tk.Button(hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=0, column=column)
+            tk.Button(hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=1, column=column)
             column += 1
             if (i >= d):
-                tk.Button(hdr, text="=", command=self.cb).grid(row=0, column=column)
+                tk.Button(hdr, text="=", command=self.cb).grid(row=1, column=column)
                 column += 1
-                self.defaults[(i - d)].grid(row=0, column=column)
+                self.defaults[(i - d)].grid(row=1, column=column)
                 column += 1
-        tk.Button(hdr, text=")", command=self.cb).grid(row=0, column=column)
+        tk.Button(hdr, text=")", command=self.cb).grid(row=1, column=column)
 
     def genForm(self):
         f = DefClauseForm(self.shared.confarea, self)
@@ -2194,22 +2245,22 @@ class ExceptClauseBlock(ClauseBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, False, "except clause")
 
-        tk.Button(self.hdr, text="except", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr, text="except", fg="red", width=0, command=self.cb).grid(row=1, column=0)
         column = 1
         if node.type == None:
             self.type = None
             self.name = None
         else:
             self.type = node.type.toBlock(self, self)
-            self.type.grid(row=0, column=column)
+            self.type.grid(row=1, column=column)
             column += 1
             if node.name == None:
                 self.name = None
             else:
-                tk.Button(hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
+                tk.Button(hdr, text="as", fg="red", width=0, command=self.cb).grid(row=1, column=column)
                 column += 1
                 self.name = node.name.toBlock(self, self)
-                self.name.grid(row=0, column=column)
+                self.name.grid(row=1, column=column)
                 column += 1
         self.hdr.grid()
 
@@ -2227,21 +2278,21 @@ class WithClauseBlock(ClauseBlock):
         super().__init__(parent, shared, node, False, "with clause")
 
         self.items = []
-        tk.Button(self.hdr, text="with", fg="red", width=0, command=self.cb).grid(row=0, column=0)
+        tk.Button(self.hdr, text="with", fg="red", width=0, command=self.cb).grid(row=1, column=0)
 
         column = 1
         if node != None:
             for (expr, var) in node.items:
                 b = expr.toBlock(self.hdr, self)
-                b.grid(row=0, column=column)
+                b.grid(row=1, column=column)
                 column += 1
                 if var == None:
                     v = None
                 else:
-                    tk.Button(self.hdr, text="as", fg="red", width=0, command=self.cb).grid(row=0, column=column)
+                    tk.Button(self.hdr, text="as", fg="red", width=0, command=self.cb).grid(row=1, column=column)
                     column += 1
                     v = var.toBlock(self.hdr, self)
-                    v.grid(row=0, column=column)
+                    v.grid(row=1, column=column)
                     column += 1
                 self.items.append((b, v))
 
@@ -2272,10 +2323,10 @@ class ForClauseBlock(ClauseBlock):
         else:
             self.expr = ExpressionBlock(self.hdr, shared, node.expr)
 
-        tk.Button(self.hdr, text="for", fg="red", width=0, command=self.cb).grid(row=0, column=0)
-        self.target.grid(row=0, column=1)
-        tk.Button(self.hdr, text="in", fg="red", command=self.cb).grid(row=0, column=2)
-        self.expr.grid(row=0, column=3)
+        tk.Button(self.hdr, text="for", fg="red", width=0, command=self.cb).grid(row=1, column=0)
+        self.target.grid(row=1, column=1)
+        tk.Button(self.hdr, text="in", fg="red", command=self.cb).grid(row=1, column=2)
+        self.expr.grid(row=1, column=3)
         self.hdr.grid()
 
     def genForm(self):

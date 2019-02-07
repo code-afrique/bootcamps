@@ -3,6 +3,7 @@ import tempfile
 import subprocess
 import sys
 import io
+import keyword
 import tkinter as tk
 import tkinter.messagebox
 import tkinter.filedialog
@@ -152,14 +153,20 @@ class CAPE(tk.Frame):
             n.print(sys.stdout, 0)
             print("'=== END OF PROGRAM ==='")
 
-    def extractComments(self, code):
+    def extract(self, code):
+        keywords = queue.Queue()
+        keywords.put(("module", 0, 0))
         comments = {}
         fd = io.StringIO(code)
         for (toktype, tokval, begin, end, line) in tokenize.generate_tokens(fd.readline):
             if (toktype == tokenize.COMMENT):
                 (row, col) = begin
                 comments[row] = tokenize.untokenize([(toktype, tokval)])
-        return comments
+            elif (toktype == tokenize.NAME):
+                (row, col) = begin
+                if keyword.iskeyword(tokval):
+                    keywords.put((tokval, row, col))
+        return (keywords, comments)
 
     def new(self):
         if (not self.shared.saved):
@@ -187,20 +194,30 @@ class CAPE(tk.Frame):
                 code = fd.read()
                 tree = pparse.pparse(code, show_offsets=True)
                 n = pmod.nodeEval(tree)
-                # extract and insert the comments
-                comments = self.extractComments(code)
+
+                # extract keywords and comments
+                keywords, comments = self.extract(code)
+
+                # find the line numbers corresponding to keywords
+                n.merge(keywords)
+
+                # now we can merge comments back into the AST, sort of
                 for (lineno, text) in comments.items():
                     assert (text[0] == "#")
                     (type, b, i) = n.findLine(lineno)
                     if type == "row":
+                        # print("ROW", lineno, i)
                         row = b.rows[i]
-                        if (lineno < row.lineno):
-                            row = RowNode(EmptyNode(), lineno)
-                            b.rows.insert(i, row)
-                        row.comment = text[1:]
+                        lin = row.lineno
                     else:
+                        # print("CLAUSE", lineno, i)
                         assert type == "clause"
-                        b.comment = text[1:]
+                        row = b
+                        lin = i
+                    if (lineno < lin):
+                        row.commentU += text[1:] + '\n'
+                    else:
+                        row.commentR = text[1:]
                 if (self.program != None):
                     self.program.grid_forget()
                 self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)

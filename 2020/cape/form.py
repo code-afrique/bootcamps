@@ -144,6 +144,16 @@ class WithClauseForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text="With Statement").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a with statement.").grid(sticky=tk.W)
 
+class FrameForm(Form):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="A block to frame other blocks").grid()
+        tk.Message(self, width=350, font="Helvetica 14", text="For programming convenience").grid(sticky=tk.W)
+
+
 class EmptyForm(Form):
 
     def __init__(self, parent, block):
@@ -209,7 +219,7 @@ class RowForm(Form):
         tk.Label(self, text="Comment: ").grid(row=7)
         self.entry = tk.Entry(self)
         self.entry.bind("<Return>", self.keyEnter)
-        c = self.block.comment.get()
+        c = self.block.commentR.get()
         self.entry.insert(tk.END, c)
         self.entry.grid(row=7, column=1)
         enter = tk.Button(self, text="Enter", command=self.cb)
