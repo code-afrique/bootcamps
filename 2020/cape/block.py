@@ -1815,7 +1815,7 @@ class RowBlock(Block):
         self.commentR = tk.StringVar()
         self.commentU = None
         menu = tk.Button(self, text="-", width=3, command=self.listcmd)
-        menu.grid(row=0, column=0, sticky=tk.W)
+        menu.grid(row=0, column=0, rowspan=2, sticky=tk.W)
 
         self.setCommentU(node.commentU)
         self.frame = FrameBlock(self, shared)
@@ -1827,11 +1827,11 @@ class RowBlock(Block):
                 self.commentR.set(("# " + node.commentR))
             if node.commentU != "":
                 self.commentU.set(node.commentU)
-        self.what.grid(row=1, column=0, sticky=tk.W)
+        self.what.grid(row=0, column=0, sticky=tk.W)
 
-        tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=1, column=1, sticky=(tk.N + tk.W))
+        tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=0, column=1, sticky=(tk.N + tk.W))
 
-        self.frame.grid(row=0, column=1, sticky=tk.W)
+        self.frame.grid(row=1, column=1, sticky=tk.W)
 
     def isCompound(self):
         return isinstance(self.what, CompoundBlock)
@@ -1851,7 +1851,7 @@ class RowBlock(Block):
                 self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
             self.commentU.insert(tk.INSERT, comment[:-1])
             self.commentU.config(state="disabled")
-            self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
+            self.commentU.grid(row=0, column=1, sticky=tk.W)
 
     def goRight(self):
         if isinstance(self.what, ContainerBlock):
