@@ -1,5 +1,6 @@
 import keyword as kw
 import tkinter as tk
+import tkinter.scrolledtext
 
 class Form(tk.Frame):
 
@@ -206,18 +207,30 @@ class RowForm(Form):
         tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: <return> or <enter> adds a new statement below.").grid(row=6, columnspan=3)
         self.bind("<Key>", self.key)
         self.focus_set()
-        tk.Label(self, text="Comment: ").grid(row=7)
+
+        tk.Label(self, text="Inline Comment: ").grid(row=7, column=0)
         self.entry = tk.Entry(self)
         self.entry.bind("<Return>", self.keyEnter)
-        c = self.block.commentR.get()
+        c = block.commentR.get()
+        print("COMR", c)
         self.entry.insert(tk.END, c)
-        self.entry.grid(row=7, column=1)
+        self.entry.grid(row=7, column=1, columnspan=2)
+
+        tk.Label(self, text="Multiline Comment (displayed above statement): ").grid(row=8, columnspan=3)
+        self.comment = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+        if block.commentU != None:
+            c = block.commentU.get("1.0", tk.END)
+            self.comment.insert(tk.END, c)
+        self.comment.grid(row=9, columnspan=3)
+
         enter = tk.Button(self, text="Enter", command=self.cb)
-        enter.grid(row=7, column=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="If you copied or deleted a statement, you can paste it here (see Edit menu).").grid(columnspan=2)
+        enter.grid(row=10, column=2)
+
+        tk.Message(self, width=350, font="Helvetica 14", text="If you copied or deleted a statement, you can paste it here (see Edit menu).").grid(columnspan=3)
 
     def cb(self):
-        self.block.setComment(self.entry.get())
+        cu = "" if self.comment.compare("end-1c", "==", "1.0") else self.comment.get("1.0", tk.END)
+        self.block.setComment(self.entry.get(), cu)
 
     def keyEnter(self, ev):
         self.cb()
@@ -227,7 +240,7 @@ class RowForm(Form):
             return
         if (ev.char == "\r"):
             self.addStmt()
-        elif (ev.char == ""):
+        elif (ev.char == "\177"):
             self.delStmt()
 
     def addStmt(self):

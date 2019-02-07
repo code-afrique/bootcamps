@@ -1794,34 +1794,40 @@ class RowBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
         self.row = None
-        self.commentU = tk.StringVar()
         self.commentR = tk.StringVar()
+        self.commentU = None
         menu = tk.Button(self, text="-", width=3, command=self.listcmd)
         menu.grid(row=0, column=0, sticky=tk.W)
 
-        frame = FrameBlock(self, shared)
+        self.setCommentU(node.commentU)
+        self.frame = FrameBlock(self, shared)
         if (node == None):
-            self.what = PassBlock(frame, self.shared, None)
+            self.what = PassBlock(self.frame, self.shared, None)
         else:
-            self.what = node.what.toBlock(frame, self)
+            self.what = node.what.toBlock(self.frame, self)
             if node.commentR != None:
                 self.commentR.set(("#" + node.commentR))
             if node.commentU != "":
                 self.commentU.set(node.commentU)
-
-        comment = self.commentU.get()
-        if comment != "":
-            (width, height) = self.bb(comment)
-            c = tk.Text(frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
-            c.insert(tk.INSERT, comment[:-1])
-            c.grid(row=0, columnspan=2, sticky=tk.W)
-
         self.what.grid(row=1, column=0, sticky=tk.W)
 
-        if self.commentR.get() != "":
-            tk.Button(frame, textvariable=self.commentR, fg="brown", command=self.listcmd).grid(row=1, column=1, sticky=(tk.N + tk.W))
+        tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd).grid(row=1, column=1, sticky=(tk.N + tk.W))
 
-        frame.grid(row=0, column=1, sticky=tk.W)
+        self.frame.grid(row=0, column=1, sticky=tk.W)
+
+    def setCommentU(self, comment):
+        if self.commentU != None:
+            self.commentU.destroy()
+        if comment == "":
+            self.commentU = None
+        else:
+            (width, height) = self.bb(comment)
+            if height > 3:
+                height = 3
+            # self.commentU = tk.scrolledtext.ScrolledText(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            self.commentU = tk.Text(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            self.commentU.insert(tk.INSERT, comment[:-1])
+            self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
 
     def goRight(self):
         if isinstance(self.what, ContainerBlock):
@@ -1840,11 +1846,13 @@ class RowBlock(Block):
         else:
             return self
 
-    def setComment(self, comment):
-        if (comment == ""):
+    def setComment(self, commentR, commentU):
+        if (commentR == ""):
             self.commentR.set("")
         else:
-            self.commentR.set(("#" + comment))
+            self.commentR.set(("#" + commentR))
+        self.setCommentU(commentU)
+        self.needsSaving()
 
     def genForm(self):
         self.setForm(RowForm(self.shared.confarea, self))
@@ -1896,7 +1904,7 @@ class RowBlock(Block):
 
     def toNode(self):
         r = RowNode(self.what.toNode(), 0)
-        r.commentU = self.commentU.get()
+        r.commentU = None if self.commentU == None else self.comment.get("1.0", tk.END)
 
         if self.shared.keeping:
             if isinstance(self.what, ClauseBlock):
