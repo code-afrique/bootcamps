@@ -230,6 +230,7 @@ class CAPE(tk.Frame):
                 row.commentU += comment + '\n'
             else:
                 row.commentR = comment
+
         if (self.program != None):
             self.program.grid_forget()
         self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
