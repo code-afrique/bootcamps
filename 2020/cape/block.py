@@ -660,20 +660,12 @@ class ClauseBlock(Block):
     def __init__(self, parent, shared, node, minimized, title):
         super().__init__(parent, shared)
 
-        self.commentU = tk.StringVar()
         self.commentR = tk.StringVar()
+        self.commentU = None
         if node != None:
-            if node.commentU != "":
-                self.commentU.set(node.commentU)
+            self.setCommentU(node.commentU)
             if node.commentR != None:
                 self.commentR.set(("#" + node.commentR))
-
-        comment = self.commentU.get()
-        if comment != "":
-            (width, height) = self.bb(comment)
-            c = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
-            c.insert(tk.INSERT, comment[:-1])
-            c.grid(row=0, sticky=tk.W)
 
         self.body_node = SeqNode([RowNode(PassNode())]) if node == None or node.body == None else node.body
         self.title = title
@@ -690,6 +682,29 @@ class ClauseBlock(Block):
         # TODO.  May need to get rid of this
         if not minimized:
             self.minmax()
+
+    def setComment(self, commentR, commentU):
+        if (commentR == ""):
+            self.commentR.set("")
+        else:
+            self.commentR.set(("#" + commentR))
+        self.setCommentU(commentU)
+        self.needsSaving()
+
+    def setCommentU(self, comment):
+        if self.commentU != None:
+            self.commentU.destroy()
+        if comment == "":
+            self.commentU = None
+        else:
+            (width, height) = self.bb(comment)
+            if height > 3:
+                height = 3
+            # self.commentU = tk.scrolledtext.ScrolledText(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            self.commentU.insert(tk.INSERT, comment[:-1])
+            self.commentU.config(state="disabled")
+            self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
 
     def listcmd(self):
         self.setBlock(self)
@@ -734,7 +749,7 @@ class ClauseBlock(Block):
 
     def toNode(self):
         r = self.toNodeRaw()
-        r.commentU = self.commentU.get()
+        r.commentU = None if self.commentU == None else self.commentU.get("1.0", tk.END)
 
         if self.shared.keeping:
             r.index = self.shared.keep(self)
@@ -1815,6 +1830,9 @@ class RowBlock(Block):
 
         self.frame.grid(row=0, column=1, sticky=tk.W)
 
+    def isCompound(self):
+        return isinstance(self.what, CompoundBlock)
+
     def setCommentU(self, comment):
         if self.commentU != None:
             self.commentU.destroy()
@@ -1827,6 +1845,7 @@ class RowBlock(Block):
             # self.commentU = tk.scrolledtext.ScrolledText(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
             self.commentU = tk.Text(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
             self.commentU.insert(tk.INSERT, comment[:-1])
+            self.commentU.config(state="disabled")
             self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
 
     def goRight(self):
@@ -1904,7 +1923,7 @@ class RowBlock(Block):
 
     def toNode(self):
         r = RowNode(self.what.toNode(), 0)
-        r.commentU = None if self.commentU == None else self.comment.get("1.0", tk.END)
+        r.commentU = None if self.commentU == None else self.commentU.get("1.0", tk.END)
 
         if self.shared.keeping:
             if isinstance(self.what, ClauseBlock):
@@ -2040,7 +2059,7 @@ class DefClauseBlock(ClauseBlock):
         self.args = args
         self.setHeader()
         self.needsSaving()
-        self.setBlock(self.body.rows[0].what)
+        self.setBlock(self.body)
 
     def toNodeRaw(self):
         v = self.mname.get()
