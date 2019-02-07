@@ -729,8 +729,14 @@ class ClauseBlock(Block):
             return self.body.toNode()
 
     def toNode(self):
-        self.shared.keep(self)
         r = self.toNodeRaw()
+        r.commentU = self.commentU.get()
+
+        # TODO fix the following
+        n = r.commentU.count('\n')
+        for i in range(n + 1):
+            self.shared.keep(self)
+
         c = self.commentR.get()
         if (c != ""):
             assert (c[0] == "#")
@@ -1377,7 +1383,8 @@ class PassBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        self.rowblk = parent
+        self.rowblk = parent.parent     # parent is a FrameBlock
+        assert isinstance(self.rowblk, RowBlock)
         btn = tk.Button(self, text="pass", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
 
@@ -1909,11 +1916,15 @@ class RowBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        self.shared.keep(self)
         r = RowNode(self.what.toNode(), 0)
-        c = self.commentU.get()
-        if (c != ""):
-            r.commentU = c
+        r.commentU = self.commentU.get()
+
+        if not isinstance(r.what, ClauseNode):
+            # TODO fix the following
+            n = r.commentU.count('\n')
+            for i in range(n + 1):
+                self.shared.keep(self)
+
         c = self.commentR.get()
         if (c != ""):
             assert (c[0] == "#")
@@ -1987,6 +1998,7 @@ class SeqBlock(Block):
 
     def gridUpdate(self):
         for row in range(len(self.rows)):
+            assert isinstance(self.rows[row], RowBlock)
             self.rows[row].grid(row=row, column=0, sticky=tk.W)
             self.rows[row].row = row
 

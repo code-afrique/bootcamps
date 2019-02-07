@@ -98,6 +98,12 @@ class ClauseNode(Node):
                 return ("clause", self, self.lineno)
         return self.body.findLine(lineno)
 
+    def printComment(self, fd, level):
+        f = io.StringIO(self.commentU)
+        for line in f:
+            self.printIndent(fd, level)
+            print("#{}".format(line), end="", file=fd)
+
     def printBody(self, fd, level):
         if self.commentR != None:
             print(":\t#{}".format(self.commentR), file=fd)
@@ -124,6 +130,7 @@ class DefClauseNode(ClauseNode):
         return block.newDefClauseBlock(frame, self)
 
     def print(self, fd, level):
+        self.printComment(fd, level)
         self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
         d = (len(self.args) - len(self.defaults))
@@ -187,6 +194,7 @@ class ClassClauseNode(ClauseNode):
         return block.newClassClauseBlock(frame, self)
 
     def print(self, fd, level):
+        self.printComment(fd, level)
         self.printIndent(fd, level)
         print("class {}(".format(self.name), end="", file=fd)
         for i in range(len(self.bases)):
@@ -214,6 +222,7 @@ class BasicClauseNode(ClauseNode):
         if self.type == "module":
             self.body.print(fd, level)
         else:
+            self.printComment(fd, level)
             self.printIndent(fd, level)
             print("{}".format(self.type), end="", file=fd)
             self.printBody(fd, level)
@@ -236,6 +245,7 @@ class CondClauseNode(ClauseNode):
         self.body.merge(q)
 
     def print(self, fd, level):
+        self.printComment(fd, level)
         self.printIndent(fd, level)
         print("{} ".format(self.type), end="", file=fd)
         self.cond.print(fd, 0)
@@ -314,6 +324,7 @@ class ExceptClauseNode(ClauseNode):
         return block.newExceptClauseBlock(frame, self)
 
     def print(self, fd, level):
+        self.printComment(fd, level)
         self.printIndent(fd, level)
         if (self.type == None):
             print("except", end="", file=fd)
@@ -346,6 +357,7 @@ class WithClauseNode(ClauseNode):
         self.body.merge(q)
 
     def print(self, fd, level):
+        self.printComment(fd, level)
         self.printIndent(fd, level)
         print("with ", end="", file=fd)
         first = True
@@ -399,6 +411,7 @@ class ForClauseNode(ClauseNode):
         return block.newForClauseBlock(frame, self)
 
     def print(self, fd, level):
+        self.printComment(fd, level)
         self.printIndent(fd, level)
         print("for ", end="", file=fd)
         self.target.print(fd, 0)

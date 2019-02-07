@@ -192,55 +192,58 @@ class CAPE(tk.Frame):
             with open(filename, "r") as fd:
                 # read and parse the program
                 code = fd.read()
-                tree = pparse.pparse(code, show_offsets=True)
-                n = pmod.nodeEval(tree)
-
-                # extract keywords and comments
-                keywords, comments = self.extract(code)
-
-                # find the line numbers corresponding to keywords
-                n.merge(keywords)
-
-                # now we can merge comments back into the AST, sort of
-                for (lineno, text) in comments.items():
-                    assert (text[0] == "#")
-                    (type, b, i) = n.findLine(lineno)
-                    if type == "row":
-                        # print("ROW", lineno, i)
-                        row = b.rows[i]
-                        lin = row.lineno
-                    else:
-                        # print("CLAUSE", lineno, i)
-                        assert type == "clause"
-                        row = b
-                        lin = i
-                    if (lineno < lin):
-                        row.commentU += text[1:] + '\n'
-                    else:
-                        row.commentR = text[1:]
-                if (self.program != None):
-                    self.program.grid_forget()
-                self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
-                self.program.grid(sticky=tk.W)
-                self.shared.scrollable.scrollUpdate()
-                self.program.setBlock(self.program.clauses[0].body)
-                # verify that conversion has been done right
-                # print("verify")
-                tree2 = pparse.pparse(code, show_offsets=False)
-                n3 = self.program.toNode()
-                f3 = io.StringIO("")
-                n3.print(f3, 0)
-                code3 = f3.getvalue()
-                tree3 = pparse.pparse(code3, show_offsets=False)
-                if (tree2 != tree3):
-                    print("Parse verification failed; edit at own risk")
-                with open("tree2", "w") as fd:
-                    fd.write(tree2)
-                with open("tree3", "w") as fd:
-                    fd.write(tree3)
-                with open("code3", "w") as fd:
-                    fd.write(code3)
+                self.parse(code)
                 self.shared.saved = True
+
+    def parse(self, code):
+        tree = pparse.pparse(code, show_offsets=True)
+        n = pmod.nodeEval(tree)
+
+        # extract keywords and comments
+        keywords, comments = self.extract(code)
+
+        # find the line numbers corresponding to keywords
+        n.merge(keywords)
+
+        # now we can merge comments back into the AST, sort of
+        for (lineno, text) in comments.items():
+            assert (text[0] == "#")
+            (type, b, i) = n.findLine(lineno)
+            if type == "row":
+                # print("ROW", lineno, i)
+                row = b.rows[i]
+                lin = row.lineno
+            else:
+                # print("CLAUSE", lineno, i)
+                assert type == "clause"
+                row = b
+                lin = i
+            if (lineno < lin):
+                row.commentU += text[1:] + '\n'
+            else:
+                row.commentR = text[1:]
+        if (self.program != None):
+            self.program.grid_forget()
+        self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
+        self.program.grid(sticky=tk.W)
+        self.shared.scrollable.scrollUpdate()
+        self.program.setBlock(self.program.clauses[0].body)
+        # verify that conversion has been done right
+        # print("verify")
+        tree2 = pparse.pparse(code, show_offsets=False)
+        n3 = self.program.toNode()
+        f3 = io.StringIO("")
+        n3.print(f3, 0)
+        code3 = f3.getvalue()
+        tree3 = pparse.pparse(code3, show_offsets=False)
+        if (tree2 != tree3):
+            print("Parse verification failed; edit at own risk")
+        with open("tree2", "w") as fd:
+            fd.write(tree2)
+        with open("tree3", "w") as fd:
+            fd.write(tree3)
+        with open("code3", "w") as fd:
+            fd.write(code3)
 
     def save(self):
         if (self.curfile == None):

@@ -169,8 +169,8 @@ class TextForm(Form):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        self.lineno = tk.Text(self, width=5, height=30, relief=tk.SUNKEN, wrap=tk.NONE, tabs=("0.2i", tk.RIGHT))
-        self.text = tk.Text(self, width=48, height=30, relief=tk.SUNKEN, wrap=tk.NONE)
+        self.lineno = tk.Text(self, width=5, height=30, bd=2, relief=tk.SUNKEN, wrap=tk.NONE, tabs=("0.2i", tk.RIGHT))
+        self.text = tk.Text(self, width=48, height=30, bd=2, relief=tk.SUNKEN, wrap=tk.NONE)
         self.ysbar = tk.Scrollbar(self)
         self.ysbar["command"] = self.scroller
         self.text["yscrollcommand"] = self.on_scroll
