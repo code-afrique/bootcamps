@@ -31,21 +31,6 @@ class PassNode(Node):
         self.printIndent(fd, level)
         print("pass", file=fd)
 
-class EmptyNode(Node):
-
-    def __init__(self):
-        super().__init__()
-
-    def merge(self, q):
-        pass
-
-    def toBlock(self, frame, block):
-        return block.newEmptyBlock(frame, self)
-
-    def print(self, fd, level):
-        self.printIndent(fd, level)
-        print("#EMPTY", file=fd)
-
 class RowNode(Node):
 
     def __init__(self, what, lineno=0):
@@ -89,7 +74,7 @@ class RowNode(Node):
             # insert the comment, if any, after the first line
             if "\n" in s:
                 i = s.index("\n")
-                s = (((s[:i] + ("#" if isinstance(self.what, EmptyNode) else "    #")) + self.commentR) + s[i:])
+                s = ((s[:i] + "    #") + self.commentR) + s[i:]
             print(s, file=fd, end="")
 
 class ClauseNode(Node):

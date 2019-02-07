@@ -14,7 +14,6 @@ import pparse
 import pmod
 import shared
 from form import HelpForm, TextForm
-from node import RowNode, EmptyNode
 from block import Block, ModuleBlock
 import console
 

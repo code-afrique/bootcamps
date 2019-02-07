@@ -153,16 +153,6 @@ class FrameForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text="A block to frame other blocks").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="For programming convenience").grid(sticky=tk.W)
 
-
-class EmptyForm(Form):
-
-    def __init__(self, parent, block):
-        super().__init__(parent, block)
-        self.isExpression = False
-        self.isStatement = True
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="Empty Statement").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This results in an empty line in the code.").grid(sticky=tk.W)
-
 class TextForm(Form):
 
     def __init__(self, parent, block):
@@ -291,7 +281,6 @@ class PassForm(Form):
         # row += 1
         tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=4, pady=10)
         row += 1
-        tk.Button(self, text="empty line", width=0, command=self.stmtEmpty).grid(columnspan=4)
         tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=4, pady=10)
 
     def stmtEmpty(self):

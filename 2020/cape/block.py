@@ -217,9 +217,6 @@ class Block(tk.Frame):
     def newPassBlock(self, parent, node):
         return PassBlock(parent, self.shared, node)
 
-    def newEmptyBlock(self, parent, node):
-        return EmptyBlock(parent, self.shared, node)
-
     def newDefClauseBlock(self, parent, node):
         return DefClauseBlock(parent, self.shared, node)
 
@@ -1404,13 +1401,6 @@ class PassBlock(Block):
     def paste(self):
         self.parent.paste()
 
-    def stmtEmpty(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = EmptyBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk)
-        self.needsSaving()
-
     def stmtAugassign(self, op):
         self.rowblk.what.grid_forget()
         if (op == "="):
@@ -1551,25 +1541,6 @@ class PassBlock(Block):
 
     def toNode(self):
         return PassNode()
-
-class EmptyBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-    # btn = tk.Button(self, text="", fg="red", width=0, command=self.cb)
-    # btn.grid(row=0, column=0)
-
-    def genForm(self):
-        self.setForm(EmptyForm(self.shared.confarea, self))
-
-    def paste(self):
-        self.parent.paste()
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return EmptyNode()
 
 class EvalBlock(Block):
 
@@ -1906,8 +1877,8 @@ class RowBlock(Block):
                 tree = pparse.pparse(code, mode="single")
                 n = pmod.nodeEval(tree)
                 assert isinstance(n, RowNode)
-                if (not (isinstance(self.what, EmptyBlock) or isinstance(self.what, PassBlock))):
-                    tk.messagebox.showinfo("Paste Error", "can only overwrite empty or pass statements")
+                if (not isinstance(self.what, PassBlock)):
+                    tk.messagebox.showinfo("Paste Error", "can only overwrite pass statements")
                 else:
                     self.what.grid_forget()
                     self.what = n.what.toBlock(self, self)
