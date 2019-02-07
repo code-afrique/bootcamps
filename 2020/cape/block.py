@@ -190,6 +190,8 @@ class Block(tk.Frame):
             p = p.parent
         if isinstance(p, HeaderBlock):
             p = p.parent
+        if isinstance(p, FrameBlock):
+            p = p.parent
         return p
 
     def goRight(self):
