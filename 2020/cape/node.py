@@ -1033,19 +1033,7 @@ class StringNode(Node):
         return block.newStringBlock(frame, self)
 
     def print(self, fd, level):
-        print("\"", end="", file=fd)
-        for c in self.what:
-            if (c == "\\"):
-                print("\\\\", end="", file=fd)
-            elif (c == "\""):
-                print("\\\"", end="", file=fd)
-            elif (c == "\n"):
-                print("\\n", end="", file=fd)
-            elif (c == "\r"):
-                print("\\r", end="", file=fd)
-            else:
-                print(c, end="", file=fd)
-        print("\"", end="", file=fd)
+        print(repr(self.what), end="", file=fd)
 
 class BytesNode(Node):
 
