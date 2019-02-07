@@ -117,7 +117,7 @@ class ClauseForm(Form):
 
         self.commentU = tk.scrolledtext.ScrolledText(frame, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2, font="-slant italic")
         if self.block.commentU != None:
-            c = self.block.commentU.get("1.0", tk.END)
+            c = self.block.commentU.get()
             self.commentU.insert(tk.END, c)
         self.commentU.grid(row=2, columnspan=2)
 
@@ -223,7 +223,7 @@ class TextForm(Form):
         self.isExpression = False
         self.isStatement = True
         self.lineno = tk.Text(self, width=5, height=30, bd=2, relief=tk.SUNKEN, wrap=tk.NONE, tabs=("0.2i", tk.RIGHT))
-        self.text = tk.Text(self, width=48, height=30, bd=2, relief=tk.SUNKEN, wrap=tk.NONE)
+        self.text = tk.Text(self, width=45, height=30, bd=2, relief=tk.SUNKEN, wrap=tk.NONE)
         self.ysbar = tk.Scrollbar(self)
         self.ysbar["command"] = self.scroller
         self.text["yscrollcommand"] = self.on_scroll
@@ -249,7 +249,7 @@ class TextForm(Form):
         self.text.mark_set(tk.INSERT, "1.0")
         self.text.focus()
         for i in range(text.count("\n")):
-            self.lineno.insert(tk.END, "    {}\n".format((i + 1)))
+            self.lineno.insert(tk.END, "{}\n".format((i + 1)))
 
     def gettext(self):
         return self.text.get("1.0", (tk.END + "-1c"))
@@ -281,7 +281,7 @@ class RowForm(Form):
             tk.Label(self, text="Multiline Comment (displayed above statement): ").grid(row=8, columnspan=3)
             self.commentU = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2, font="-slant italic")
             if block.commentU != None:
-                c = block.commentU.get("1.0", tk.END)
+                c = block.commentU.get()
                 self.commentU.insert(tk.END, c)
             self.commentU.grid(row=9, columnspan=3)
 
@@ -359,9 +359,6 @@ class PassForm(Form):
         tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=4, pady=10)
         row += 1
         tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=4, pady=10)
-
-    def stmtEmpty(self):
-        self.block.stmtEmpty()
 
     def stmtDef(self):
         self.block.stmtDef()
@@ -465,8 +462,6 @@ class PassForm(Form):
             self.stmtEval()
         elif (ev.char == "("):
             self.stmtCall()
-        elif (ev.char == "\r"):
-            self.stmtEmpty()
         elif (ev.char == "\177"):
             self.deleteKey(ev)
 
@@ -634,8 +629,8 @@ class DefClauseForm(ClauseForm):
                 tk.messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
                 return
             args.append(a)
-        self.block.defUpdate(name, args)
         self.setComments()
+        self.block.defUpdate(name, args)
         # self.focus_set()
 
     def keyEnter(self, x):

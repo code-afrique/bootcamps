@@ -57,13 +57,6 @@ class RowNode(Node):
             self.printIndent(fd, level)
             print("# {}".format(line), end="", file=fd)
 
-        """
-        if isinstance(self.what, ClauseNode):
-            self.commentR = None
-        else:
-            self.commentR = "{}".format(self.index)
-        """
-
         if self.commentR == None:
             self.what.print(fd, level)
         else:

@@ -662,7 +662,10 @@ class ClauseBlock(Block):
         super().__init__(parent, shared)
 
         self.commentR = tk.StringVar()
-        self.commentU = None
+        self.commentU = tk.StringVar()
+        self.commentButton = tk.Frame(self, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+        tk.Button(self.commentButton, textvariable=self.commentU, fg="brown", command=self.listcmd, font="-slant italic", justify=tk.LEFT).grid()
+
         if node != None:
             self.setCommentU(node.commentU)
             if node.commentR != None:
@@ -693,21 +696,13 @@ class ClauseBlock(Block):
         self.needsSaving()
 
     def setCommentU(self, comment):
-        if self.commentU != None:
-            self.commentU.grid_forget() # gotta do this first because of bug in ScrolledText I think
-            self.commentU.destroy()
+        comment = "" if comment == None else comment.rstrip()
         if comment == "":
-            self.commentU = None
+            self.commentButton.grid_forget()
         else:
-            (width, height) = self.bb(comment)
-            if height > 4:
-                height = 4
-                self.commentU = tk.scrolledtext.ScrolledText(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
-            else:
-                self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
-            self.commentU.insert(tk.INSERT, comment[:-1])
-            self.commentU.config(state="disabled")
-            self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
+            self.commentU.set(comment)
+            self.commentButton.grid(row=0, columnspan=2, sticky=tk.W)
+        self.needsSaving()
 
     def listcmd(self):
         self.setBlock(self)
@@ -752,7 +747,8 @@ class ClauseBlock(Block):
 
     def toNode(self):
         r = self.toNodeRaw()
-        r.commentU = None if self.commentU == None else self.commentU.get("1.0", tk.END)
+        cu = self.commentU.get()
+        r.commentU = None if cu == "" else (cu + "\n")
 
         if self.shared.keeping:
             r.index = self.shared.keep(self)
@@ -1813,45 +1809,46 @@ class RowBlock(Block):
         super().__init__(parent, shared, borderwidth=1)
         self.row = None
         self.commentR = tk.StringVar()
-        self.commentU = None
-        menu = tk.Button(self, text="-", width=3, command=self.listcmd)
-        menu.grid(row=0, column=0, rowspan=2, sticky=tk.W)
+        self.commentU = tk.StringVar()
 
-        self.setCommentU(node.commentU)
+        menu = tk.Button(self, text="-", width=3, command=self.listcmd)
+        menu.grid(row=0, column=0, sticky=tk.W)
+
         self.frame = FrameBlock(self, shared)
+        self.commentButton = tk.Frame(self.frame, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+        tk.Button(self.commentButton, textvariable=self.commentU, fg="brown", command=self.listcmd, font="-slant italic", justify=tk.LEFT).grid()
         if (node == None):
             self.what = PassBlock(self.frame, self.shared, None)
         else:
+            self.setCommentU(node.commentU)
             self.what = node.what.toBlock(self.frame, self)
             if node.commentR != None:
                 self.commentR.set(("# " + node.commentR))
-            if node.commentU != "":
-                self.commentU.set(node.commentU)
-        self.what.grid(row=0, column=0, sticky=tk.W)
+        self.what.grid(row=1, column=0, sticky=tk.W)
 
-        tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=0, column=1, sticky=(tk.N + tk.W))
+        tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=1, column=1, sticky=(tk.N + tk.W))
 
-        self.frame.grid(row=1, column=1, sticky=tk.W)
+        self.frame.grid(row=0, column=1, sticky=tk.W)
 
     def isCompound(self):
         return isinstance(self.what, CompoundBlock)
 
-    def setCommentU(self, comment):
-        if self.commentU != None:
-            self.commentU.grid_forget() # gotta do this first because of bug in ScrolledText I think
-            self.commentU.destroy()
-        if comment == "":
-            self.commentU = None
+    def setComment(self, commentR, commentU):
+        if (commentR == ""):
+            self.commentR.set("")
         else:
-            (width, height) = self.bb(comment)
-            if height > 4:
-                height = 4
-                self.commentU = tk.scrolledtext.ScrolledText(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
-            else:
-                self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
-            self.commentU.insert(tk.INSERT, comment[:-1])
-            self.commentU.config(state="disabled")
-            self.commentU.grid(row=0, column=1, sticky=tk.W)
+            self.commentR.set(("# " + commentR))
+        self.setCommentU(commentU)
+        self.needsSaving()
+
+    def setCommentU(self, comment):
+        comment = "" if comment == None else comment.rstrip()
+        if comment == "":
+            self.commentButton.grid_forget()
+        else:
+            self.commentU.set(comment)
+            self.commentButton.grid(row=0, columnspan=2, sticky=tk.W)
+        self.needsSaving()
 
     def goRight(self):
         if isinstance(self.what, ContainerBlock):
@@ -1870,12 +1867,13 @@ class RowBlock(Block):
         else:
             return self
 
-    def setComment(self, commentR, commentU):
-        if (commentR == ""):
-            self.commentR.set("")
+    def setCommentU(self, comment):
+        comment = "" if comment == None else comment.rstrip()
+        if comment == "":
+            self.commentButton.grid_forget()
         else:
-            self.commentR.set(("# " + commentR))
-        self.setCommentU(commentU)
+            self.commentU.set(comment)
+            self.commentButton.grid(row=0, columnspan=2, sticky=tk.W)
         self.needsSaving()
 
     def genForm(self):
@@ -1928,7 +1926,8 @@ class RowBlock(Block):
 
     def toNode(self):
         r = RowNode(self.what.toNode(), 0)
-        r.commentU = None if self.commentU == None else self.commentU.get("1.0", tk.END)
+        cu = self.commentU.get()
+        r.commentU = None if cu == "" else (cu + "\n")
 
         if self.shared.keeping:
             if isinstance(self.what, ClauseBlock):
