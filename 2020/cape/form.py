@@ -124,9 +124,7 @@ class ClauseForm(Form):
         enter.grid(row=3, column=1)
 
     def setComments(self):
-        cu = self.commentU.get("1.0", tk.END)
-        if cu == "\n":
-            cu = ""
+        cu = self.commentU.get("1.0", "end-1c")
         self.block.setComment(self.commentR.get(), cu)
 
 class BasicClauseForm(ClauseForm):
@@ -268,7 +266,7 @@ class TextForm(Form):
             self.lineno.insert(tk.END, "{}\n".format((i + 1)))
 
     def gettext(self):
-        return self.text.get("1.0", (tk.END + "-1c"))
+        return self.text.get("1.0", "end-1c")
 
 class RowForm(Form):
 
@@ -307,9 +305,7 @@ class RowForm(Form):
         tk.Message(self, width=350, font="Helvetica 14", text="If you copied or deleted a statement, you can paste it here (see Edit menu).").grid(columnspan=3)
 
     def cb(self):
-        cu = self.commentU.get("1.0", tk.END)
-        if cu == "\n":
-            cu = ""
+        cu = self.commentU.get("end-1c")
         self.block.setComment(self.entry.get(), cu)
 
     def keyEnter(self, ev):
@@ -1020,17 +1016,19 @@ class StringForm(Form):
         super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="Set the contents of the string (no need for escaping)").grid(row=0, columnspan=2)
-        tk.Label(self, text="String: ").grid(row=1)
-        self.entry = tk.Entry(self)
-        self.entry.bind("<Return>", self.keyEnter)
-        self.entry.insert(tk.END, block.string.get())
-        self.entry.grid(row=1, column=1)
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="Set the contents of the string (no need for escaping)").grid()
+
+        self.string = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.NONE, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+        self.string.insert("1.0", block.string.get())
+        self.string.grid()
         enter = tk.Button(self, text="Enter", command=self.cb)
-        enter.grid(row=1, column=2)
+        enter.grid()
 
     def cb(self):
-        self.block.setContents(self.entry.get())
+        s = self.string.get("1.0", "end-1c")
+        if s == "\n":
+            s = ""
+        self.block.setContents(s)
 
     def keyEnter(self, ev):
         self.cb()

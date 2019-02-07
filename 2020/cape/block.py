@@ -669,7 +669,7 @@ class ClauseBlock(Block):
         tk.Button(self.commentButton, textvariable=self.commentU, fg="brown", command=self.listcmd, font="-slant italic", justify=tk.LEFT).grid()
 
         if node != None:
-            self.setCommentU(node.commentU)
+            self.setCommentU(node.commentU[:-1])
             if node.commentR != None:
                 self.commentR.set(("# " + node.commentR))
 
@@ -698,7 +698,7 @@ class ClauseBlock(Block):
         self.needsSaving()
 
     def setCommentU(self, comment):
-        comment = "" if comment == None else comment.rstrip()
+        comment = "" if comment == None else comment
         if comment == "":
             self.commentButton.grid_forget()
         else:
@@ -1766,7 +1766,7 @@ class RowBlock(Block):
         if (node == None):
             self.what = PassBlock(self.frame, self.shared, None)
         else:
-            self.setCommentU(node.commentU)
+            self.setCommentU(node.commentU[:-1])
             self.what = node.what.toBlock(self.frame, self)
             if node.commentR != None:
                 self.commentR.set(("# " + node.commentR))
@@ -1788,7 +1788,7 @@ class RowBlock(Block):
         self.needsSaving()
 
     def setCommentU(self, comment):
-        comment = "" if comment == None else comment.rstrip()
+        comment = "" if comment == None else comment
         if comment == "":
             self.commentButton.grid_forget()
         else:
@@ -1812,15 +1812,6 @@ class RowBlock(Block):
             return self.parent.rows[(self.row + 1)]
         else:
             return self
-
-    def setCommentU(self, comment):
-        comment = "" if comment == None else comment.rstrip()
-        if comment == "":
-            self.commentButton.grid_forget()
-        else:
-            self.commentU.set(comment)
-            self.commentButton.grid(row=0, columnspan=2, sticky=tk.W)
-        self.needsSaving()
 
     def genForm(self):
         self.setForm(RowForm(self.shared.confarea, self))
