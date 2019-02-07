@@ -90,7 +90,7 @@ class Console(tk.Frame):
                         if mo:
                             errCol = len(mo.group(1))
                         else:
-                            mo = re.match(r'^\w+Error: .*$', line)
+                            mo = re.match(r'^\w+Error.*$', line)
                             if mo:
                                 errDescr = line
             if errDescr != None:
