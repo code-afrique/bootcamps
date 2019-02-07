@@ -258,7 +258,10 @@ class CAPE(tk.Frame):
         self.errormsgs.delete('1.0', tk.END)
         self.shared.cvtError = False
 
-        # convert blocks to nodes
+        # convert blocks to nodes, while keeping track of RowBlocks and ClauseBlocks
+		# as those are the places where comments can be inserted.  Also, use
+		# indexes into the list of RowBlocks and ClauseBlocks as inline comments
+		# so we can find them back later
         self.shared.startKeeping()
         n = self.program.toNode()
         self.shared.stopKeeping()
@@ -266,14 +269,17 @@ class CAPE(tk.Frame):
         if self.shared.cvtError:
             print("===== Fix program first =====")
         else:
-            # convert nodes to code
+            # convert nodes to code, and parse the code again, this time to get the
+			# right line numbers for all the statements, as well as their indices
+			# in the comments.  Keep the node tree in self.node, so that if errors
+			# occur, we can find the statements.
             f = io.StringIO("")
             n.print(f, 0)
             code = f.getvalue()
-
-            # now parse the code again
             self.node = self.shared.parse(code)
 
+			# Finally, write the (original) code to a file, and start a "console"
+			# to run the code and capture its output (including error output
             (fd, path) = tempfile.mkstemp(dir=".", suffix=".py")
             with os.fdopen(fd, "w") as tmp:
                 n.print(tmp, 0)
@@ -283,6 +289,9 @@ class CAPE(tk.Frame):
                 c.grid()
                 c.start_proc(path)
 
+	# This is an old version of running code that actually runs the code straight
+	# within the same Python interpreter.  The advantage is that you don't need
+	# another interpreter.  The disadvantage is that Python is no good at sandboxing.
     def runx(self):
         self.shared.cvtError = False
         n = self.program.toNode()

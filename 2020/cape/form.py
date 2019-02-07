@@ -1031,7 +1031,6 @@ class StringForm(Form):
 
     def cb(self):
         self.block.setContents(self.entry.get())
-        self.focus_set()
 
     def keyEnter(self, ev):
         self.cb()
