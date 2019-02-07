@@ -770,7 +770,7 @@ class BasicClauseBlock(ClauseBlock):
         self.hdr.grid()
 
     def genForm(self):
-        self.setForm(ClauseForm(self.shared.confarea, self))
+        self.setForm(BasicClauseForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
@@ -1415,143 +1415,87 @@ class PassBlock(Block):
     def paste(self):
         self.parent.paste()
 
-    def stmtAugassign(self, op):
+    def stmtPut(self, n):
         self.rowblk.what.grid_forget()
+        self.rowblk.what = n.toBlock(self.rowblk.frame, self)
+        self.rowblk.what.grid(row=1, column=0, sticky=tk.W)
+        self.needsSaving()
+
+    def stmtAugassign(self, op):
         if (op == "="):
-            self.rowblk.what = AssignBlock(self.rowblk, self.shared, None)
+            self.stmtPut(AssignNode([ExpressionNode(None)], ExpressionNode(None)))
             self.setBlock(self.rowblk.what.targets[0])
         else:
-            self.rowblk.what = AugassignBlock(self.rowblk, self.shared, AugassignNode(None, None, op))
+            self.stmtPut(AugassignNode(ExpressionNode(None), ExpressionNode(None), op))
             self.setBlock(self.rowblk.what.left)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.needsSaving()
 
     def stmtEval(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = EvalBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(EvalNode(ExpressionNode(None)))
         self.setBlock(self.rowblk.what.expr)
-        self.needsSaving()
 
     def stmtIf(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = IfBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(IfNode([CondClauseNode("if", None, None)], False))
         self.setBlock(self.rowblk.what.clauses[0].cond)
-        self.needsSaving()
 
     def stmtWhile(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = WhileBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.clauses[0])
-        self.needsSaving()
+        self.stmtPut(WhileNode([CondClauseNode("while", None, None)], False))
+        self.setBlock(self.rowblk.what.clauses[0].cond)
 
     def stmtFor(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ForBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-        self.setBlock(self.rowblk.what.clauses[0])
-        self.needsSaving()
+        self.stmtPut(ForNode([ForClauseNode(ExpressionNode(None), ExpressionNode(None), None)], False))
+        self.setBlock(self.rowblk.what.clauses[0].target)
 
     def stmtDef(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(DefClauseNode("", [], [], None)))
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(ContainerNode(DefClauseNode("", [], [], None)))
         self.setBlock(self.rowblk.what.clauses[0])
-        self.needsSaving()
         self.shared.curForm.entry.focus()
 
     def stmtClass(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(ClassClauseNode("", [], None)))
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(ContainerNode(ClassClauseNode("", [], None)))
         self.setBlock(self.rowblk.what.clauses[0])
-        self.needsSaving()
         self.shared.curForm.entry.focus()
 
     def stmtWith(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ContainerBlock(self.rowblk, self.shared, ContainerNode(WithClauseNode([], None)))
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(ContainerNode(WithClauseNode([(ExpressionNode(None), None)], None)))
         self.setBlock(self.rowblk.what.clauses[0])
-        self.needsSaving()
 
     def stmtReturn(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ReturnBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(ReturnNode(None))
         self.setBlock(self.rowblk.what)
-        self.needsSaving()
 
     def stmtDel(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = DelBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(DelNode([ExpressionNode(None)]))
         self.setBlock(self.rowblk.what.targets[0])
         self.needsSaving()
 
     def stmtCall(self):
-        self.rowblk.what.grid_forget()
-        n = EvalNode(ExpressionNode(CallNode(ExpressionNode(None), [], [])))
-        self.rowblk.what = n.toBlock(self.rowblk, self)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(EvalNode(ExpressionNode(CallNode(ExpressionNode(None), [], []))))
         self.setBlock(self.rowblk.what.expr.what.func)
-        self.needsSaving()
-        self.shared.curForm.entry.focus()
+        # self.shared.curForm.entry.focus()
 
     def stmtPrint(self):
-        self.rowblk.what.grid_forget()
-        n = EvalNode(ExpressionNode(CallNode(ExpressionNode(NameNode("print")), [ExpressionNode(None)], [])))
-        self.rowblk.what = n.toBlock(self.rowblk, self)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(EvalNode(ExpressionNode(CallNode(ExpressionNode(NameNode("print")), [ExpressionNode(None)], []))))
         self.setBlock(self.rowblk.what.expr.what.args[0])
-        self.needsSaving()
 
     def stmtAssert(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = AssertBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(AssertNode(None, None))
         self.setBlock(self.rowblk.what.test)
-        self.needsSaving()
 
     def stmtBreak(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = BreakBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(BreakNode())
         self.setBlock(self.rowblk.what)
-        self.needsSaving()
 
     def stmtContinue(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ContinueBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(ContinueNode())
         self.setBlock(self.rowblk.what)
-        self.needsSaving()
 
     def stmtGlobal(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = GlobalBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(GlobalNode([ExpressionNode(None)]))
         self.setBlock(self.rowblk.what.vars[0])
-        self.shared.curForm.entry.focus()
-        self.needsSaving()
 
     def stmtImport(self):
-        self.rowblk.what.grid_forget()
-        self.rowblk.what = ImportBlock(self.rowblk, self.shared, None)
-        self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
+        self.stmtPut(ImportNode(ExpressionNode(None), None))
         self.setBlock(self.rowblk.what.module)
-        self.shared.curForm.entry.focus()
-        self.needsSaving()
-
-    def stmtPasteOld(self):
-        if (self.shared.stmtBuffer != None):
-            self.rowblk.what.grid_forget()
-            self.rowblk.what = self.shared.stmtBuffer.toBlock(self.rowblk, self.rowblk)
-            self.rowblk.what.grid(row=0, column=1, sticky=tk.W)
-            self.setBlock(self.rowblk.what)
-        self.needsSaving()
 
     def toNode(self):
         return PassNode()
@@ -1912,7 +1856,7 @@ class RowBlock(Block):
                 else:
                     self.what.grid_forget()
                     self.what = n.what.toBlock(self, self)
-                    self.what.grid(row=0, column=1, sticky=tk.W)
+                    self.what.grid(row=1, column=0, sticky=tk.W)
                     self.setBlock(self.what)
                     self.needsSaving()
             except SyntaxError:
@@ -2091,6 +2035,14 @@ class IfBlock(CompoundBlock):
     def cb(self):
         self.setBlock(self)
 
+    def insertElif(self):
+        clause = CondClauseBlock(self, self.shared, CondClauseNode("elif", None, None))
+        n = len(self.clauses)
+        self.clauses.insert(n - 1 if self.hasElse else n, clause)
+        self.gridUpdate()
+        self.setBlock(clause.body.rows[0].what)
+        self.needsSaving()
+
     def addElse(self):
         if not self.hasElse:
             clause = BasicClauseBlock(self, self.shared, BasicClauseNode("else", None))
@@ -2107,14 +2059,6 @@ class IfBlock(CompoundBlock):
             self.setBlock(self)
             self.hasElse = False
             self.needsSaving()
-
-    def insertElif(self):
-        clause = CondClauseBlock(self, self.shared, CondClauseNode("elif", None, None))
-        n = len(self.clauses)
-        self.clauses.insert(n - 1 if self.hasElse else n, clause)
-        self.gridUpdate()
-        self.setBlock(clause.body.rows[0].what)
-        self.needsSaving()
 
     def gridUpdate(self):
         super().gridUpdate()

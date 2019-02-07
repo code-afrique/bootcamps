@@ -51,7 +51,7 @@ class Form(tk.Frame):
     def key(self, ev):
         if ((ev.type != "2") or (len(ev.char) != 1)):    # check if normal KeyPress
             return
-        if (ev.char == ""):
+        if (ev.char == "\177"):
             self.deleteKey(ev)
 
 class HelpForm(Form):
@@ -129,6 +129,23 @@ class ClauseForm(Form):
         if cu == "\n":
             cu = ""
         self.block.setComment(self.commentR.get(), cu)
+
+class BasicClauseForm(ClauseForm):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = False
+        self.isStatement = True
+        tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements.").grid(sticky=tk.W)
+        self.insertComments(row=3)
+
+    def cb(self):
+        self.setComments()
+        # self.focus_set()
+
+    def keyEnter(self, x):
+        self.cb()
 
 class CondClauseForm(ClauseForm):
 
