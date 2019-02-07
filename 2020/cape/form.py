@@ -125,7 +125,9 @@ class ClauseForm(Form):
         enter.grid(row=3, column=1)
 
     def setComments(self):
-        cu = "" if self.commentU.compare("end-1c", "==", "1.0") else self.commentU.get("1.0", tk.END)
+        cu = self.commentU.get("1.0", tk.END)
+        if cu == "\n":
+            cu = ""
         self.block.setComment(self.commentR.get(), cu)
 
 class CondClauseForm(ClauseForm):
@@ -289,7 +291,9 @@ class RowForm(Form):
         tk.Message(self, width=350, font="Helvetica 14", text="If you copied or deleted a statement, you can paste it here (see Edit menu).").grid(columnspan=3)
 
     def cb(self):
-        cu = "" if self.commentU.compare("end-1c", "==", "1.0") else self.commentU.get("1.0", tk.END)
+        cu = self.commentU.get("1.0", tk.END)
+        if cu == "\n":
+            cu = ""
         self.block.setComment(self.entry.get(), cu)
 
     def keyEnter(self, ev):

@@ -34,6 +34,7 @@ class Block(tk.Frame):
 
     def setForm(self, f):
         if (self.shared.curForm != None):
+            self.shared.curForm.grid_forget()
             self.shared.curForm.destroy()
         self.shared.curForm = f
         if f:
@@ -693,15 +694,17 @@ class ClauseBlock(Block):
 
     def setCommentU(self, comment):
         if self.commentU != None:
+            self.commentU.grid_forget() # gotta do this first because of bug in ScrolledText I think
             self.commentU.destroy()
         if comment == "":
             self.commentU = None
         else:
             (width, height) = self.bb(comment)
-            if height > 3:
-                height = 3
-            # self.commentU = tk.scrolledtext.ScrolledText(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
-            self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
+            if height > 4:
+                height = 4
+                self.commentU = tk.scrolledtext.ScrolledText(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
+            else:
+                self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
             self.commentU.insert(tk.INSERT, comment[:-1])
             self.commentU.config(state="disabled")
             self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
@@ -1835,15 +1838,17 @@ class RowBlock(Block):
 
     def setCommentU(self, comment):
         if self.commentU != None:
+            self.commentU.grid_forget() # gotta do this first because of bug in ScrolledText I think
             self.commentU.destroy()
         if comment == "":
             self.commentU = None
         else:
             (width, height) = self.bb(comment)
-            if height > 3:
-                height = 3
-            # self.commentU = tk.scrolledtext.ScrolledText(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
-            self.commentU = tk.Text(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
+            if height > 4:
+                height = 4
+                self.commentU = tk.scrolledtext.ScrolledText(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
+            else:
+                self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
             self.commentU.insert(tk.INSERT, comment[:-1])
             self.commentU.config(state="disabled")
             self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
