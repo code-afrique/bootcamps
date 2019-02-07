@@ -186,12 +186,17 @@ class Block(tk.Frame):
         if (self.isTop or (self.parent == None) or self.parent.isTop):
             return
         p = self.parent
-        if isinstance(p, ExpressionBlock):
-            p = p.parent
-        if isinstance(p, HeaderBlock):
-            p = p.parent
-        if isinstance(p, FrameBlock):
-            p = p.parent
+        while True:
+            if isinstance(p, ExpressionBlock):
+                p = p.parent
+            elif isinstance(p, HeaderBlock):
+                p = p.parent
+            elif isinstance(p, FrameBlock):
+                p = p.parent
+            elif isinstance(p, ContainerBlock):
+                p = p.parent
+            else:
+                break
         return p
 
     def goRight(self):
@@ -1848,6 +1853,8 @@ class RowBlock(Block):
         frame.grid(row=0, column=1, sticky=tk.W)
 
     def goRight(self):
+        if isinstance(self.what, ContainerBlock):
+            return self.what.clauses[0]
         return (self if (self.what == None) else self.what)
 
     def goUp(self):

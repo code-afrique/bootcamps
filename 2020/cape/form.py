@@ -69,7 +69,7 @@ class ContainerForm(Form):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="Module").grid()
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="Container").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="A container captures a one-clause statement").grid(sticky=tk.W)
 
 class ModuleForm(Form):
