@@ -196,6 +196,12 @@ class CAPE(tk.Frame):
                 self.parse(code)
                 self.shared.saved = True
 
+    def getComment(self, text):
+        assert (text[0] == "#")
+        if len(text) > 1 and text[1] == " ":
+            return text[2:]
+        return text[1:]
+
     def parse(self, code):
         tree = pparse.pparse(code, show_offsets=True)
         n = pmod.nodeEval(tree)
@@ -208,7 +214,7 @@ class CAPE(tk.Frame):
 
         # now we can merge comments back into the AST, sort of
         for (lineno, text) in comments.items():
-            assert (text[0] == "#")
+            comment = self.getComment(text)
             (type, b, i) = n.findLine(lineno)
             if type == "row":
                 # print("ROW", lineno, i)
@@ -220,9 +226,9 @@ class CAPE(tk.Frame):
                 row = b
                 lin = i
             if (lineno < lin):
-                row.commentU += text[1:] + '\n'
+                row.commentU += comment + '\n'
             else:
-                row.commentR = text[1:]
+                row.commentR = comment
         if (self.program != None):
             self.program.grid_forget()
         self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
@@ -302,7 +308,7 @@ class CAPE(tk.Frame):
 
             # now we can merge comments back into the AST, sort of
             for (lineno, text) in comments.items():
-                assert (text[0] == "#")
+                comment = self.getComment(text)
                 (type, b, i) = self.node.findLine(lineno)
                 if type == "row":
                     # print("ROW", lineno, i)
@@ -314,9 +320,9 @@ class CAPE(tk.Frame):
                     row = b
                     lin = i
                 if (lineno < lin):
-                    row.commentU += text[1:] + '\n'
+                    row.commentU += comment + '\n'
                 else:
-                    row.commentR = text[1:]
+                    row.commentR = comment
 
             (fd, path) = tempfile.mkstemp(dir=".", suffix=".py")
             with os.fdopen(fd, "w") as tmp:

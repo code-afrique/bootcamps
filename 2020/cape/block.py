@@ -665,7 +665,7 @@ class ClauseBlock(Block):
         if node != None:
             self.setCommentU(node.commentU)
             if node.commentR != None:
-                self.commentR.set(("#" + node.commentR))
+                self.commentR.set(("# " + node.commentR))
 
         self.body_node = SeqNode([RowNode(PassNode())]) if node == None or node.body == None else node.body
         self.title = title
@@ -675,7 +675,7 @@ class ClauseBlock(Block):
 
         self.hdr.grid(row=1, column=0, sticky=tk.W)
         self.colon.grid(row=1, column=1000, sticky=tk.W)
-        tk.Button(self.hdr, textvariable=self.commentR, fg="brown", command=self.listcmd).grid(row=1, column=1001, sticky=(tk.N + tk.W))
+        tk.Button(self.hdr, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=1, column=1001, sticky=(tk.N + tk.W))
         self.minimized = True
         self.row = None
 
@@ -687,7 +687,7 @@ class ClauseBlock(Block):
         if (commentR == ""):
             self.commentR.set("")
         else:
-            self.commentR.set(("#" + commentR))
+            self.commentR.set(("# " + commentR))
         self.setCommentU(commentU)
         self.needsSaving()
 
@@ -701,7 +701,7 @@ class ClauseBlock(Block):
             if height > 3:
                 height = 3
             # self.commentU = tk.scrolledtext.ScrolledText(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
-            self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            self.commentU = tk.Text(self, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
             self.commentU.insert(tk.INSERT, comment[:-1])
             self.commentU.config(state="disabled")
             self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
@@ -757,8 +757,8 @@ class ClauseBlock(Block):
         else:
             c = self.commentR.get()
             if (c != ""):
-                assert (c[0] == "#")
-                r.commentR = c[1:]
+                assert (c[0:2] == "# ")
+                r.commentR = c[2:]
         return r
 
 # A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
@@ -1821,12 +1821,12 @@ class RowBlock(Block):
         else:
             self.what = node.what.toBlock(self.frame, self)
             if node.commentR != None:
-                self.commentR.set(("#" + node.commentR))
+                self.commentR.set(("# " + node.commentR))
             if node.commentU != "":
                 self.commentU.set(node.commentU)
         self.what.grid(row=1, column=0, sticky=tk.W)
 
-        tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd).grid(row=1, column=1, sticky=(tk.N + tk.W))
+        tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=1, column=1, sticky=(tk.N + tk.W))
 
         self.frame.grid(row=0, column=1, sticky=tk.W)
 
@@ -1843,7 +1843,7 @@ class RowBlock(Block):
             if height > 3:
                 height = 3
             # self.commentU = tk.scrolledtext.ScrolledText(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
-            self.commentU = tk.Text(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2)
+            self.commentU = tk.Text(self.frame, fg="brown", width=width, height=height, bd=2, highlightbackground="brown", highlightcolor="brown", highlightthickness=2, font="-slant italic")
             self.commentU.insert(tk.INSERT, comment[:-1])
             self.commentU.config(state="disabled")
             self.commentU.grid(row=0, columnspan=2, sticky=tk.W)
@@ -1869,7 +1869,7 @@ class RowBlock(Block):
         if (commentR == ""):
             self.commentR.set("")
         else:
-            self.commentR.set(("#" + commentR))
+            self.commentR.set(("# " + commentR))
         self.setCommentU(commentU)
         self.needsSaving()
 
@@ -1934,8 +1934,8 @@ class RowBlock(Block):
         else:
             c = self.commentR.get()
             if (c != ""):
-                assert (c[0] == "#")
-                r.commentR = c[1:]
+                assert (c[0:2] == "# ")
+                r.commentR = c[2:]
         return r
 
 # The parent of a SeqBlock is always a ClauseBlock, which helps with navigating

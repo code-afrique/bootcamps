@@ -55,7 +55,7 @@ class RowNode(Node):
         f = io.StringIO(self.commentU)
         for line in f:
             self.printIndent(fd, level)
-            print("#{}".format(line), end="", file=fd)
+            print("# {}".format(line), end="", file=fd)
 
         """
         if isinstance(self.what, ClauseNode):
@@ -74,7 +74,7 @@ class RowNode(Node):
             # insert the comment, if any, after the first line
             if "\n" in s:
                 i = s.index("\n")
-                s = ((s[:i] + "    #") + self.commentR) + s[i:]
+                s = ((s[:i] + "    # ") + self.commentR) + s[i:]
             print(s, file=fd, end="")
 
 class ClauseNode(Node):
@@ -97,7 +97,7 @@ class ClauseNode(Node):
         f = io.StringIO(self.commentU)
         for line in f:
             self.printIndent(fd, level)
-            print("#{}".format(line), end="", file=fd)
+            print("# {}".format(line), end="", file=fd)
 
     def printBody(self, fd, level):
         """
@@ -107,7 +107,7 @@ class ClauseNode(Node):
         if self.commentR == None:
             print(":", file=fd)
         else:
-            print(":\t#{}".format(self.commentR), file=fd)
+            print(":\t# {}".format(self.commentR), file=fd)
         self.body.print(fd, level + 1)
 
 class DefClauseNode(ClauseNode):

@@ -107,7 +107,7 @@ class ClauseForm(Form):
         frame.grid(row=row, column=column, columnspan=columnspan)
 
         tk.Label(frame, text="Inline Comment: ").grid(row=0, column=0)
-        self.commentR = tk.Entry(frame)
+        self.commentR = tk.Entry(frame, font="-slant italic")
         self.commentR.bind("<Return>", self.keyEnter)
         c = self.block.commentR.get()
         self.commentR.insert(tk.END, c[1:])
@@ -115,7 +115,7 @@ class ClauseForm(Form):
 
         tk.Label(frame, text="Multiline Comment (displayed above statement): ").grid(row=1, columnspan=2)
 
-        self.commentU = tk.scrolledtext.ScrolledText(frame, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+        self.commentU = tk.scrolledtext.ScrolledText(frame, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2, font="-slant italic")
         if self.block.commentU != None:
             c = self.block.commentU.get("1.0", tk.END)
             self.commentU.insert(tk.END, c)
@@ -270,14 +270,14 @@ class RowForm(Form):
 
         if not block.isCompound():
             tk.Label(self, text="Inline Comment: ").grid(row=7, column=0)
-            self.entry = tk.Entry(self)
+            self.entry = tk.Entry(self, font="-slant italic")
             self.entry.bind("<Return>", self.keyEnter)
             c = block.commentR.get()
             self.entry.insert(tk.END, c[1:])
             self.entry.grid(row=7, column=1, columnspan=2)
 
             tk.Label(self, text="Multiline Comment (displayed above statement): ").grid(row=8, columnspan=3)
-            self.commentU = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
+            self.commentU = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2, font="-slant italic")
             if block.commentU != None:
                 c = block.commentU.get("1.0", tk.END)
                 self.commentU.insert(tk.END, c)
