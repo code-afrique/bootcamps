@@ -204,35 +204,8 @@ class CAPE(tk.Frame):
         return text[1:]
 
     def parse(self, code):
-        tree = pparse.pparse(code, show_offsets=True)
-        n = pmod.nodeEval(tree)
-
-        # extract keywords and comments
-        keywords, comments = self.extract(code)
-
-        # find the line numbers corresponding to keywords
-        n.merge(keywords)
-
-        # now we can merge comments back into the AST, sort of
-        for (lineno, text) in comments.items():
-            comment = self.getComment(text)
-            (type, b, i) = n.findLine(lineno)
-            if type == "row":
-                # print("ROW", lineno, i)
-                row = b.rows[i]
-                lin = row.lineno
-            else:
-                # print("CLAUSE", lineno, i)
-                assert type == "clause"
-                row = b
-                lin = i
-            if (lineno < lin):
-                row.commentU += comment + '\n'
-            else:
-                row.commentR = comment
-
-        if (self.program != None):
-            self.program.grid_forget()
+        n = self.shared.parse(code);
+        self.program.grid_forget()
         self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
         self.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
@@ -299,32 +272,7 @@ class CAPE(tk.Frame):
             code = f.getvalue()
 
             # now parse the code again
-            tree = pparse.pparse(code, show_offsets=True)
-            self.node = pmod.nodeEval(tree)
-
-            # extract keywords and comments
-            keywords, comments = self.extract(code)
-
-            # find the line numbers corresponding to keywords
-            self.node.merge(keywords)
-
-            # now we can merge comments back into the AST, sort of
-            for (lineno, text) in comments.items():
-                comment = self.getComment(text)
-                (type, b, i) = self.node.findLine(lineno)
-                if type == "row":
-                    # print("ROW", lineno, i)
-                    row = b.rows[i]
-                    lin = row.lineno
-                else:
-                    # print("CLAUSE", lineno, i)
-                    assert type == "clause"
-                    row = b
-                    lin = i
-                if (lineno < lin):
-                    row.commentU += comment + '\n'
-                else:
-                    row.commentR = comment
+            self.node = self.shared.parse(code)
 
             (fd, path) = tempfile.mkstemp(dir=".", suffix=".py")
             with os.fdopen(fd, "w") as tmp:
