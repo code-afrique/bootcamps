@@ -105,6 +105,7 @@ class CAPE(tk.Frame):
         self.program.grid(sticky=tk.W)
         self.program.setBlock(self.program.clauses[0].body.rows[0].what)
         self.shared.scrollable.scrollUpdate()
+        self.shared.saved = True
 
         self.errormsgs = tk.scrolledtext.ScrolledText(self, wrap=tk.WORD, width=100, height=3, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
         self.errormsgs.insert(tk.INSERT, "Hello World")
