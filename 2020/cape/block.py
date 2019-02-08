@@ -308,6 +308,9 @@ class Block(tk.Frame):
     def newListopBlock(self, parent, node):
         return ListopBlock(parent, self.shared, node)
 
+    def newListopBlock(self, parent, node):
+        return ListopBlock(parent, self.shared, node)
+
     def newUnaryopBlock(self, parent, node):
         return UnaryopBlock(parent, self.shared, node)
 
@@ -325,6 +328,9 @@ class Block(tk.Frame):
 
     def newListcompBlock(self, parent, node):
         return ListcompBlock(parent, self.shared, node)
+
+    def newDictcompBlock(self, parent, node):
+        return DictcompBlock(parent, self.shared, node)
 
     def newDictBlock(self, parent, node):
         return DictBlock(parent, self.shared, node)
@@ -1091,6 +1097,45 @@ class ListcompBlock(Block):
 
     def genForm(self):
         self.setForm(ListcompForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        # TODO fake.  Should probably extract from blocks
+        return self.node
+
+class DictcompBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.node = node
+        tk.Button(self, text="{", width=0, command=self.cb).grid(row=0, column=0)
+        self.key = node.key.toBlock(self, self)
+        self.key.grid(row=0, column=1)
+        tk.Button(self, text=" : ", width=0, command=self.cb).grid(row=0, column=2)
+        self.value = node.value.toBlock(self, self)
+        self.value.grid(row=0, column=3)
+        column = 4
+        self.generators = []
+        for (target, iter, ifs, is_async) in node.generators:
+            tk.Button(self, text=" for ", width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            target.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text=" in ", width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            iter.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            for i in ifs:
+                tk.Button(self, text=" if ", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                i.toBlock(self, self).grid(row=0, column=column)
+                column += 1
+        tk.Button(self, text="}", width=0, command=self.cb).grid(row=0, column=column)
+
+    def genForm(self):
+        self.setForm(DictcompForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)

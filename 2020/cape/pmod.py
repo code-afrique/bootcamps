@@ -216,6 +216,9 @@ def IfExp(lineno, col_offset, test, body, orelse):
 def ListComp(lineno, col_offset, elt, generators):
     return ExpressionNode(ListcompNode(elt, generators))
 
+def DictComp(lineno, col_offset, key, value, generators):
+    return ExpressionNode(DictcompNode(key, value, generators))
+
 def Add():
     return "+"
 
