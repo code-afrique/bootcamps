@@ -2088,7 +2088,7 @@ class DefClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.vararg, self.kwarg, self.getBody())
+        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody())
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):

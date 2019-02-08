@@ -11,6 +11,7 @@ import tkinter.scrolledtext
 import tokenize
 import queue
 import ast
+import argparse
 import pmod
 import shared
 from form import HelpForm, TextForm
@@ -62,7 +63,7 @@ class Scrollable(tk.Frame):
 
 class CAPE(tk.Frame):
 
-    def __init__(self, parent, shared):
+    def __init__(self, parent, shared, filename):
         super().__init__(parent, borderwidth=1, relief=tk.SUNKEN)
         self.parent = parent
         self.shared = shared
@@ -72,7 +73,7 @@ class CAPE(tk.Frame):
         parent.config(menu=menu)
         file = tk.Menu(menu)
         file.add_command(label="New", command=self.new)
-        file.add_command(label="Open", command=self.load)
+        file.add_command(label="Open", command=self.open)
         file.add_command(label="Save", command=self.save)
         file.add_command(label="Save As", command=self.saveAs)
         file.add_separator()
@@ -101,11 +102,15 @@ class CAPE(tk.Frame):
         self.progarea = tk.Frame(self, width=750, height=475)
         self.progarea.configure(bd=2, highlightbackground="green", highlightcolor="green", highlightthickness=2)
         self.shared.scrollable = Scrollable(self.progarea, shared, width=16)
-        self.program = ModuleBlock(self.shared.scrollable.stuff, shared, None)
-        self.program.grid(sticky=tk.W)
-        self.program.setBlock(self.program.clauses[0].body.rows[0].what)
-        self.shared.scrollable.scrollUpdate()
-        self.shared.saved = True
+
+        if filename:
+            self.load(filename)
+        else:
+            self.program = ModuleBlock(self.shared.scrollable.stuff, shared, None)
+            self.program.grid(sticky=tk.W)
+            self.program.setBlock(self.program.clauses[0].body.rows[0].what)
+            self.shared.scrollable.scrollUpdate()
+            self.shared.saved = True
 
         self.errormsgs = tk.scrolledtext.ScrolledText(self, wrap=tk.WORD, width=100, height=3, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
         self.errormsgs.insert(tk.INSERT, "...error output from running programs will appear here...")
@@ -183,19 +188,22 @@ class CAPE(tk.Frame):
         self.shared.scrollable.scrollUpdate()
         self.shared.saved = True
 
-    def load(self):
+    def open(self):
         if (not self.shared.saved):
             tk.messagebox.showinfo("Warning", "You must save the program first")
             self.shared.saved = True
             return
         filename = tk.filedialog.askopenfilename(defaultextension=".py", filetypes=(("Python source files", "*.py"), ("All files", "*.*")))
         if filename:
-            self.curfile = filename
-            with open(filename, "r") as fd:
-                # read and parse the program
-                code = fd.read()
-                self.parse(code)
-                self.shared.saved = True
+            self.load(filename)
+
+    def load(self, filename):
+        self.curfile = filename
+        with open(filename, "r") as fd:
+            # read and parse the program
+            code = fd.read()
+            self.parse(code)
+            self.shared.saved = True
 
     def getComment(self, text):
         assert (text[0] == "#")
@@ -205,7 +213,8 @@ class CAPE(tk.Frame):
 
     def parse(self, code):
         n = self.shared.parse(code);
-        self.program.grid_forget()
+        if self.program != None:
+            self.program.grid_forget()
         self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
         self.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
@@ -264,9 +273,9 @@ class CAPE(tk.Frame):
         self.shared.cvtError = False
 
         # convert blocks to nodes, while keeping track of RowBlocks and ClauseBlocks
-		# as those are the places where comments can be inserted.  Also, use
-		# indexes into the list of RowBlocks and ClauseBlocks as inline comments
-		# so we can find them back later
+        # as those are the places where comments can be inserted.  Also, use
+        # indexes into the list of RowBlocks and ClauseBlocks as inline comments
+        # so we can find them back later
         self.shared.startKeeping()
         n = self.program.toNode()
         self.shared.stopKeeping()
@@ -275,16 +284,16 @@ class CAPE(tk.Frame):
             print("===== Fix program first =====")
         else:
             # convert nodes to code, and parse the code again, this time to get the
-			# right line numbers for all the statements, as well as their indices
-			# in the comments.  Keep the node tree in self.node, so that if errors
-			# occur, we can find the statements.
+            # right line numbers for all the statements, as well as their indices
+            # in the comments.  Keep the node tree in self.node, so that if errors
+            # occur, we can find the statements.
             f = io.StringIO("")
             n.print(f, 0)
             code = f.getvalue()
             self.node = self.shared.parse(code)
 
-			# Finally, write the (original) code to a file, and start a "console"
-			# to run the code and capture its output (including error output
+            # Finally, write the (original) code to a file, and start a "console"
+            # to run the code and capture its output (including error output
             (fd, path) = tempfile.mkstemp(dir=".", suffix=".py")
             with os.fdopen(fd, "w") as tmp:
                 n.print(tmp, 0)
@@ -294,9 +303,9 @@ class CAPE(tk.Frame):
                 c.grid()
                 c.start_proc(path)
 
-	# This is an old version of running code that actually runs the code straight
-	# within the same Python interpreter.  The advantage is that you don't need
-	# another interpreter.  The disadvantage is that Python is no good at sandboxing.
+    # This is an old version of running code that actually runs the code straight
+    # within the same Python interpreter.  The advantage is that you don't need
+    # another interpreter.  The disadvantage is that Python is no good at sandboxing.
     def runx(self):
         self.shared.cvtError = False
         n = self.program.toNode()
@@ -353,17 +362,22 @@ class CAPE(tk.Frame):
             tk.messagebox.showinfo("Warning", "You must save the program first")
             self.shared.saved = True
 
-def top(root):
+def top(root, file):
     s = shared.Shared()
-    tl = CAPE(root, s)
+    tl = CAPE(root, s, file)
     tl.grid()
     # tl.grid_propagate(0)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", type=str, help="Python source file")
+    args = parser.parse_args()
+
     root = tk.Tk()
     root.title("Code Afrique Python Editor")
     root.geometry("1175x600")
-    top(root)
+    top(root, args.file)
     root.mainloop()
+
 if (__name__ == "__main__"):
     main()

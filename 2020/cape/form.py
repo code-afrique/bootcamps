@@ -145,7 +145,6 @@ class BasicClauseForm(ClauseForm):
 
     def cb(self):
         self.setComments()
-        # self.focus_set()
 
     def keyEnter(self, x):
         self.cb()
@@ -162,7 +161,6 @@ class CondClauseForm(ClauseForm):
 
     def cb(self):
         self.setComments()
-        # self.focus_set()
 
     def keyEnter(self, x):
         self.cb()
@@ -179,7 +177,6 @@ class ForClauseForm(ClauseForm):
 
     def cb(self):
         self.setComments()
-        # self.focus_set()
 
     def keyEnter(self, x):
         self.cb()
@@ -196,7 +193,6 @@ class ExceptClauseForm(ClauseForm):
 
     def cb(self):
         self.setComments()
-        # self.focus_set()
 
     def keyEnter(self, x):
         self.cb()
@@ -222,7 +218,6 @@ class WithClauseForm(ClauseForm):
 
     def cb(self):
         self.setComments()
-        # self.focus_set()
 
     def keyEnter(self, x):
         self.cb()
@@ -650,7 +645,6 @@ class DefClauseForm(ClauseForm):
             return
         self.setComments()
         self.block.defUpdate(name)
-        # self.focus_set()
 
     def keyEnter(self, x):
         self.cb()
@@ -1085,7 +1079,6 @@ class NumberForm(Form):
         try:
             float(self.entry.get())
             self.block.setValue(self.entry.get())
-            self.focus_set()
         except ValueError:
             tk.messagebox.showinfo("Format Error", "'{}' is not a valid number".format(self.entry.get()))
 
