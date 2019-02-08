@@ -448,7 +448,7 @@ class StringBlock(Block):
         super().__init__(parent, shared)
         self.string = tk.StringVar()
         tk.Button(self, text="\"", command=self.cb).grid(row=0, column=0)
-        self.btn = tk.Button(self, textvariable=self.string, fg="green", width=0, command=self.cb)
+        self.btn = tk.Button(self, textvariable=self.string, fg="green", width=0, command=self.cb, justify=tk.LEFT)
         self.string.set(node.what)
         self.btn.grid(row=0, column=1)
         tk.Button(self, text="\"", command=self.cb).grid(row=0, column=2)

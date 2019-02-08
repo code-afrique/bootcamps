@@ -1032,8 +1032,21 @@ class StringNode(Node):
     def toBlock(self, frame, block):
         return block.newStringBlock(frame, self)
 
+    # like repr, but uses triple quotes when possible
+    def mrepr(self, s):
+        if s.count("\n") == 0:
+            return repr(s)
+        fd = io.StringIO(s)
+        lines = s.split("\n")
+        print('"""', end="", file=fd)
+        for line in lines[:-1]:
+            print(repr(line)[1:-1], file=fd)
+        print(repr(lines[-1])[1:-1], end="", file=fd)
+        print('"""', end="", file=fd)
+        return fd.getvalue()
+
     def print(self, fd, level):
-        print(repr(self.what), end="", file=fd)
+        print(self.mrepr(self.what), end="", file=fd)
 
 class BytesNode(Node):
 
