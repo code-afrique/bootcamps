@@ -606,37 +606,39 @@ class DefClauseForm(ClauseForm):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="Set function information").grid(row=0, columnspan=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="A function (aka method) has a name, a list of names of arguments, and a 'body'.  With this form, you can edit the function name and arguments.").grid(row=1, columnspan=2)
-        tk.Label(self, text="Method name: ").grid(row=2, sticky=tk.W)
-        self.entry = tk.Entry(self)
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="Set function information").grid(row=0, columnspan=3)
+        tk.Message(self, width=350, font="Helvetica 14", text="A function (aka method) has a name, a list of names of arguments, and a 'body'.  With this form, you can edit the function name and arguments.").grid(row=1, columnspan=3)
+        tk.Label(self, text="Method name: ").grid(row=2, sticky=tk.E)
+        self.entry = tk.Entry(self, width=12)
         self.entry.insert(tk.END, block.mname.get())
         self.entry.bind("<Return>", self.keyEnter)
         self.entry.grid(row=2, column=1)
-        self.args = []
-        self.ndefaults = 0
-        for arg in block.args:
-            self.addArg(arg)
+        tk.Button(self, text="Set function name", command=self.cb).grid(row=2, column=2, sticky=tk.W)
 
-        ma = tk.Button(self, text="+ Add argument", command=self.newArg)
-        ma.grid(row=100, column=0)
-        # enter = tk.Button(self, text="Enter", command=self.cb)
-        # enter.grid(row=100, column=1, sticky=tk.E)
-        self.ndefaults = len(block.defaults)
+        # tk.Label(self, text="Argument name: ").grid(row=3, sticky=tk.W)
+        self.argtype = tk.StringVar(self)
+        self.argtype.set("normal")
+        atypes = tk.OptionMenu(self, self.argtype, "normal", "keyword", "*vararg", "**vararg")
+        atypes.grid(row=3, column=0, sticky=tk.E)
 
-        self.insertComments(row=101, columnspan=2)
+        self.arg = tk.Entry(self, width=12)
+        # self.arg.bind("<Return>", self.keyEnter)
+        self.arg.grid(row=3, column=1)
+        tk.Button(self, text="Add argument", command=self.incArg).grid(row=3, column=2, sticky=tk.W)
 
-    def newArg(self):
-        self.addArg("")
+        self.insertComments(row=100, columnspan=3)
 
-    def addArg(self, name):
-        nargs = len(self.args)
-        tk.Label(self, text="Argument {}:".format((nargs + 1))).grid(row=(nargs + 3), sticky=tk.W)
-        e = tk.Entry(self)
-        e.insert(tk.END, name)
-        e.grid(row=(nargs + 3), column=1)
-        e.focus()
-        self.args.insert(nargs - self.ndefaults, e)
+    def incArg(self):
+        name = self.arg.get()
+        if name in kw.kwlist:
+            tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
+        elif (not name.isidentifier()):
+            tk.messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(name))
+        elif name in self.block.args:
+            tk.messagebox.showinfo("Name Error", "'{}' is already an argument".format(name))
+        else:
+            self.arg.delete(0, tk.END)
+            self.block.incArg(name, self.argtype.get())
 
     def cb(self):
         name = self.entry.get()
@@ -646,17 +648,8 @@ class DefClauseForm(ClauseForm):
         if (not name.isidentifier()):
             tk.messagebox.showinfo("Format Error", "'{}' is not a valid function name".format(name))
             return
-        args = []
-        for arg in self.args:
-            a = arg.get()
-            if (a in kw.kwlist):
-                tk.messagebox.showinfo("Name Error", "'{}' is a Python keyword".format(name))
-            if (not a.isidentifier()):
-                tk.messagebox.showinfo("Format Error", "'{}' is not a valid argument name".format(a))
-                return
-            args.append(a)
         self.setComments()
-        self.block.defUpdate(name, args)
+        self.block.defUpdate(name)
         # self.focus_set()
 
     def keyEnter(self, x):

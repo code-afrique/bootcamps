@@ -692,19 +692,26 @@ class ClauseBlock(Block):
 
         self.body_node = SeqNode([RowNode(PassNode())]) if node == None or node.body == None else node.body
         self.title = title
-        self.hdr = HeaderBlock(self, shared)
-        self.colon = tk.Button(self.hdr, highlightbackground="yellow", text="+", command=self.minmax)
+        self.hdr = None
+        self.newHeader()
         self.body = None
 
-        self.hdr.grid(row=1, column=0, sticky=tk.W)
-        self.colon.grid(row=1, column=1000, sticky=tk.W)
-        tk.Button(self.hdr, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=1, column=1001, sticky=(tk.N + tk.W))
         self.minimized = True
         self.row = None
 
         # TODO.  May need to get rid of this
         if not minimized:
             self.minmax()
+
+    def newHeader(self):
+        if self.hdr != None:
+            self.hdr.destroy()
+        self.hdr = HeaderBlock(self, self.shared)
+        self.colon = tk.Button(self.hdr, highlightbackground="yellow", text="+", command=self.minmax)
+
+        self.colon.grid(row=1, column=1000, sticky=tk.W)
+        tk.Button(self.hdr, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=1, column=1001, sticky=(tk.N + tk.W))
+        self.hdr.grid(row=1, column=0, sticky=tk.W)
 
     def setComment(self, commentR, commentU):
         if (commentR == ""):
@@ -1990,19 +1997,18 @@ class DefClauseBlock(ClauseBlock):
         self.mname = tk.StringVar()
         self.mname.set(node.name)
         self.args = node.args
-        self.defaults = [d.toBlock(self.hdr, self) for d in node.defaults]
+        self.defaults = node.defaults
         self.kwarg = node.kwarg
-
+        self.argBlocks = []
         self.setHeader()
-        self.hdr.grid()
 
     def setHeader(self):
-        hdr = self.hdr
-        btn = tk.Button(hdr, text="def", fg="red", width=0, command=self.cb)
+        self.newHeader()
+        btn = tk.Button(self.hdr, text="def", fg="red", width=0, command=self.cb)
         btn.grid(row=1, column=0)
-        self.name = tk.Button(hdr, textvariable=self.mname, fg="blue", command=self.cb)
+        self.name = tk.Button(self.hdr, textvariable=self.mname, fg="blue", command=self.cb)
         self.name.grid(row=1, column=1)
-        tk.Button(hdr, text="(", command=self.cb).grid(row=1, column=2)
+        tk.Button(self.hdr, text="(", command=self.cb).grid(row=1, column=2)
         column = 3
         d = (len(self.args) - len(self.defaults))
         first = True
@@ -2010,22 +2016,26 @@ class DefClauseBlock(ClauseBlock):
             if first:
                 first = False
             else:
-                tk.Button(hdr, text=",", command=self.cb).grid(row=1, column=column)
+                tk.Button(self.hdr, text=",", command=self.cb).grid(row=1, column=column)
                 column += 1
-            tk.Button(hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=1, column=column)
+            tk.Button(self.hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=1, column=column)
             column += 1
             if (i >= d):
-                tk.Button(hdr, text="=", command=self.cb).grid(row=1, column=column)
+                tk.Button(self.hdr, text="=", command=self.cb).grid(row=1, column=column)
                 column += 1
-                self.defaults[(i - d)].grid(row=1, column=column)
+                self.defaults[(i - d)].toBlock(self.hdr, self).grid(row=1, column=column)
                 column += 1
         if self.kwarg != None:
             if not first:
-                tk.Button(hdr, text=",", command=self.cb).grid(row=1, column=column)
+                tk.Button(self.hdr, text=",", command=self.cb).grid(row=1, column=column)
                 column += 1
-            tk.Button(hdr, text="**"+self.kwarg, fg="blue", command=self.cb).grid(row=1, column=column)
+            tk.Button(self.hdr, text="**"+self.kwarg, fg="blue", command=self.cb).grid(row=1, column=column)
             column += 1
-        tk.Button(hdr, text=")", command=self.cb).grid(row=1, column=column)
+        tk.Button(self.hdr, text=")", command=self.cb).grid(row=1, column=column)
+
+    def addArg(self, name):
+        self.args.insert(len(self.defaults), name)
+        self.setHeader()
 
     def genForm(self):
         f = DefClauseForm(self.shared.confarea, self)
@@ -2035,12 +2045,27 @@ class DefClauseBlock(ClauseBlock):
     def cb(self):
         self.setBlock(self)
 
-    def defUpdate(self, mname, args):
-        self.mname.set(mname)
-        self.args = args
+    def incArg(self, name, type):
+        if type == "normal":
+            pos = len(self.args) - len(self.defaults)
+            self.args.insert(pos, name)
+        elif type == "keyword":
+            self.args.append(name)
+            self.defaults.append(ExpressionNode(None))
+        elif type == "*vararg":
+            pos = len(self.args) - len(self.defaults)
+            self.args.insert(pos, "*" + name)
+        else:
+            assert type == "**vararg"
+            self.kwarg = name
         self.setHeader()
         self.needsSaving()
-        self.setBlock(self.body)
+
+    def defUpdate(self, mname):
+        self.mname.set(mname)
+        self.setHeader()
+        self.needsSaving()
+        # self.setBlock(self.body)
 
     def toNodeRaw(self):
         v = self.mname.get()
