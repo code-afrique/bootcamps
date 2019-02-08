@@ -608,7 +608,7 @@ class DefClauseForm(ClauseForm):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Set function information").grid(row=0, columnspan=3)
         tk.Message(self, width=350, font="Helvetica 14", text="A function (aka method) has a name, a list of names of arguments, and a 'body'.  With this form, you can edit the function name and arguments.").grid(row=1, columnspan=3)
-        tk.Label(self, text="Method name: ").grid(row=2, sticky=tk.E)
+        tk.Label(self, text="Function name: ").grid(row=2, sticky=tk.E)
         self.entry = tk.Entry(self, width=12)
         self.entry.insert(tk.END, block.mname.get())
         self.entry.bind("<Return>", self.keyEnter)
