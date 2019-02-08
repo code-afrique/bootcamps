@@ -326,6 +326,9 @@ class Block(tk.Frame):
     def newListBlock(self, parent, node):
         return ListBlock(parent, self.shared, node)
 
+    def newSetBlock(self, parent, node):
+        return SetBlock(parent, self.shared, node)
+
     def newListcompBlock(self, parent, node):
         return ListcompBlock(parent, self.shared, node)
 
@@ -1068,6 +1071,43 @@ class ListBlock(Block):
 
     def toNode(self):
         return ListNode([entry.toNode() for entry in self.entries])
+
+class SetBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        tk.Button(self, text="{", width=0, command=self.cb).grid(row=0, column=0)
+        self.eol = tk.Button(self, text="}", width=0, command=self.cb)
+        self.entries = []
+        if (node != None):
+            for e in node.entries:
+                self.addEntry(e)
+        self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(SetForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addEntry(self, node):
+        if (node == None):
+            e = ExpressionBlock(self, self.shared, None)
+        else:
+            e = ExpressionBlock(self, self.shared, node)
+        self.entries.append(e)
+        self.gridUpdate()
+        self.needsSaving()
+
+    def gridUpdate(self):
+        for i in range(len(self.entries)):
+            if (i != 0):
+                tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=((2 * i) + 1))
+            self.entries[i].grid(row=0, column=((2 * i) + 2))
+        self.eol.grid(row=0, column=((2 * len(self.entries)) + 2))
+
+    def toNode(self):
+        return SetNode([entry.toNode() for entry in self.entries])
 
 class ListcompBlock(Block):
 

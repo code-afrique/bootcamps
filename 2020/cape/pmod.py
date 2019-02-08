@@ -149,6 +149,9 @@ def Del():
 def List(lineno, col_offset, elts, ctx):
     return ExpressionNode(ListNode(elts))
 
+def Set(lineno, col_offset, elts):
+    return ExpressionNode(SetNode(elts))
+
 def Tuple(lineno, col_offset, elts, ctx):
     return ExpressionNode(TupleNode(elts))
 

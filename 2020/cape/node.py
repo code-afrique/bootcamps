@@ -875,6 +875,27 @@ class ListNode(Node):
             self.entries[i].print(fd, 0)
         print("]", end="", file=fd)
 
+class SetNode(Node):
+
+    def __init__(self, entries):
+        super().__init__()
+        self.entries = entries
+
+    def merge(self, q):
+        for e in self.entries:
+            e.merge(q)
+
+    def toBlock(self, frame, block):
+        return block.newSetBlock(frame, self)
+
+    def print(self, fd, level):
+        print("{", end="", file=fd)
+        for i in range(len(self.entries)):
+            if (i != 0):
+                print(", ", end="", file=fd)
+            self.entries[i].print(fd, 0)
+        print("}", end="", file=fd)
+
 class ListcompNode(Node):
     def __init__(self, elt, generators):
         super().__init__()

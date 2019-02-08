@@ -843,6 +843,21 @@ class ListForm(Form):
         self.block.addEntry(None)
         self.block.setBlock(self.block.entries[(- 1)])
 
+class SetForm(Form):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = True
+        self.isStatement = False
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="'set' expression").grid(columnspan=2)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'set' is simply a collection of expressions").grid(row=1, columnspan=2)
+        ma = tk.Button(self, text="+ Add a new expression to the set", command=self.addEntry)
+        ma.grid(row=2, column=0, columnspan=2)
+
+    def addEntry(self):
+        self.block.addEntry(None)
+        self.block.setBlock(self.block.entries[(- 1)])
+
 class DictForm(Form):
 
     def __init__(self, parent, block):
