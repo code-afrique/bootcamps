@@ -108,7 +108,7 @@ class CAPE(tk.Frame):
         self.shared.saved = True
 
         self.errormsgs = tk.scrolledtext.ScrolledText(self, wrap=tk.WORD, width=100, height=3, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
-        self.errormsgs.insert(tk.INSERT, "Hello World")
+        self.errormsgs.insert(tk.INSERT, "...error output from running programs will appear here...")
 
         self.shared.confarea.grid(row=0, column=0, sticky=tk.N)
         self.progarea.grid(row=0, column=1, sticky=tk.NW)
