@@ -10,7 +10,7 @@ import tkinter.filedialog
 import tkinter.scrolledtext
 import tokenize
 import queue
-import pparse
+import ast
 import pmod
 import shared
 from form import HelpForm, TextForm
@@ -210,9 +210,12 @@ class CAPE(tk.Frame):
         self.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
         self.program.setBlock(self.program.clauses[0].body)
+
         # verify that conversion has been done right
         # print("verify")
-        tree2 = pparse.pparse(code, show_offsets=False)
+        # tree2 = pparse.pparse(code, show_offsets=False)
+        mod2 = ast.parse(code)
+        tree2 = ast.dump(mod2, include_attributes=False)
         with open("tree2", "w") as fd:
             fd.write(tree2)
         n3 = self.program.toNode()
@@ -221,7 +224,9 @@ class CAPE(tk.Frame):
         code3 = f3.getvalue()
         with open("code3", "w") as fd:
             fd.write(code3)
-        tree3 = pparse.pparse(code3, show_offsets=False)
+        # tree3 = pparse.pparse(code3, show_offsets=False)
+        mod3 = ast.parse(code3)
+        tree3 = ast.dump(mod3, include_attributes=False)
         with open("tree3", "w") as fd:
             fd.write(tree3)
         if (tree2 != tree3):

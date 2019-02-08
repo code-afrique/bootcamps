@@ -1,10 +1,10 @@
 import time
-import pparse
 import queue
 import tokenize
-import pmod
+import ast
 import io
 import keyword
+import pmod
 
 class Shared():
     def __init__(self):
@@ -62,7 +62,9 @@ class Shared():
         return text[1:]
 
     def parse(self, code, show_offsets=True, mode='exec'):
-        tree = pparse.pparse(code, show_offsets=True, mode=mode)
+        # tree = pparse.pparse(code, mode="eval")
+        mod = ast.parse(code, mode=mode)
+        tree = ast.dump(mod, include_attributes=True)
         n = pmod.nodeEval(tree)
 
         # extract keywords and comments

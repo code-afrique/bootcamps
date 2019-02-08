@@ -4,7 +4,7 @@ import tkinter.scrolledtext
 import io
 from form import *
 from node import *
-import pparse
+import ast
 import pmod
 import queue
 import tokenize
@@ -1326,7 +1326,9 @@ class ExpressionBlock(Block):
     def paste(self):
         try:
             code = self.clipboard_get()
-            tree = pparse.pparse(code, mode="eval")
+            # tree = pparse.pparse(code, mode="eval")
+            mod = ast.parse(code, mode="eval")
+            tree = ast.dump(mod, include_attributes=True)
             n = pmod.nodeEval(tree)
             assert isinstance(n, ExpressionNode)
             self.setValue(n.what)
