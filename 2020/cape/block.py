@@ -1215,7 +1215,7 @@ class ExpressionBlock(Block):
 
     def exprString(self):
         self.setValue(StringNode(""))
-        self.shared.curForm.entry.focus()
+        self.shared.curForm.string.focus()
 
     def exprName(self, v):
         self.setValue(NameNode(v))

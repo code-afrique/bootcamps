@@ -370,7 +370,7 @@ class PassForm(Form):
         # row += 1
         tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=4, pady=10)
         row += 1
-        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'if', 'while', 'for', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=4, pady=10)
+        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'def', 'if', 'while', 'for', 'print', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=4, pady=10)
 
     def stmtDef(self):
         self.block.stmtDef()
