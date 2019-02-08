@@ -1479,7 +1479,7 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.clauses[0].target)
 
     def stmtDef(self):
-        self.stmtPut(ContainerNode(DefClauseNode("", [], [], None)))
+        self.stmtPut(ContainerNode(DefClauseNode("", [], [], None, None)))
         self.setBlock(self.rowblk.what.clauses[0])
         self.shared.curForm.entry.focus()
 
@@ -1991,6 +1991,7 @@ class DefClauseBlock(ClauseBlock):
         self.mname.set(node.name)
         self.args = node.args
         self.defaults = [d.toBlock(self.hdr, self) for d in node.defaults]
+        self.kwarg = node.kwarg
 
         self.setHeader()
         self.hdr.grid()
@@ -2004,8 +2005,11 @@ class DefClauseBlock(ClauseBlock):
         tk.Button(hdr, text="(", command=self.cb).grid(row=1, column=2)
         column = 3
         d = (len(self.args) - len(self.defaults))
+        first = True
         for i in range(len(self.args)):
-            if (i != 0):
+            if first:
+                first = False
+            else:
                 tk.Button(hdr, text=",", command=self.cb).grid(row=1, column=column)
                 column += 1
             tk.Button(hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=1, column=column)
@@ -2015,6 +2019,12 @@ class DefClauseBlock(ClauseBlock):
                 column += 1
                 self.defaults[(i - d)].grid(row=1, column=column)
                 column += 1
+        if self.kwarg != None:
+            if not first:
+                tk.Button(hdr, text=",", command=self.cb).grid(row=1, column=column)
+                column += 1
+            tk.Button(hdr, text="**"+self.kwarg, fg="blue", command=self.cb).grid(row=1, column=column)
+            column += 1
         tk.Button(hdr, text=")", command=self.cb).grid(row=1, column=column)
 
     def genForm(self):
@@ -2039,7 +2049,7 @@ class DefClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.getBody())
+        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.kwarg, self.getBody())
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):

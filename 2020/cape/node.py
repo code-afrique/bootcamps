@@ -104,11 +104,12 @@ class ClauseNode(Node):
         self.body.print(fd, level + 1)
 
 class DefClauseNode(ClauseNode):
-    def __init__(self, name, args, defaults, body):
+    def __init__(self, name, args, defaults, kwarg, body):
         super().__init__(body)
         self.name = name
         self.args = args
         self.defaults = defaults
+        self.kwarg = kwarg
 
     def merge(self, q):
         (kw, line, col) = q.get()
@@ -126,13 +127,20 @@ class DefClauseNode(ClauseNode):
         self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
         d = (len(self.args) - len(self.defaults))
+        first = True
         for i in range(len(self.args)):
-            if (i != 0):
+            if first:
+                first = False
+            else:
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
             if (i >= d):
                 print("=", end="", file=fd)
                 self.defaults[(i - d)].print(fd, 0)
+        if self.kwarg != None:
+            if not first:
+                print(", ", end="", file=fd)
+            print("**{}".format(self.kwarg), end="", file=fd)
         print(")", end="", file=fd)
         self.printBody(fd, level)
 
