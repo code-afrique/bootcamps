@@ -969,10 +969,15 @@ class CallBlock(Block):
     def newArg(self, node):
         self.addArg(node)
         self.gridUpdate()
+        self.setBlock(self.args[-1])
         self.needsSaving()
 
     def addNamedArg(self, name):
         self.addKeyword((name, None))
+        self.gridUpdate()
+        (k, v) = self.keywords[-1]
+        self.setBlock(v)
+        self.needsSaving()
 
     def addKeyword(self, kw):
         (key, val) = kw
