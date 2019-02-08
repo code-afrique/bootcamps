@@ -240,6 +240,12 @@ def Mult():
 def Pow():
     return "**"
 
+def BitOr():
+    return "|"
+
+def BitAnd():
+    return "&"
+
 def USub():
     return "-"
 
