@@ -9,18 +9,14 @@ def Lambda(lineno, col_offset, args, body):
     return ExpressionNode(LambdaNode(argnames, defaults, body))
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
-    (argnames, defaults, kwarg) = args
-    return RowNode(ContainerNode(DefClauseNode(name, argnames, defaults, kwarg, SeqNode(body))), lineno)
+    (argnames, defaults, vararg, kwarg) = args
+    return RowNode(ContainerNode(DefClauseNode(name, argnames, defaults, vararg, kwarg, SeqNode(body))), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
     return RowNode(ContainerNode(ClassClauseNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body))), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
-    a = args
-    if vararg != None:
-    	a.append('*' + vararg)
-    a += kwonlyargs
-    return (a, defaults + kw_defaults, kwarg)
+    return (args + kwonlyargs, defaults + kw_defaults, vararg, kwarg)
 
 def args(lineno, col_offset, arg, annotation):
     return arg

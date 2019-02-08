@@ -104,11 +104,12 @@ class ClauseNode(Node):
         self.body.print(fd, level + 1)
 
 class DefClauseNode(ClauseNode):
-    def __init__(self, name, args, defaults, kwarg, body):
+    def __init__(self, name, args, defaults, vararg, kwarg, body):
         super().__init__(body)
         self.name = name
         self.args = args
         self.defaults = defaults
+        self.vararg = vararg
         self.kwarg = kwarg
 
     def merge(self, q):
@@ -126,17 +127,29 @@ class DefClauseNode(ClauseNode):
         self.printComment(fd, level)
         self.printIndent(fd, level)
         print("def {}(".format(self.name), end="", file=fd)
-        d = (len(self.args) - len(self.defaults))
         first = True
-        for i in range(len(self.args)):
+        nargs = len(self.args)
+        ndefaults = len(self.defaults)
+        for i in range(nargs - ndefaults):
             if first:
                 first = False
             else:
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
-            if (i >= d):
-                print("=", end="", file=fd)
-                self.defaults[(i - d)].print(fd, 0)
+        if self.vararg != None:
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
+            print("*{}".format(self.vararg), end="", file=fd)
+        for i in range(nargs - ndefaults, nargs):
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
+            print(self.args[i], end="", file=fd)
+            print("=", end="", file=fd)
+            self.defaults[i - ndefaults].print(fd, 0)
         if self.kwarg != None:
             if not first:
                 print(", ", end="", file=fd)

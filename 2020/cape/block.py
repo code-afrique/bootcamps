@@ -1486,7 +1486,7 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.clauses[0].target)
 
     def stmtDef(self):
-        self.stmtPut(ContainerNode(DefClauseNode("", [], [], None, None)))
+        self.stmtPut(ContainerNode(DefClauseNode("", [], [], None, None, None)))
         self.setBlock(self.rowblk.what.clauses[0])
         self.shared.curForm.entry.focus()
 
@@ -1998,6 +1998,7 @@ class DefClauseBlock(ClauseBlock):
         self.mname.set(node.name)
         self.args = node.args
         self.defaults = node.defaults
+        self.vararg = node.vararg
         self.kwarg = node.kwarg
         self.argBlocks = []
         self.setHeader()
@@ -2010,9 +2011,10 @@ class DefClauseBlock(ClauseBlock):
         self.name.grid(row=1, column=1)
         tk.Button(self.hdr, text="(", command=self.cb).grid(row=1, column=2)
         column = 3
-        d = (len(self.args) - len(self.defaults))
         first = True
-        for i in range(len(self.args)):
+        nargs = len(self.args)
+        ndefaults = len(self.defaults)
+        for i in range(nargs - ndefaults):
             if first:
                 first = False
             else:
@@ -2020,11 +2022,24 @@ class DefClauseBlock(ClauseBlock):
                 column += 1
             tk.Button(self.hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=1, column=column)
             column += 1
-            if (i >= d):
-                tk.Button(self.hdr, text="=", command=self.cb).grid(row=1, column=column)
+        if self.vararg != None:
+            if not first:
+                tk.Button(self.hdr, text=",", command=self.cb).grid(row=1, column=column)
                 column += 1
-                self.defaults[(i - d)].toBlock(self.hdr, self).grid(row=1, column=column)
+            tk.Button(self.hdr, text="*"+self.vararg, fg="blue", command=self.cb).grid(row=1, column=column)
+            column += 1
+        for i in range(nargs - ndefaults, nargs):
+            if first:
+                first = False
+            else:
+                tk.Button(self.hdr, text=",", command=self.cb).grid(row=1, column=column)
                 column += 1
+            tk.Button(self.hdr, text=self.args[i], fg="blue", command=self.cb).grid(row=1, column=column)
+            column += 1
+            tk.Button(self.hdr, text="=", command=self.cb).grid(row=1, column=column)
+            column += 1
+            self.defaults[i - ndefaults].toBlock(self.hdr, self).grid(row=1, column=column)
+            column += 1
         if self.kwarg != None:
             if not first:
                 tk.Button(self.hdr, text=",", command=self.cb).grid(row=1, column=column)
@@ -2053,8 +2068,7 @@ class DefClauseBlock(ClauseBlock):
             self.args.append(name)
             self.defaults.append(ExpressionNode(None))
         elif type == "*vararg":
-            pos = len(self.args) - len(self.defaults)
-            self.args.insert(pos, "*" + name)
+            self.vararg = name
         else:
             assert type == "**vararg"
             self.kwarg = name
@@ -2074,7 +2088,7 @@ class DefClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.kwarg, self.getBody())
+        return DefClauseNode(v, self.args, [d.toNode() for d in self.defaults], self.vararg, self.kwarg, self.getBody())
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
