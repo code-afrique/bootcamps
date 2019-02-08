@@ -88,7 +88,12 @@ class SeqForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Sequence of statements").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of {} statements.".format(len(block.rows))).grid(sticky=tk.W)
+        
+        n = len(block.rows)
+        if n == 1:
+            tk.Message(self, width=350, font="Helvetica 14", text="There is currently only one statement in this sequence.".format(len(block.rows))).grid(sticky=tk.W)
+        else:
+            tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of {} statements.".format(len(block.rows))).grid(sticky=tk.W)
 
 class ClauseForm(Form):
 
@@ -135,7 +140,8 @@ class BasicClauseForm(ClauseForm):
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
         tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements.").grid(sticky=tk.W)
-        self.insertComments(row=3)
+        if block.type != "module":
+            self.insertComments(row=3)
 
     def cb(self):
         self.setComments()
@@ -168,7 +174,7 @@ class ForClauseForm(ClauseForm):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements within a for loop").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
         self.insertComments(row=3)
 
     def cb(self):
@@ -211,7 +217,7 @@ class WithClauseForm(ClauseForm):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="With Statement").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a with statement.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a with statement.  (Currently little support available.)").grid(sticky=tk.W)
         self.insertComments(row=3)
 
     def cb(self):
@@ -370,7 +376,7 @@ class PassForm(Form):
         # row += 1
         tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=4, pady=10)
         row += 1
-        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'def', 'if', 'while', 'for', 'print', and 'return' statements can be inserted by typing their first letter.").grid(columnspan=4, pady=10)
+        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'def', 'if', 'while', 'for', 'print', and 'return' statements can be inserted by typing their first letter.  You can also add an assignment operation by typing '=', or augmented assignment operations by typing the operator name.").grid(columnspan=4, pady=10)
 
     def stmtDef(self):
         self.block.stmtDef()
@@ -469,7 +475,15 @@ class PassForm(Form):
         elif (self.block.isWithinDef and (ev.char == "y")):
             self.stmtYield()
         elif (ev.char == "="):
-            self.stmtAugassign("=")
+            self.block.stmtAugassign("=")
+        elif (ev.char == "+"):
+            self.block.stmtAugassign("+=")
+        elif (ev.char == "-"):
+            self.block.stmtAugassign("-=")
+        elif (ev.char == "*"):
+            self.block.stmtAugassign("*=")
+        elif (ev.char == "/"):
+            self.block.stmtAugassign("/=")
         elif (ev.char == "?"):
             self.stmtEval()
         elif (ev.char == "("):
@@ -492,7 +506,7 @@ class ExpressionForm(Form):
         row = 0
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Select an expression type").grid(row=row, column=0, columnspan=3)
         row += 1
-        tk.Message(self, width=350, font="Helvetica 14", text="Either click on one of the types below or use a keyboard shortcut.  If you want to enter a name just type its first character.  If you want to type a number just enter its first digit.  If you want to enter a string, type a \".  If you type a '(' it will assume you intend to call a function, and so on.").grid(row=row, column=0, columnspan=3)
+        tk.Message(self, width=350, font="Helvetica 14", text="Either click on one of the types below or use a keyboard shortcut.  If you want to enter a name just type its first character.  If you want to type a number just enter its first digit.  If you want to enter a string, type a \".  To call a function, enter '(', to start a list enter '[', to start a tuple enter ',', and so on.").grid(row=row, column=0, columnspan=3)
         row += 1
         tk.Button(self, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
         tk.Button(self, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
@@ -715,7 +729,7 @@ class ForForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'for' statement").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.  Optionally, it may also contain an 'else' clause that is executed should the list be empty.").grid(row=1)
         if (block.hasElse):
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
         else:
@@ -735,7 +749,7 @@ class WhileForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'while' statement").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.").grid(row=1)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'while' statement has a 'loop condition' and a 'body'.  The body is executed repeatedly as long as the loop condition holds.  Optionally, there is an 'else' clause that is executed if the loop condition does not hold initially.").grid(row=1)
         if block.hasElse:
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
         else:
@@ -825,7 +839,7 @@ class ImportForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'import' statement").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="An 'import' statement' includes a module.").grid(row=1)
+        tk.Message(self, width=350, font="Helvetica 14", text="An 'import' statement' imports the definition in another module.").grid(row=1)
 
 class ListForm(Form):
 
@@ -999,7 +1013,7 @@ class AssignForm(Form):
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'assignment'").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="An 'assignment' operation is used to update the variable on the left of assignment operation symbol using the value that is on the right.").grid(row=1)
+        tk.Message(self, width=350, font="Helvetica 14", text="An 'assignment' operation is used to update the variable on the left of assignment operation symbol '=' using the value that is on the right.").grid(row=1)
 
 class AugassignForm(Form):
 

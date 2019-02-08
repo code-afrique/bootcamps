@@ -1295,6 +1295,8 @@ class ExpressionBlock(Block):
                 self.exprCall()
             elif (c == "["):
                 self.exprList()
+            elif (c == ","):
+                self.exprTuple()
             elif (c == "="):
                 self.exprBinaryop("==")
             elif (c == "!"):
@@ -1619,7 +1621,7 @@ class DelBlock(Block):
             column += 1
 
     def genForm(self):
-        self.setForm(ReturnForm(self.shared.confarea, self))
+        self.setForm(DelForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
