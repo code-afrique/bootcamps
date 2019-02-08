@@ -130,7 +130,8 @@ class DefClauseNode(ClauseNode):
         first = True
         nargs = len(self.args)
         ndefaults = len(self.defaults)
-        for i in range(nargs - ndefaults):
+        delta = nargs - ndefaults
+        for i in range(delta):
             if first:
                 first = False
             else:
@@ -142,14 +143,14 @@ class DefClauseNode(ClauseNode):
             else:
                 print(", ", end="", file=fd)
             print("*{}".format(self.vararg), end="", file=fd)
-        for i in range(nargs - ndefaults, nargs):
+        for i in range(delta, nargs):
             if first:
                 first = False
             else:
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
             print("=", end="", file=fd)
-            self.defaults[i - ndefaults].print(fd, 0)
+            self.defaults[i - delta].print(fd, 0)
         if self.kwarg != None:
             if not first:
                 print(", ", end="", file=fd)

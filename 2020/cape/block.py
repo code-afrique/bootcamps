@@ -2014,7 +2014,8 @@ class DefClauseBlock(ClauseBlock):
         first = True
         nargs = len(self.args)
         ndefaults = len(self.defaults)
-        for i in range(nargs - ndefaults):
+        delta = nargs - ndefaults
+        for i in range(delta):
             if first:
                 first = False
             else:
@@ -2028,7 +2029,7 @@ class DefClauseBlock(ClauseBlock):
                 column += 1
             tk.Button(self.hdr, text="*"+self.vararg, fg="blue", command=self.cb).grid(row=1, column=column)
             column += 1
-        for i in range(nargs - ndefaults, nargs):
+        for i in range(delta, nargs):
             if first:
                 first = False
             else:
@@ -2038,7 +2039,7 @@ class DefClauseBlock(ClauseBlock):
             column += 1
             tk.Button(self.hdr, text="=", command=self.cb).grid(row=1, column=column)
             column += 1
-            self.defaults[i - ndefaults].toBlock(self.hdr, self).grid(row=1, column=column)
+            self.defaults[i - delta].toBlock(self.hdr, self).grid(row=1, column=column)
             column += 1
         if self.kwarg != None:
             if not first:
