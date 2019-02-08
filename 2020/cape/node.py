@@ -825,7 +825,10 @@ class CallNode(Node):
                 first = False
             else:
                 print(", ", end="", file=fd)
-            print("{}=".format(arg), end="", file=fd)
+            if arg == None:
+                print("**", end="", file=fd)
+            else:
+                print("{}=".format(arg), end="", file=fd)
             val.print(fd, 0)
         print(")", end="", file=fd)
 

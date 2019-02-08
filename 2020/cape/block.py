@@ -999,10 +999,14 @@ class CallBlock(Block):
             else:
                 tk.Button(self, text=",", width=0, command=self.cb).grid(row=0, column=column)
                 column += 1
-            tk.Button(self, text=k, width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            tk.Button(self, text="=", width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
+            if k == None:
+                tk.Button(self, text="**", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+            else:
+                tk.Button(self, text=k, width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                tk.Button(self, text="=", width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
             v.grid(row=0, column=column)
             column += 1
         self.eol.grid(row=0, column=column)
