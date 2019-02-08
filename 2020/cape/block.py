@@ -208,8 +208,24 @@ class Block(tk.Frame):
     def goUp(self):
         return self
 
-    def goDown(self):
-        return self
+        def goDown(self):
+            return self
+
+    def commentize(self, s):
+        r = ""
+        for c in s.split("\n"):
+            r += "# " + c + "\n"
+        return r[:-1]
+
+    def uncommentize(self, s):
+        r = ""
+        for c in s.split("\n"):
+            if len(c) > 0 and c[0] == '#':
+                c = c[1:]
+                if len(c) > 0 and c[0] == ' ':
+                    c = c[1:]
+            r += c + "\n"
+        return r[:-1]
 
     def newContainerBlock(self, parent, node):
         return ContainerBlock(parent, self.shared, node)
@@ -671,7 +687,8 @@ class ClauseBlock(Block):
         if node != None:
             self.setCommentU(node.commentU[:-1])
             if node.commentR != None:
-                self.commentR.set(("# " + node.commentR))
+                # self.commentR.set(("# " + node.commentR))
+                self.commentR.set(self.commentize(node.commentR))
 
         self.body_node = SeqNode([RowNode(PassNode())]) if node == None or node.body == None else node.body
         self.title = title
@@ -693,7 +710,8 @@ class ClauseBlock(Block):
         if (commentR == ""):
             self.commentR.set("")
         else:
-            self.commentR.set(("# " + commentR))
+            # self.commentR.set(("# " + commentR))
+            self.commentR.set(self.commentize(commentR))
         self.setCommentU(commentU)
         self.needsSaving()
 
@@ -702,7 +720,7 @@ class ClauseBlock(Block):
         if comment == "":
             self.commentButton.grid_forget()
         else:
-            self.commentU.set(comment)
+            self.commentU.set(self.commentize(comment))
             self.commentButton.grid(row=0, columnspan=2, sticky=tk.W)
         self.needsSaving()
 
@@ -749,7 +767,7 @@ class ClauseBlock(Block):
 
     def toNode(self):
         r = self.toNodeRaw()
-        cu = self.commentU.get()
+        cu = self.uncommentize(self.commentU.get())
         r.commentU = None if cu == "" else (cu + "\n")
 
         if self.shared.keeping:
@@ -759,7 +777,7 @@ class ClauseBlock(Block):
             c = self.commentR.get()
             if (c != ""):
                 assert (c[0:2] == "# ")
-                r.commentR = c[2:]
+                r.commentR = self.uncommentize(c)
         return r
 
 # A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
@@ -1769,7 +1787,8 @@ class RowBlock(Block):
             self.setCommentU(node.commentU[:-1])
             self.what = node.what.toBlock(self.frame, self)
             if node.commentR != None:
-                self.commentR.set(("# " + node.commentR))
+                # self.commentR.set(("# " + node.commentR))
+                self.commentR.set(self.commentize(node.commentR))
         self.what.grid(row=1, column=0, sticky=tk.W)
 
         tk.Button(self.frame, textvariable=self.commentR, fg="brown", command=self.listcmd, font="-slant italic").grid(row=1, column=1, sticky=(tk.N + tk.W))
@@ -1783,7 +1802,8 @@ class RowBlock(Block):
         if (commentR == ""):
             self.commentR.set("")
         else:
-            self.commentR.set(("# " + commentR))
+            # self.commentR.set(("# " + commentR))
+            self.commentR.set(self.commentize(commentR))
         self.setCommentU(commentU)
         self.needsSaving()
 
@@ -1792,7 +1812,7 @@ class RowBlock(Block):
         if comment == "":
             self.commentButton.grid_forget()
         else:
-            self.commentU.set(comment)
+            self.commentU.set(self.commentize(comment))
             self.commentButton.grid(row=0, columnspan=2, sticky=tk.W)
         self.needsSaving()
 
@@ -1859,7 +1879,7 @@ class RowBlock(Block):
 
     def toNode(self):
         r = RowNode(self.what.toNode(), 0)
-        cu = self.commentU.get()
+        cu = self.uncommentize(self.commentU.get())
         r.commentU = None if cu == "" else (cu + "\n")
 
         if self.shared.keeping:
@@ -1872,7 +1892,8 @@ class RowBlock(Block):
             c = self.commentR.get()
             if (c != ""):
                 assert (c[0:2] == "# ")
-                r.commentR = c[2:]
+                # r.commentR = c[2:]
+                r.commentR = self.uncommentize(c)
         return r
 
 # The parent of a SeqBlock is always a ClauseBlock, which helps with navigating

@@ -108,15 +108,15 @@ class ClauseForm(Form):
         tk.Label(frame, text="Inline Comment: ").grid(row=0, column=0)
         self.commentR = tk.Entry(frame, font="-slant italic")
         self.commentR.bind("<Return>", self.keyEnter)
-        c = self.block.commentR.get()
-        self.commentR.insert(tk.END, c[1:])
+        c = self.block.uncommentize(self.block.commentR.get())
+        self.commentR.insert(tk.END, c)
         self.commentR.grid(row=0, column=1)
 
         tk.Label(frame, text="Multiline Comment (displayed above statement): ").grid(row=1, columnspan=2)
 
         self.commentU = tk.scrolledtext.ScrolledText(frame, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2, font="-slant italic")
         if self.block.commentU != None:
-            c = self.block.commentU.get()
+            c = self.block.uncommentize(self.block.commentU.get())
             self.commentU.insert(tk.END, c)
         self.commentU.grid(row=2, columnspan=2)
 
@@ -288,14 +288,14 @@ class RowForm(Form):
             tk.Label(self, text="Inline Comment: ").grid(row=7, column=0)
             self.entry = tk.Entry(self, font="-slant italic")
             self.entry.bind("<Return>", self.keyEnter)
-            c = block.commentR.get()
-            self.entry.insert(tk.END, c[1:])
+            c = block.uncommentize(block.commentR.get())
+            self.entry.insert(tk.END, c)
             self.entry.grid(row=7, column=1, columnspan=2)
 
             tk.Label(self, text="Multiline Comment (displayed above statement): ").grid(row=8, columnspan=3)
             self.commentU = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2, font="-slant italic")
             if block.commentU != None:
-                c = block.commentU.get()
+                c = block.uncommentize(block.commentU.get())
                 self.commentU.insert(tk.END, c)
             self.commentU.grid(row=9, columnspan=3)
 
@@ -305,7 +305,7 @@ class RowForm(Form):
         tk.Message(self, width=350, font="Helvetica 14", text="If you copied or deleted a statement, you can paste it here (see Edit menu).").grid(columnspan=3)
 
     def cb(self):
-        cu = self.commentU.get("end-1c")
+        cu = self.commentU.get("1.0", "end-1c")
         self.block.setComment(self.entry.get(), cu)
 
     def keyEnter(self, ev):
@@ -492,7 +492,7 @@ class ExpressionForm(Form):
         row = 0
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Select an expression type").grid(row=row, column=0, columnspan=3)
         row += 1
-        tk.Message(self, width=350, font="Helvetica 14", text="Either click on one of the types below or use a keyboard shortcut.  For example, if you type an alphabetic character it will automatically know you intend to enter a name, if you type a digit it will know you intend to enter a number, if you type a '=' it will assume you intend to do an assignment, and so on.").grid(row=row, column=0, columnspan=3)
+        tk.Message(self, width=350, font="Helvetica 14", text="Either click on one of the types below or use a keyboard shortcut.  If you want to enter a name just type its first character.  If you want to type a number just enter its first digit.  If you want to enter a string, type a \".  If you type a '(' it will assume you intend to call a function, and so on.").grid(row=row, column=0, columnspan=3)
         row += 1
         tk.Button(self, text="name", command=self.exprName).grid(row=row, sticky=tk.W)
         tk.Button(self, text="x.y", command=self.exprAttr).grid(row=row, column=1, sticky=tk.W)
@@ -504,7 +504,7 @@ class ExpressionForm(Form):
         row += 1
         if (not block.isWithinStore):
             tk.Button(self, text="number", command=self.exprNumber).grid(row=row, sticky=tk.W)
-            tk.Button(self, text="string", command=self.exprString).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(self, text='"string"', command=self.exprString).grid(row=row, column=1, sticky=tk.W)
             tk.Button(self, text="f()", command=self.exprCall).grid(row=row, column=2, sticky=tk.W)
             row += 1
             tk.Button(self, text="False", command=self.exprFalse).grid(row=row, column=0, sticky=tk.W)
