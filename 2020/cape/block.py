@@ -1354,6 +1354,9 @@ class ExpressionBlock(Block):
     def exprTuple(self):
         self.setValue(TupleNode([]))
 
+    def exprSet(self):
+        self.setValue(SetNode([ExpressionNode(None)]))
+
     def exprDict(self):
         self.setValue(DictNode([], []))
 

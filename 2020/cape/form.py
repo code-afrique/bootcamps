@@ -520,8 +520,9 @@ class ExpressionForm(Form):
             tk.Button(self, text="True", command=self.exprTrue).grid(row=row, column=1, sticky=tk.W)
             tk.Button(self, text="None", command=self.exprNone).grid(row=row, column=2, sticky=tk.W)
             row += 1
-            tk.Button(self, text="{...: ...}", command=self.exprDict).grid(row=row, column=0, sticky=tk.W)
-            tk.Button(self, text="x if c else y", command=self.exprIfelse).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(self, text="{...}", command=self.exprSet).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(self, text="{...: ...}", command=self.exprDict).grid(row=row, column=1, sticky=tk.W)
+            tk.Button(self, text="x if c else y", command=self.exprIfelse).grid(row=row, column=2, sticky=tk.W)
             row += 1
             tk.Label(self, text="").grid(row=row)
             row += 1
@@ -574,6 +575,9 @@ class ExpressionForm(Form):
 
     def exprTuple(self):
         self.block.exprTuple()
+
+    def exprSet(self):
+        self.block.exprSet()
 
     def exprDict(self):
         self.block.exprDict()
@@ -850,7 +854,7 @@ class SetForm(Form):
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'set' expression").grid(columnspan=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'set' is simply a collection of expressions").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'set' is simply a collection of expressions.  Note that the only way to create an empty set is to call 'set()'.").grid(row=1, columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the set", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
 
