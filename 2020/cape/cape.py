@@ -216,6 +216,7 @@ class CAPE(tk.Frame):
         return text[1:]
 
     def parse(self, code):
+        self.shared.trap = True
         n = self.shared.parse(code);
         if self.shared.program != None:
             self.shared.program.grid_forget()
@@ -244,6 +245,7 @@ class CAPE(tk.Frame):
             fd.write(tree3)
         if (tree2 != tree3):
             print("Parse verification failed; edit at own risk")
+        self.shared.trap = False
 
     def save(self):
         if (self.curfile == None):

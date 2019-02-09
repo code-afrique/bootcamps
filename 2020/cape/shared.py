@@ -100,13 +100,16 @@ class Shared():
     # save for undo later
     def save(self):
         if self.program != None:
+            print("save for later")
             self.cvtError = True
             n = self.program.toNode()
             self.stack.append(n)
 
     def undo(self):
         if len(self.stack) == 0:
+            print("nothing to undo")
             return
+        print("undo")
         self.program.grid_forget()
         n = self.stack.pop()
         self.program = block.ModuleBlock(self.scrollable.stuff, self, n)

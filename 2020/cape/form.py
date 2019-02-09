@@ -683,6 +683,7 @@ class ClassClauseForm(ClauseForm):
 
     def addBaseClass(self):
         self.block.addBaseClass(None)
+        self.block.needsSaving()
         self.block.setBlock(self.block.bases[(- 1)])
 
     def cb(self):
@@ -873,6 +874,7 @@ class ListForm(Form):
     def addEntry(self):
         self.block.addEntry(None)
         self.block.setBlock(self.block.entries[(- 1)])
+        self.block.needsSaving()
 
 class SetForm(Form):
 

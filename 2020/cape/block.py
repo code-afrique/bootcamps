@@ -708,7 +708,7 @@ class ClauseBlock(Block):
         self.body_node = (SeqNode([StatementNode(PassNode())]) if ((node == None) or (node.body == None)) else node.body)
         self.title = title
 
-		# decorators are in rows 1 .. 1 + #decorators
+        # decorators are in rows 1 .. 1 + #decorators
         self.decorator_list = [] if node == None else node.decorator_list
         r = 1
         for d in self.decorator_list:
@@ -874,7 +874,7 @@ class ModuleBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
-            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode('module', None, self.minimized))]
+            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode('module', None, False))]
         else:
             self.clauses = [c.toBlock(self, self) for c in node.clauses]
         self.clauses[0].grid()
@@ -942,7 +942,6 @@ class ClassClauseBlock(ClauseBlock):
             base = ExpressionBlock(self.hdr, self.shared, node)
         self.bases.append(base)
         self.setHeader()
-        self.needsSaving()
 
     def setHeader(self):
         column = 3
@@ -1074,7 +1073,6 @@ class ListBlock(Block):
             e = ExpressionBlock(self, self.shared, node)
         self.entries.append(e)
         self.gridUpdate()
-        self.needsSaving()
 
     def gridUpdate(self):
         for i in range(len(self.entries)):
