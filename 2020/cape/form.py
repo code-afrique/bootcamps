@@ -943,12 +943,26 @@ class TryForm(Form):
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'try' statement").grid(columnspan=2)
         tk.Message(self, width=350, font="Helvetica 14", text="A try statement is used to catch exceptions that may occur during evaluation of a sequence of statements.").grid(row=1, columnspan=2)
 
+class GenexpForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = True
+        self.isStatement = False
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="Generator Expression").grid(columnspan=2)
+
 class ListcompForm(Form):
     def __init__(self, parent, block):
         super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="List Comprehension").grid(columnspan=2)
+
+class ListcompForm(Form):
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = True
+        self.isStatement = False
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="Set Comprehension").grid(columnspan=2)
 
 class DictcompForm(Form):
     def __init__(self, parent, block):

@@ -896,6 +896,42 @@ class SetNode(Node):
             self.entries[i].print(fd, 0)
         print("}", end="", file=fd)
 
+class GenexpNode(Node):
+    def __init__(self, elt, generators):
+        super().__init__()
+        self.elt = elt
+        self.generators = generators
+
+    def merge(self, q):
+        self.elt.merge(q)
+        for (target, iter, ifs, is_async) in self.generators:
+            (kw, line, col) = q.get()
+            assert kw == "for"
+            target.merge(q)
+            (kw2, line2, col2) = q.get()
+            assert kw2 == "in"
+            iter.merge(q)
+            for i in ifs:
+                (kw3, line3, col3) = q.get()
+                assert kw2 == "if"
+                i.merge(q)
+
+    def toBlock(self, frame, block):
+        return block.newGenexpBlock(frame, self)
+
+    def print(self, fd, level):
+        print("(", end="", file=fd)
+        self.elt.print(fd, 0)
+        for (target, iter, ifs, is_async) in self.generators:
+            print(" for ", end="", file=fd)
+            target.print(fd, 0)
+            print(" in ", end="", file=fd)
+            iter.print(fd, 0)
+            for i in ifs:
+                print(" if ", end="", file=fd)
+                i.print(fd, 0)
+        print(")", end="", file=fd)
+
 class ListcompNode(Node):
     def __init__(self, elt, generators):
         super().__init__()
@@ -931,6 +967,42 @@ class ListcompNode(Node):
                 print(" if ", end="", file=fd)
                 i.print(fd, 0)
         print("]", end="", file=fd)
+
+class SetcompNode(Node):
+    def __init__(self, elt, generators):
+        super().__init__()
+        self.elt = elt
+        self.generators = generators
+
+    def merge(self, q):
+        self.elt.merge(q)
+        for (target, iter, ifs, is_async) in self.generators:
+            (kw, line, col) = q.get()
+            assert kw == "for"
+            target.merge(q)
+            (kw2, line2, col2) = q.get()
+            assert kw2 == "in"
+            iter.merge(q)
+            for i in ifs:
+                (kw3, line3, col3) = q.get()
+                assert kw2 == "if"
+                i.merge(q)
+
+    def toBlock(self, frame, block):
+        return block.newSetcompBlock(frame, self)
+
+    def print(self, fd, level):
+        print("{", end="", file=fd)
+        self.elt.print(fd, 0)
+        for (target, iter, ifs, is_async) in self.generators:
+            print(" for ", end="", file=fd)
+            target.print(fd, 0)
+            print(" in ", end="", file=fd)
+            iter.print(fd, 0)
+            for i in ifs:
+                print(" if ", end="", file=fd)
+                i.print(fd, 0)
+        print("}", end="", file=fd)
 
 class DictcompNode(Node):
     def __init__(self, key, value, generators):

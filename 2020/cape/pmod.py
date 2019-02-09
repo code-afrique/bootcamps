@@ -216,8 +216,14 @@ def Dict(lineno, col_offset, keys, values):
 def IfExp(lineno, col_offset, test, body, orelse):
     return ExpressionNode(IfelseNode(test, body, orelse))
 
+def GeneratorExp(lineno, col_offset, elt, generators):
+    return ExpressionNode(GenexpNode(elt, generators))
+
 def ListComp(lineno, col_offset, elt, generators):
     return ExpressionNode(ListcompNode(elt, generators))
+
+def SetComp(lineno, col_offset, elt, generators):
+    return ExpressionNode(SetcompNode(elt, generators))
 
 def DictComp(lineno, col_offset, key, value, generators):
     return ExpressionNode(DictcompNode(key, value, generators))
@@ -273,10 +279,6 @@ def comprehension(target, iter, ifs, is_async=0):
 def withitem(context_expr, optional_vars):
     return (context_expr, optional_vars)
 #####
-
-def GeneratorExp(lineno, col_offset, elt, generators):
-    assert False, "generators not yet implemented"
-    return ExpressionNode(ConstantNode("GENERATOR"))
 
 def Yield(lineno, col_offset, value):
     assert False, "'yield' not yet implemented"
