@@ -769,6 +769,22 @@ class ReturnForm(Form):
     def returnValue(self):
         self.block.returnValue()
 
+class YieldForm(Form):
+
+    def __init__(self, parent, block):
+        super().__init__(parent, block)
+        self.isExpression = True
+        self.isStatement = False
+        self.block = block
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="'yield' statement").grid()
+        tk.Message(self, width=350, font="Helvetica 14", text="A yield expression is used to create generator expressions.").grid(row=1)
+        if (block.expr == None):
+            rv = tk.Button(self, text="Add a value", command=self.yieldValue)
+            rv.grid()
+
+    def yieldValue(self):
+        self.block.yieldValue()
+
 class DelForm(Form):
 
     def __init__(self, parent, block):

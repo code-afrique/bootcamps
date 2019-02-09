@@ -275,6 +275,9 @@ class Block(tk.Frame):
     def newReturnBlock(self, parent, node):
         return ReturnBlock(parent, self.shared, node)
 
+    def newYieldBlock(self, parent, node):
+        return YieldBlock(parent, self.shared, node)
+
     def newDelBlock(self, parent, node):
         return DelBlock(parent, self.shared, node)
 
@@ -1669,6 +1672,10 @@ class PassBlock(Block):
         self.stmtPut(ReturnNode(None))
         self.setBlock(self.rowblk.what)
 
+    def stmtYield(self):
+        self.stmtPut(YieldNode(None))
+        self.setBlock(self.rowblk.what)
+
     def stmtDel(self):
         self.stmtPut(DelNode([ExpressionNode(None)]))
         self.setBlock(self.rowblk.what.targets[0])
@@ -1749,6 +1756,31 @@ class ReturnBlock(Block):
 
     def toNode(self):
         return ReturnNode((None if (self.expr == None) else self.expr.toNode()))
+
+class YieldBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        tk.Button(self, text="yield", fg="red", command=self.cb).grid(row=0, column=0)
+        if ((node == None) or (node.what == None)):
+            self.expr = None
+        else:
+            self.expr = ExpressionBlock(self, shared, node.what)
+            self.expr.grid(row=0, column=1)
+
+    def genForm(self):
+        self.setForm(YieldForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def yieldValue(self):
+        self.expr = ExpressionBlock(self, self.shared, None)
+        self.expr.grid(row=0, column=1)
+        self.setBlock(self.expr)
+
+    def toNode(self):
+        return YieldNode((None if (self.expr == None) else self.expr.toNode()))
 
 class LambdaBlock(Block):
 

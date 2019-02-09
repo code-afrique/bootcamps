@@ -92,6 +92,9 @@ def With(lineno, col_offset, items, body):
 def Compare(lineno, col_offset, left, ops, comparators):
     return ExpressionNode(ListopNode(([left] + comparators), ops))
 
+def Yield(lineno, col_offset, value):
+    return ExpressionNode(YieldNode(value))
+
 def Is():
     return "is"
 
@@ -278,12 +281,6 @@ def comprehension(target, iter, ifs, is_async=0):
 
 def withitem(context_expr, optional_vars):
     return (context_expr, optional_vars)
-#####
-
-def Yield(lineno, col_offset, value):
-    assert False, "'yield' not yet implemented"
-    return RowNode(PassNode(), lineno)
-#####
 
 def nodeEval(tree):
     return eval(tree)

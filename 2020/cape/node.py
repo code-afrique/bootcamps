@@ -458,6 +458,31 @@ class ReturnNode(Node):
             self.what.print(fd, 0)
             print("", file=fd)
 
+class YieldNode(Node):
+
+    def __init__(self, what):
+        super().__init__()
+        self.what = what
+
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert kw == "yield"
+        self.lineno = line
+        if self.what != None:
+            self.what.merge(q)
+
+    def toBlock(self, frame, block):
+        return block.newYieldBlock(frame, self)
+
+    def print(self, fd, level):
+        self.printIndent(fd, level)
+        if (self.what == None):
+            print("yield", file=fd)
+        else:
+            print("yield ", end="", file=fd)
+            self.what.print(fd, 0)
+            print("", file=fd)
+
 class AssertNode(Node):
 
     def __init__(self, test, msg):
