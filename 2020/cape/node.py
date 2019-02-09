@@ -104,14 +104,14 @@ class ClauseNode(Node):
         self.body.print(fd, level + 1)
 
 class DefClauseNode(ClauseNode):
-    def __init__(self, name, args, defaults, vararg, kwarg, body, decoration_list):
+    def __init__(self, name, args, defaults, vararg, kwarg, body, decorator_list):
         super().__init__(body)
         self.name = name
         self.args = args
         self.defaults = defaults
         self.vararg = vararg
         self.kwarg = kwarg
-        self.decoration_list = decoration_list
+        self.decorator_list = decorator_list
 
     def merge(self, q):
         (kw, line, col) = q.get()
@@ -125,7 +125,7 @@ class DefClauseNode(ClauseNode):
         return block.newDefClauseBlock(frame, self)
 
     def print(self, fd, level):
-        for d in self.decoration_list:
+        for d in self.decorator_list:
             self.printIndent(fd, level)
             print("@", end="", file=fd)
             d.print(fd, 0)
@@ -199,10 +199,11 @@ class LambdaNode(Node):
 
 class ClassClauseNode(ClauseNode):
 
-    def __init__(self, name, bases, body):
+    def __init__(self, name, bases, body, decorator_list):
         super().__init__(body)
         self.name = name
         self.bases = bases
+        self.decorator_list = decorator_list
 
     def merge(self, q):
         (kw, line, col) = q.get()
@@ -214,6 +215,11 @@ class ClassClauseNode(ClauseNode):
         return block.newClassClauseBlock(frame, self)
 
     def print(self, fd, level):
+        for d in self.decorator_list:
+            self.printIndent(fd, level)
+            print("@", end="", file=fd)
+            d.print(fd, 0)
+            print(file=fd)
         self.printComment(fd, level)
         self.printIndent(fd, level)
         print("class {}(".format(self.name), end="", file=fd)

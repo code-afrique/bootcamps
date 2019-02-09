@@ -916,6 +916,7 @@ class ClassClauseBlock(ClauseBlock):
         if (node != None):
             for base in node.bases:
                 self.addBaseClass(base)
+        self.decorator_list = node.decorator_list
 
         self.setHeader()
         self.hdr.grid()
@@ -956,7 +957,7 @@ class ClassClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad class name")
                 self.shared.cvtError = True
-        return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody())
+        return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody(), self.decorator_list)
 
 class CallBlock(Block):
 
@@ -1666,7 +1667,7 @@ class PassBlock(Block):
         self.shared.curForm.entry.focus()
 
     def stmtClass(self):
-        self.stmtPut(ContainerNode(ClassClauseNode("", [], None)))
+        self.stmtPut(ContainerNode(ClassClauseNode("", [], None, [])))
         self.setBlock(self.rowblk.what.clauses[0])
         self.shared.curForm.entry.focus()
 
@@ -2200,7 +2201,7 @@ class DefClauseBlock(ClauseBlock):
         self.defaults = node.defaults
         self.vararg = node.vararg
         self.kwarg = node.kwarg
-        self.decoration_list = node.decoration_list
+        self.decorator_list = node.decorator_list
         self.setHeader()
 
     def setHeader(self):
@@ -2289,7 +2290,7 @@ class DefClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.decoration_list)
+        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.decorator_list)
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):

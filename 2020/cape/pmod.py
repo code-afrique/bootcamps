@@ -13,7 +13,7 @@ def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
     return StatementNode(ContainerNode(DefClauseNode(name, argnames, defaults, vararg, kwarg, SeqNode(body), decorator_list)), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
-    return StatementNode(ContainerNode(ClassClauseNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body))), lineno)
+    return StatementNode(ContainerNode(ClassClauseNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), decorator_list)), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
     return (args + kwonlyargs, defaults + kw_defaults, vararg, kwarg)
