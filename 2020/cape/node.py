@@ -57,7 +57,7 @@ class StatementNode(Node):
             self.printIndent(fd, level)
             print("# {}".format(line), end="", file=fd)
 
-        if self.commentR == None:
+        if self.commentR == None or self.commentR.strip() == "":
             self.what.print(fd, level)
         else:
             # print into a string buffer
@@ -97,7 +97,7 @@ class ClauseNode(Node):
         self.commentR = "{}".format(self.index)
         """
 
-        if self.commentR == None:
+        if self.commentR == None or self.commentR.strip() == "":
             print(":", file=fd)
         else:
             print(":\t# {}".format(self.commentR), file=fd)

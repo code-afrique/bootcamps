@@ -8,7 +8,7 @@ import ast
 import pmod
 import queue
 import tokenize
-class Block(tk.Frame):
+class Block(tk.Frame):	# 
     def __init__(self, parent, shared, borderwidth=0):
         super().__init__(parent, borderwidth=borderwidth, relief=tk.SUNKEN)
         self.parent = parent
@@ -180,21 +180,17 @@ class Block(tk.Frame):
             return self
     def commentize(self, s):
         r = ''
-        for c in s.split("""
-"""):
-            r += (('# ' + c) + """
-""")
+        for c in s.split('\n'):
+            r += (('# ' + c) + '\n')
         return r[:(- 1)]
     def uncommentize(self, s):
         r = ''
-        for c in s.split("""
-"""):
+        for c in s.split('\n'):
             if ((len(c) > 0) and (c[0] == '#')):
                 c = c[1:]
                 if ((len(c) > 0) and (c[0] == ' ')):
                     c = c[1:]
-            r += (c + """
-""")
+            r += (c + '\n')
         return r[:(- 1)]
     def newContainerBlock(self, parent, node):
         return ContainerBlock(parent, self.shared, node)
@@ -298,16 +294,16 @@ class Block(tk.Frame):
         return ExpressionBlock(parent, self.shared, what)
     def newSeqBlock(self, parent, rows):
         return SeqBlock(parent, self.shared, rows)
-class FrameBlock(Block):
+class FrameBlock(Block):	# 
     def __init__(self, parent, shared):
         super().__init__(parent, shared)
     def genForm(self):
         f = FrameForm(self.shared.confarea, self)
         self.setForm(f)
-class HeaderBlock(Block):
+class HeaderBlock(Block):	# 
     def __init__(self, parent, shared):
         super().__init__(parent, shared)
-class NameBlock(Block):
+class NameBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.vname = tk.StringVar()
@@ -333,7 +329,7 @@ class NameBlock(Block):
                 tk.messagebox.showinfo('Convert Error', 'Fix bad variable name')
                 self.shared.cvtError = True
         return NameNode(v)
-class NumberBlock(Block):
+class NumberBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.value = tk.StringVar()
@@ -361,7 +357,7 @@ class NumberBlock(Block):
                 tk.messagebox.showinfo('Convert Error', 'Fix bad number')
                 self.shared.cvtError = True
         return NumberNode(v)
-class ConstantBlock(Block):
+class ConstantBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.value = tk.StringVar()
@@ -374,7 +370,7 @@ class ConstantBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return ConstantNode(self.value.get())
-class StringBlock(Block):
+class StringBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.string = tk.StringVar()
@@ -397,7 +393,7 @@ class StringBlock(Block):
         self.setBlock(self.goLeft())
     def toNode(self):
         return StringNode(self.string.get())
-class BytesBlock(Block):
+class BytesBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.bytes = tk.StringVar()
@@ -419,7 +415,7 @@ class BytesBlock(Block):
         self.needsSaving()
     def toNode(self):
         return BytesNode(self.bytes.get().encode())
-class SubscriptBlock(Block):
+class SubscriptBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.isWithinStore = False
@@ -481,7 +477,7 @@ class SubscriptBlock(Block):
         self.setBlock(self.step)
     def toNode(self):
         return SubscriptNode(self.array.toNode(), (self.isSlice, (None if (self.lower == None) else self.lower.toNode()), (None if (self.upper == None) else self.upper.toNode()), (None if (self.step == None) else self.step.toNode())))
-class AttrBlock(Block):
+class AttrBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.isWithinStore = False
@@ -502,7 +498,7 @@ class AttrBlock(Block):
         self.setForm(AttrForm(self.shared.confarea, self))
     def toNode(self):
         return AttrNode(self.array.toNode(), self.ref.toNode())
-class UnaryopBlock(Block):
+class UnaryopBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         left = tk.Button(self, text=node.op, fg='purple', width=0, command=self.cb)
@@ -516,7 +512,7 @@ class UnaryopBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return UnaryopNode(self.right.toNode(), self.op)
-class BinaryopBlock(Block):
+class BinaryopBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.left = ExpressionBlock(self, shared, node.left)
@@ -532,7 +528,7 @@ class BinaryopBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return BinaryopNode(self.left.toNode(), self.right.toNode(), self.op)
-class ListopBlock(Block):
+class ListopBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.values = [ExpressionBlock(self, shared, v) for v in node.values]
@@ -550,7 +546,7 @@ class ListopBlock(Block):
     def toNode(self):
         return ListopNode([v.toNode() for v in self.values], self.ops)
 # A clause block consists of a header and a body
-class ClauseBlock(Block):
+class ClauseBlock(Block):	# 
     def __init__(self, parent, shared, node, minimized, title):
         super().__init__(parent, shared)
         self.commentR = tk.StringVar()
@@ -590,7 +586,7 @@ class ClauseBlock(Block):
     def setCommentU(self, comment):
         comment = ('' if (comment == None) else comment)
         if (comment == ''):
-            self.commentU.set("")
+            self.commentU.set('')
             self.commentButton.grid_forget()
         else:
             self.commentU.set(self.commentize(comment))
@@ -633,8 +629,7 @@ class ClauseBlock(Block):
     def toNode(self):
         r = self.toNodeRaw()
         cu = self.uncommentize(self.commentU.get())
-        r.commentU = (None if (cu == '') else (cu + """
-"""))
+        r.commentU = (None if (cu == '') else (cu + '\n'))
         if self.shared.keeping:
             r.index = self.shared.keep(self)
             r.commentR = '{}'.format(r.index)
@@ -644,11 +639,11 @@ class ClauseBlock(Block):
                 assert (c[0:2] == '# ')
                 r.commentR = self.uncommentize(c)
             else:
-                r.commentR = ""
+                r.commentR = ''
         return r
 # A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
 # 'finally' clauses.
-class BasicClauseBlock(ClauseBlock):
+class BasicClauseBlock(ClauseBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, False, '{} clause'.format(node.type))
         self.type = node.type
@@ -662,7 +657,7 @@ class BasicClauseBlock(ClauseBlock):
         return BasicClauseNode(self.type, self.getBody())
 # An 'if' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
 # clauses.
-class CondClauseBlock(ClauseBlock):
+class CondClauseBlock(ClauseBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, False, '{} clause'.format(node.type))
         if (node.cond == None):
@@ -683,7 +678,7 @@ class CondClauseBlock(ClauseBlock):
     def toNodeRaw(self):
         return CondClauseNode(self.type, self.cond.toNode(), self.getBody())
 # A compound block consists of a list of clause blocks.
-class CompoundBlock(Block):
+class CompoundBlock(Block):	# 
     def __init__(self, parent, shared):
         super().__init__(parent, shared)
         self.clauses = []
@@ -692,7 +687,7 @@ class CompoundBlock(Block):
             self.clauses[row].row = row
     def goRight(self):
         return self.clauses[0]
-class ModuleBlock(CompoundBlock):
+class ModuleBlock(CompoundBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
@@ -707,7 +702,7 @@ class ModuleBlock(CompoundBlock):
     def toNode(self):
         return ModuleNode(self.clauses[0].toNode())
 # A container block is a compound block with a single clause in it.
-class ContainerBlock(CompoundBlock):
+class ContainerBlock(CompoundBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.clauses = [c.toBlock(self, self) for c in node.clauses]
@@ -718,7 +713,7 @@ class ContainerBlock(CompoundBlock):
         self.setBlock(self)
     def toNode(self):
         return ContainerNode(self.clauses[0].toNode())
-class ClassClauseBlock(ClauseBlock):
+class ClassClauseBlock(ClauseBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, (node.body != None), 'def clause')
         self.cname = tk.StringVar()
@@ -737,7 +732,7 @@ class ClassClauseBlock(ClauseBlock):
         self.setHeader()
         self.hdr.grid()
     def genForm(self):
-        self.setForm(ClassForm(self.shared.confarea, self))
+        self.setForm(ClassClauseForm(self.shared.confarea, self))
     def cb(self):
         self.setBlock(self)
     def classUpdate(self, mname):
@@ -768,7 +763,7 @@ class ClassClauseBlock(ClauseBlock):
                 tk.messagebox.showinfo('Convert Error', 'Fix bad class name')
                 self.shared.cvtError = True
         return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody(), self.decorator_list)
-class CallBlock(Block):
+class CallBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
@@ -844,7 +839,7 @@ class CallBlock(Block):
         self.eol.grid(row=0, column=column)
     def toNode(self):
         return CallNode(self.func.toNode(), [arg.toNode() for arg in self.args], [(k, v.toNode()) for (k, v) in self.keywords])
-class ListBlock(Block):
+class ListBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='[', width=0, command=self.cb).grid(row=0, column=0)
@@ -874,7 +869,7 @@ class ListBlock(Block):
         self.eol.grid(row=0, column=((2 * len(self.entries)) + 2))
     def toNode(self):
         return ListNode([entry.toNode() for entry in self.entries])
-class SetBlock(Block):
+class SetBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='{', width=0, command=self.cb).grid(row=0, column=0)
@@ -904,7 +899,7 @@ class SetBlock(Block):
         self.eol.grid(row=0, column=((2 * len(self.entries)) + 2))
     def toNode(self):
         return SetNode([entry.toNode() for entry in self.entries])
-class GenexpBlock(Block):
+class GenexpBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.node = node
@@ -935,7 +930,7 @@ class GenexpBlock(Block):
     def toNode(self):
         # TODO fake.  Should probably extract from blocks
         return self.node
-class ListcompBlock(Block):
+class ListcompBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.node = node
@@ -966,7 +961,7 @@ class ListcompBlock(Block):
     def toNode(self):
         # TODO fake.  Should probably extract from blocks
         return self.node
-class SetcompBlock(Block):
+class SetcompBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.node = node
@@ -997,7 +992,7 @@ class SetcompBlock(Block):
     def toNode(self):
         # TODO fake.  Should probably extract from blocks
         return self.node
-class DictcompBlock(Block):
+class DictcompBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.node = node
@@ -1031,7 +1026,7 @@ class DictcompBlock(Block):
     def toNode(self):
         # TODO fake.  Should probably extract from blocks
         return self.node
-class DictBlock(Block):
+class DictBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.keys = []
@@ -1074,7 +1069,7 @@ class DictBlock(Block):
         self.eol.grid(row=0, column=column)
     def toNode(self):
         return DictNode([k.toNode() for k in self.keys], [v.toNode() for v in self.values])
-class TupleBlock(Block):
+class TupleBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='(', width=0, command=self.cb).grid(row=0, column=0)
@@ -1111,7 +1106,7 @@ class TupleBlock(Block):
         self.eol.grid(row=0, column=column)
     def toNode(self):
         return TupleNode([entry.toNode() for entry in self.entries])
-class ExpressionBlock(Block):
+class ExpressionBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
         self.button = tk.Button(self, text='?', width=0, command=self.cb)
@@ -1252,7 +1247,7 @@ class ExpressionBlock(Block):
                 self.shared.cvtError = True
             return ExpressionNode(NameNode('__CAPE_UNINITIALIZED__'))
         return ExpressionNode(self.what.toNode())
-class AssignBlock(Block):
+class AssignBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
@@ -1280,7 +1275,7 @@ class AssignBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return AssignNode([t.toNode() for t in self.targets], self.value.toNode())
-class IfelseBlock(Block):
+class IfelseBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
@@ -1302,7 +1297,7 @@ class IfelseBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return IfelseNode(self.cond.toNode(), self.ifTrue.toNode(), self.ifFalse.toNode())
-class AugassignBlock(Block):
+class AugassignBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.isWithinStore = True
@@ -1320,7 +1315,7 @@ class AugassignBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return AugassignNode(self.left.toNode(), self.right.toNode(), self.op)
-class PassBlock(Block):
+class PassBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.rowblk = parent.parent    # parent is a FrameBlock
@@ -1400,7 +1395,7 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.module)
     def toNode(self):
         return PassNode()
-class EvalBlock(Block):
+class EvalBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
@@ -1414,7 +1409,7 @@ class EvalBlock(Block):
         return self.expr
     def toNode(self):
         return EvalNode(self.expr.toNode())
-class ReturnBlock(Block):
+class ReturnBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='return', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1433,7 +1428,7 @@ class ReturnBlock(Block):
         self.setBlock(self.expr)
     def toNode(self):
         return ReturnNode((None if (self.expr == None) else self.expr.toNode()))
-class YieldBlock(Block):
+class YieldBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='yield', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1452,7 +1447,7 @@ class YieldBlock(Block):
         self.setBlock(self.expr)
     def toNode(self):
         return YieldNode((None if (self.expr == None) else self.expr.toNode()))
-class LambdaBlock(Block):
+class LambdaBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         # fake...
@@ -1480,7 +1475,7 @@ class LambdaBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return self.node
-class DelBlock(Block):
+class DelBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='del', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1505,7 +1500,7 @@ class DelBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return DelNode([t.toNode() for t in self.targets])
-class AssertBlock(Block):
+class AssertBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='assert', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1525,7 +1520,7 @@ class AssertBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return AssertNode(self.test.toNode(), (None if (self.msg == None) else self.msg.toNode()))
-class BreakBlock(Block):
+class BreakBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='break', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1535,7 +1530,7 @@ class BreakBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return BreakNode()
-class ContinueBlock(Block):
+class ContinueBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='continue', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1545,7 +1540,7 @@ class ContinueBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return ContinueNode()
-class GlobalBlock(Block):
+class GlobalBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='global', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1566,7 +1561,7 @@ class GlobalBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return GlobalNode([v.toNode() for v in self.vars])
-class ImportBlock(Block):
+class ImportBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='import', fg='red', command=self.cb).grid(row=0, column=0)
@@ -1586,7 +1581,7 @@ class ImportBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return ImportNode(self.module.toNode(), (None if (self.alias == None) else self.alias.toNode()))
-class ImportfromBlock(Block):
+class ImportfromBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.node = node
@@ -1615,7 +1610,7 @@ class ImportfromBlock(Block):
         self.setBlock(self)
     def toNode(self):
         return self.node
-class StatementBlock(Block):
+class StatementBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
         self.row = None
@@ -1650,7 +1645,7 @@ class StatementBlock(Block):
     def setCommentU(self, comment):
         comment = ('' if (comment == None) else comment)
         if (comment == ''):
-            self.commentU.set("")
+            self.commentU.set('')
             self.commentButton.grid_forget()
         else:
             self.commentU.set(self.commentize(comment))
@@ -1709,8 +1704,7 @@ class StatementBlock(Block):
     def toNode(self):
         r = StatementNode(self.what.toNode(), 0)
         cu = self.uncommentize(self.commentU.get())
-        r.commentU = (None if (cu == '') else (cu + """
-"""))
+        r.commentU = (None if (cu == '') else (cu + '\n'))
         if self.shared.keeping:
             if isinstance(self.what, ClauseBlock):
                 r.commentR = None
@@ -1727,7 +1721,7 @@ class StatementBlock(Block):
 # The parent of a SeqBlock is always a ClauseBlock, which helps with navigating
 # There's something to be said to merge the concepts of SeqBlock and ClauseBlock, but
 # that might require creating ClauseNodes for all types of clauses.
-class SeqBlock(Block):
+class SeqBlock(Block):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.rows = []
@@ -1787,8 +1781,8 @@ class SeqBlock(Block):
             self.rows[row].row = row
     def toNode(self):
         return SeqNode([r.toNode() for r in self.rows])
-class DefClauseBlock(ClauseBlock):
-    def __init__(self, parent, shared, node):
+class DefClauseBlock(ClauseBlock):	# 
+    def __init__(self, parent, shared, node):	# 
         parent.isWithinDef = True
         super().__init__(parent, shared, node, (node.body != None), 'def clause')
         self.mname = tk.StringVar()
@@ -1799,7 +1793,7 @@ class DefClauseBlock(ClauseBlock):
         self.kwarg = node.kwarg
         self.decorator_list = node.decorator_list
         self.setHeader()
-    def setHeader(self):
+    def setHeader(self):	# 
         self.newHeader()
         btn = tk.Button(self.hdr, text='def', fg='red', width=0, command=self.cb)
         btn.grid(row=1, column=0)
@@ -1845,16 +1839,15 @@ class DefClauseBlock(ClauseBlock):
             column += 1
         tk.Button(self.hdr, text=')', command=self.cb).grid(row=1, column=column)
     # TODO.  This function may be obsolete
-    def addArg(self, name):
+    def addArg(self, name):	# 
         self.args.insert(len(self.defaults), name)
         self.setHeader()
-    def genForm(self):
+    def genForm(self):	# 
         f = DefClauseForm(self.shared.confarea, self)
         self.setForm(f)
-    # f.entry.focus()
-    def cb(self):
+    def cb(self):	# 
         self.setBlock(self)
-    def incArg(self, name, type):
+    def incArg(self, name, type):	# 
         if (type == 'normal'):
             pos = (len(self.args) - len(self.defaults))
             self.args.insert(pos, name)
@@ -1868,12 +1861,11 @@ class DefClauseBlock(ClauseBlock):
             self.kwarg = name
         self.setHeader()
         self.needsSaving()
-    def defUpdate(self, mname):
+    def defUpdate(self, mname):	# 
         self.mname.set(mname)
         self.setHeader()
         self.needsSaving()
-    # self.setBlock(self.body)
-    def toNodeRaw(self):
+    def toNodeRaw(self):	# 
         v = self.mname.get()
         if (not v.isidentifier()):
             if (not self.shared.cvtError):
@@ -1881,7 +1873,7 @@ class DefClauseBlock(ClauseBlock):
                 tk.messagebox.showinfo('Convert Error', 'Fix bad function name')
                 self.shared.cvtError = True
         return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.decorator_list)
-class IfBlock(CompoundBlock):
+class IfBlock(CompoundBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
@@ -1924,7 +1916,7 @@ class IfBlock(CompoundBlock):
         self.scrollUpdate()
     def toNode(self):
         return IfNode([c.toNode() for c in self.clauses], self.hasElse)
-class WhileBlock(CompoundBlock):
+class WhileBlock(CompoundBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.isWithinLoop = True
@@ -1965,7 +1957,7 @@ class WhileBlock(CompoundBlock):
         self.scrollUpdate()
     def toNode(self):
         return WhileNode([c.toNode() for c in self.clauses], self.hasElse)
-class ForBlock(CompoundBlock):
+class ForBlock(CompoundBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.isWithinLoop = True
@@ -2006,7 +1998,7 @@ class ForBlock(CompoundBlock):
         self.scrollUpdate()
     def toNode(self):
         return ForNode([c.toNode() for c in self.clauses], self.hasElse)
-class TryBlock(CompoundBlock):
+class TryBlock(CompoundBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
@@ -2042,7 +2034,7 @@ class TryBlock(CompoundBlock):
         self.scrollUpdate()
     def toNode(self):
         return TryNode([c.toNode() for c in self.clauses], self.hasElse)
-class ExceptClauseBlock(ClauseBlock):
+class ExceptClauseBlock(ClauseBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, False, 'except clause')
         tk.Button(self.hdr, text='except', fg='red', width=0, command=self.cb).grid(row=1, column=0)
@@ -2069,7 +2061,7 @@ class ExceptClauseBlock(ClauseBlock):
         self.setBlock(self)
     def toNodeRaw(self):
         return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), self.getBody())
-class WithClauseBlock(ClauseBlock):
+class WithClauseBlock(ClauseBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, False, 'with clause')
         self.items = []
@@ -2096,7 +2088,7 @@ class WithClauseBlock(ClauseBlock):
         self.setBlock(self)
     def toNodeRaw(self):
         return WithClauseNode([(e.toNode(), (None if (v == None) else v.toNode())) for (e, v) in self.items], self.getBody())
-class ForClauseBlock(ClauseBlock):
+class ForClauseBlock(ClauseBlock):	# 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, node, False, 'for clause')
         self.hdr.isWithinStore = True

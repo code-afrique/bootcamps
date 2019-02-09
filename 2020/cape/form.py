@@ -659,12 +659,10 @@ class DefClauseForm(ClauseForm):
     def keyEnter(self, x):
         self.cb()
 
-class ClassForm(Form):
+class ClassClauseForm(ClauseForm):
 
     def __init__(self, parent, block):
         super().__init__(parent, block)
-        self.isExpression = False
-        self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Set class information").grid(row=0, columnspan=2)
         tk.Message(self, width=350, font="Helvetica 14", text="A class has a name, a list of bases, and a 'body'.  With this form, you can edit the class name and bases.").grid(row=1, columnspan=2)
         tk.Label(self, text="Class name: ").grid(row=2, sticky=tk.W)
@@ -676,6 +674,8 @@ class ClassForm(Form):
         enter.grid(row=2, column=2, sticky=tk.E)
         ma = tk.Button(self, text="+ Add a new base class", command=self.addBaseClass)
         ma.grid(row=3, column=0, columnspan=2)
+
+        self.insertComments(row=100, columnspan=2)
 
     def addBaseClass(self):
         self.block.addBaseClass(None)
@@ -689,6 +689,7 @@ class ClassForm(Form):
         if (not name.isidentifier()):
             tk.messagebox.showinfo("Format Error", "'{}' is not a valid class name".format(name))
             return
+        self.setComments()
         self.block.classUpdate(name)
 
     def keyEnter(self, x):
