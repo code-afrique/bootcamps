@@ -127,6 +127,7 @@ class DefClauseNode(ClauseNode):
         return block.newDefClauseBlock(frame, self)
 
     def print(self, fd, level):
+        print(file=fd)
         for d in self.decorator_list:
             self.printIndent(fd, level)
             print("@", end="", file=fd)
@@ -219,6 +220,7 @@ class ClassClauseNode(ClauseNode):
         return block.newClassClauseBlock(frame, self)
 
     def print(self, fd, level):
+        print(file=fd)
         for d in self.decorator_list:
             self.printIndent(fd, level)
             print("@", end="", file=fd)

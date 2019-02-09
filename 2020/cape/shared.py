@@ -17,6 +17,7 @@ class Shared():
         self.confarea = None
         self.canvas = None
         self.keeping = False
+        self.trap = False
 
     def startKeeping(self):
         assert not self.keeping

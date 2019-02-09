@@ -206,6 +206,7 @@ class CAPE(tk.Frame):
             code = fd.read()
             self.parse(code)
             self.shared.saved = True
+            # self.shared.trap = True
 
     def getComment(self, text):
         assert (text[0] == "#")
