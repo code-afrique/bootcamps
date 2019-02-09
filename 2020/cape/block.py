@@ -1661,7 +1661,7 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.clauses[0].target)
 
     def stmtDef(self):
-        self.stmtPut(ContainerNode(DefClauseNode("", [], [], None, None, None)))
+        self.stmtPut(ContainerNode(DefClauseNode("", [], [], None, None, None, [])))
         self.setBlock(self.rowblk.what.clauses[0])
         self.shared.curForm.entry.focus()
 
@@ -2200,7 +2200,7 @@ class DefClauseBlock(ClauseBlock):
         self.defaults = node.defaults
         self.vararg = node.vararg
         self.kwarg = node.kwarg
-        self.argBlocks = []
+        self.decoration_list = node.decoration_list
         self.setHeader()
 
     def setHeader(self):
@@ -2289,7 +2289,7 @@ class DefClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo("Convert Error", "Fix bad function name")
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody())
+        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.decoration_list)
 
 class IfBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
