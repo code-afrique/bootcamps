@@ -274,10 +274,10 @@ class CAPE(tk.Frame):
         self.errormsgs.delete('1.0', tk.END)
         self.shared.cvtError = False
 
-        # convert blocks to nodes, while keeping track of RowBlocks and ClauseBlocks
-        # as those are the places where comments can be inserted.  Also, use
-        # indexes into the list of RowBlocks and ClauseBlocks as inline comments
-        # so we can find them back later
+        # convert blocks to nodes, while keeping track of StatementBlocks
+		# and ClauseBlocks as those are the places where comments can be
+		# inserted.  Also, use # indexes into the list of StatementBlocks
+		# and ClauseBlocks as inline comments so we can find them back later
         self.shared.startKeeping()
         n = self.program.toNode()
         self.shared.stopKeeping()

@@ -31,7 +31,7 @@ class PassNode(Node):
         self.printIndent(fd, level)
         print("pass", file=fd)
 
-class RowNode(Node):
+class StatementNode(Node):
 
     def __init__(self, what, lineno=0):
         super().__init__()
@@ -45,7 +45,7 @@ class RowNode(Node):
         self.what.merge(q)
 
     def toBlock(self, frame, block):
-        return block.newRowBlock(frame, self)
+        return block.newStatementBlock(frame, self)
 
     def findLine(self, lineno):
         return self.what.findLine(lineno)
@@ -1274,7 +1274,7 @@ class SeqNode(Node):
 
     def findLine(self, lineno):
         for i in range(len(self.rows)):
-            assert isinstance(self.rows[i], RowNode)
+            assert isinstance(self.rows[i], StatementNode)
             if not isinstance(self.rows[i].what, CompoundNode) and self.rows[i].lineno >= lineno:
                 return ("row", self, i)
             r = self.rows[i].findLine(lineno)

@@ -157,9 +157,9 @@ class Block(tk.Frame):
     def cut(self, doCopy):
         if doCopy:
             self.copy()
-        if isinstance(self, RowBlock):
+        if isinstance(self, StatementBlock):
             self.delStmt()
-        elif isinstance(self.parent, RowBlock):
+        elif isinstance(self.parent, StatementBlock):
             self.parent.delStmt()
         elif isinstance(self, ExpressionBlock):
             self.delExpr()
@@ -371,8 +371,8 @@ class Block(tk.Frame):
     def newBytesBlock(self, parent, what):
         return BytesBlock(parent, self.shared, what)
 
-    def newRowBlock(self, parent, what):
-        return RowBlock(parent, self.shared, what)
+    def newStatementBlock(self, parent, what):
+        return StatementBlock(parent, self.shared, what)
 
     def newExpressionBlock(self, parent, what):
         return ExpressionBlock(parent, self.shared, what)
@@ -708,7 +708,7 @@ class ClauseBlock(Block):
                 # self.commentR.set(("# " + node.commentR))
                 self.commentR.set(self.commentize(node.commentR))
 
-        self.body_node = SeqNode([RowNode(PassNode())]) if node == None or node.body == None else node.body
+        self.body_node = SeqNode([StatementNode(PassNode())]) if node == None or node.body == None else node.body
         self.title = title
         self.hdr = None
         self.newHeader()
@@ -1610,7 +1610,7 @@ class PassBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         self.rowblk = parent.parent     # parent is a FrameBlock
-        assert isinstance(self.rowblk, RowBlock)
+        assert isinstance(self.rowblk, StatementBlock)
         btn = tk.Button(self, text="pass", fg="red", width=0, command=self.cb)
         btn.grid(row=0, column=0)
 
@@ -1985,7 +1985,7 @@ class ImportfromBlock(Block):
     def toNode(self):
         return self.node
 
-class RowBlock(Block):
+class StatementBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared, borderwidth=1)
@@ -2052,7 +2052,7 @@ class RowBlock(Block):
             return self
 
     def genForm(self):
-        self.setForm(RowForm(self.shared.confarea, self))
+        self.setForm(StatementForm(self.shared.confarea, self))
 
     def addStmt(self):
         self.parent.insert((self.row + 1))
@@ -2071,7 +2071,7 @@ class RowBlock(Block):
         self.needsSaving()
 
     def delStmt(self):
-        self.parent.delRow(self.row)
+        self.parent.delStatement(self.row)
         print("statement deleted")
         self.needsSaving()
 
@@ -2079,7 +2079,7 @@ class RowBlock(Block):
         code = self.clipboard_get()
         try:
             n = self.shared.parse(code, mode="single")
-            assert isinstance(n, RowNode)
+            assert isinstance(n, StatementNode)
             if (not isinstance(self.what, PassBlock)):
                 tk.messagebox.showinfo("Paste Error", "can only overwrite pass statements")
             else:
@@ -2096,7 +2096,7 @@ class RowBlock(Block):
         self.setBlock(self)
 
     def toNode(self):
-        r = RowNode(self.what.toNode(), 0)
+        r = StatementNode(self.what.toNode(), 0)
         cu = self.uncommentize(self.commentU.get())
         r.commentU = None if cu == "" else (cu + "\n")
 
@@ -2126,7 +2126,7 @@ class SeqBlock(Block):
             self.insert(0)
         else:
             for i in range(len(node.rows)):
-                self.rows.append(RowBlock(self, shared, node.rows[i]))
+                self.rows.append(StatementBlock(self, shared, node.rows[i]))
             self.gridUpdate()
 
     def findLine(n):
@@ -2145,12 +2145,12 @@ class SeqBlock(Block):
         self.setForm(SeqForm(self.shared.confarea, self))
 
     def insert(self, row):
-        rb = RowBlock(self, self.shared, None)
+        rb = StatementBlock(self, self.shared, None)
         self.rows.insert(row, rb)
         self.gridUpdate()
         self.setBlock(rb.what)
 
-    def delRow(self, row):
+    def delStatement(self, row):
         for i in range(len(self.rows)):
             self.rows[i].grid_forget()
         if (row < len(self.rows)):
@@ -2181,7 +2181,7 @@ class SeqBlock(Block):
 
     def gridUpdate(self):
         for row in range(len(self.rows)):
-            assert isinstance(self.rows[row], RowBlock)
+            assert isinstance(self.rows[row], StatementBlock)
             self.rows[row].grid(row=row, column=0, sticky=tk.W)
             self.rows[row].row = row
 

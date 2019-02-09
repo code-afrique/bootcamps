@@ -269,7 +269,7 @@ class TextForm(Form):
     def gettext(self):
         return self.text.get("1.0", "end-1c")
 
-class RowForm(Form):
+class StatementForm(Form):
 
     def __init__(self, parent, block):
         super().__init__(parent, block)
