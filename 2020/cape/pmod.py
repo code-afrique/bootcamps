@@ -5,8 +5,8 @@ def Module(body):
     return ModuleNode(BasicClauseNode("module", SeqNode(body)))
 
 def Lambda(lineno, col_offset, args, body):
-    (argnames, defaults) = args
-    return ExpressionNode(LambdaNode(argnames, defaults, body))
+    (argnames, defaults, vararg, kwarg) = args
+    return ExpressionNode(LambdaNode(argnames, defaults, vararg, kwarg, body))
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
     (argnames, defaults, vararg, kwarg) = args

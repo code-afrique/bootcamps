@@ -700,12 +700,21 @@ class ClauseBlock(Block):
                 self.commentR.set(self.commentize(node.commentR))
         self.body_node = (SeqNode([StatementNode(PassNode())]) if ((node == None) or (node.body == None)) else node.body)
         self.title = title
+
+        self.decorator_list = [] if node == None else node.decorator_list
+        r = 1
+        for d in self.decorator_list:
+            frame = FrameBlock(self, shared)
+            tk.Button(frame, text='@', command=self.cb).grid(row=0, column=0, sticky=tk.W)
+            d.toBlock(frame, self).grid(row=0, column=1, sticky=tk.W)
+            frame.grid(row=0, column=0, sticky=tk.W)
+            r += 1
+
         self.hdr = None
         self.newHeader()
         self.body = None
         self.minimized = True
         self.row = None
-        # TODO.  May need to get rid of this
         if (not minimized):
             self.minmax()
 
@@ -716,7 +725,7 @@ class ClauseBlock(Block):
         self.colon = tk.Button(self.hdr, highlightbackground='yellow', text='+', command=self.minmax)
         self.colon.grid(row=1, column=1000, sticky=tk.W)
         tk.Button(self.hdr, textvariable=self.commentR, fg='brown', command=self.listcmd, font='-slant italic').grid(row=1, column=1001, sticky=(tk.N + tk.W))
-        self.hdr.grid(row=1, column=0, sticky=tk.W)
+        self.hdr.grid(row=1+len(self.decorator_list), column=0, sticky=tk.W)
 
     def setComment(self, commentR, commentU):
         if (commentR == ''):
@@ -733,7 +742,7 @@ class ClauseBlock(Block):
             self.commentButton.grid_forget()
         else:
             self.commentU.set(self.commentize(comment))
-            self.commentButton.grid(row=0, columnspan=2, sticky=tk.W)
+            self.commentButton.grid(row=0, sticky=tk.W)
 
     def listcmd(self):
         self.setBlock(self)
@@ -760,7 +769,7 @@ class ClauseBlock(Block):
         if self.minimized:
             if (self.body == None):
                 self.body = self.body_node.toBlock(self, self)
-            self.body.grid(row=2, column=0, columnspan=2, sticky=tk.W)
+            self.body.grid(row=2+len(self.decorator_list), column=0, sticky=tk.W)
             self.update()
             self.minimized = False
             self.colon.configure(highlightbackground='white', text=':')
@@ -1779,19 +1788,50 @@ class LambdaBlock(Block):
         # fake...
         self.node = node
         tk.Button(self, text='lambda', fg='red', command=self.cb).grid(row=0, column=0)
+
+        self.args = node.args
+        self.defaults = node.defaults
+        self.vararg = node.vararg
+        self.kwarg = node.kwarg
+
         column = 1
-        d = len(node.defaults)
-        for i in range(len(node.args)):
-            if (i > 0):
-                tk.Button(self, text=',', fg='red', command=self.cb).grid(row=0, column=column)
+        first = True
+        nargs = len(self.args)
+        ndefaults = len(self.defaults)
+        delta = (nargs - ndefaults)
+        for i in range(delta):
+            if first:
+                first = False
+            else:
+                tk.Button(self, text=',', command=self.cb).grid(row=0, column=column)
                 column += 1
-            tk.Button(self, text=node.args[i], fg='red', command=self.cb).grid(row=0, column=column)
+            tk.Button(self, text=self.args[i], fg='blue', command=self.cb).grid(row=0, column=column)
             column += 1
-            if (i >= d):
-                tk.Button(self, text='=', fg='red', command=self.cb).grid(row=0, column=column)
+        if (self.vararg != None):
+            if (not first):
+                tk.Button(self, text=',', command=self.cb).grid(row=0, column=column)
                 column += 1
-                node.defaults[(i - d)].toBlock(self, self).grid(row=0, column=column)
+            tk.Button(self, text=('*' + self.vararg), fg='blue', command=self.cb).grid(row=0, column=column)
+            column += 1
+        for i in range(delta, nargs):
+            if first:
+                first = False
+            else:
+                tk.Button(self, text=',', command=self.cb).grid(row=0, column=column)
                 column += 1
+            tk.Button(self, text=self.args[i], fg='blue', command=self.cb).grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text='=', command=self.cb).grid(row=0, column=column)
+            column += 1
+            self.defaults[(i - delta)].toBlock(self, self).grid(row=0, column=column)
+            column += 1
+        if (self.kwarg != None):
+            if (not first):
+                tk.Button(self, text=',', command=self.cb).grid(row=0, column=column)
+                column += 1
+            tk.Button(self, text=('**' + self.kwarg), fg='blue', command=self.cb).grid(row=0, column=column)
+            column += 1
+
         tk.Button(self, text=':', fg='red', command=self.cb).grid(row=0, column=column)
         column += 1
         node.body.toBlock(self, self).grid(row=0, column=column)

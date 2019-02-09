@@ -78,6 +78,7 @@ class ClauseNode(Node):
         self.commentR = None
         self.lineno = 0
         self.index = 0
+        self.decorator_list = []
 
     def findLine(self, lineno):
         assert isinstance(self.body, SeqNode)
@@ -169,10 +170,12 @@ class DefClauseNode(ClauseNode):
 
 class LambdaNode(Node):
 
-    def __init__(self, args, defaults, body):
+    def __init__(self, args, defaults, vararg, kwarg, body):
         super().__init__()
         self.args = args
         self.defaults = defaults
+        self.vararg = vararg
+        self.kwarg = kwarg
         self.body = body
 
     def merge(self, q):
@@ -188,14 +191,34 @@ class LambdaNode(Node):
 
     def print(self, fd, level):
         print("(lambda ", end="", file=fd)
-        d = (len(self.args) - len(self.defaults))
-        for i in range(len(self.args)):
-            if (i != 0):
+        nargs = len(self.args)
+        ndefaults = len(self.defaults)
+        delta = nargs - ndefaults
+        first = True
+        for i in range(delta):
+            if first:
+                first = False
+            else:
                 print(", ", end="", file=fd)
             print(self.args[i], end="", file=fd)
-            if (i >= d):
-                print("=", end="", file=fd)
-                self.defaults[(i - d)].print(fd, 0)
+        if self.vararg != None:
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
+            print("*{}".format(self.vararg), end="", file=fd)
+        for i in range(delta, nargs):
+            if first:
+                first = False
+            else:
+                print(", ", end="", file=fd)
+            print(self.args[i], end="", file=fd)
+            print("=", end="", file=fd)
+            self.defaults[i - delta].print(fd, 0)
+        if self.kwarg != None:
+            if not first:
+                print(", ", end="", file=fd)
+            print("**{}".format(self.kwarg), end="", file=fd)
         print(": ", end="", file=fd)
         self.body.print(fd, 0)
         print(")", end="", file=fd)
