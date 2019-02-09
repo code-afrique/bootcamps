@@ -2,7 +2,7 @@ from node import *
 __all__ = ["nodeEval"]
 
 def Module(body):
-    return ModuleNode(BasicClauseNode("module", SeqNode(body)))
+    return ModuleNode(BasicClauseNode("module", SeqNode(body), False))
 
 def Lambda(lineno, col_offset, args, body):
     (argnames, defaults, vararg, kwarg) = args
@@ -10,10 +10,10 @@ def Lambda(lineno, col_offset, args, body):
 
 def FunctionDef(lineno, col_offset, name, args, body, decorator_list, returns):
     (argnames, defaults, vararg, kwarg) = args
-    return StatementNode(ContainerNode(DefClauseNode(name, argnames, defaults, vararg, kwarg, SeqNode(body), decorator_list)), lineno)
+    return StatementNode(ContainerNode(DefClauseNode(name, argnames, defaults, vararg, kwarg, SeqNode(body), True, decorator_list)), lineno)
 
 def ClassDef(lineno, col_offset, name, bases, keywords, body, decorator_list):
-    return StatementNode(ContainerNode(ClassClauseNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), decorator_list)), lineno)
+    return StatementNode(ContainerNode(ClassClauseNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), True, decorator_list)), lineno)
 
 def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
     return (args + kwonlyargs, defaults + kw_defaults, vararg, kwarg)
@@ -53,41 +53,41 @@ def Bytes(lineno, col_offset, s):
 
 def For(lineno, col_offset, target, iter, body, orelse):
     if orelse == []:
-        return StatementNode(ForNode([ForClauseNode(target, iter, SeqNode(body))], False), lineno)
+        return StatementNode(ForNode([ForClauseNode(target, iter, SeqNode(body), False)], False), lineno)
     else:
-        return StatementNode(ForNode([ForClauseNode(target, iter, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
+        return StatementNode(ForNode([ForClauseNode(target, iter, SeqNode(body), False), BasicClauseNode("else", SeqNode(orelse), False)], True), lineno)
 
 def While(lineno, col_offset, test, body, orelse):
     if orelse == []:
-        return StatementNode(WhileNode([CondClauseNode("while", test, SeqNode(body))], False), lineno)
+        return StatementNode(WhileNode([CondClauseNode("while", test, SeqNode(body), False)], False), lineno)
     else:
-        return StatementNode(WhileNode([CondClauseNode("while", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
+        return StatementNode(WhileNode([CondClauseNode("while", test, SeqNode(body), False), BasicClauseNode("else", SeqNode(orelse), False)], True), lineno)
 
 def If(lineno, col_offset, test, body, orelse):
     if (orelse == []):
-        return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body))], False), lineno)
+        return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body), False)], False), lineno)
     if (len(orelse) == 1):
         row = orelse[0]
         assert isinstance(row, StatementNode)
         stmt = row.what
         if isinstance(stmt, IfNode):
             stmt.clauses[0].type = "elif"
-            return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body))] + stmt.clauses, stmt.hasElse), lineno)
-    return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body)), BasicClauseNode("else", SeqNode(orelse))], True), lineno)
+            return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body), False)] + stmt.clauses, stmt.hasElse), lineno)
+    return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body), False), BasicClauseNode("else", SeqNode(orelse), False)], True), lineno)
 
 def Try(lineno, col_offset, body, handlers, orelse, finalbody):
-    clauses = [BasicClauseNode("try", SeqNode(body))] + handlers
+    clauses = [BasicClauseNode("try", SeqNode(body), False)] + handlers
     if orelse != []:
-        clauses.append(BasicClauseNode("else", SeqNode(orelse)))
+        clauses.append(BasicClauseNode("else", SeqNode(orelse), False))
     if finalbody != []:
-        clauses.append(BasicClauseNode("finally", SeqNode(finalbody)))
+        clauses.append(BasicClauseNode("finally", SeqNode(finalbody), False))
     return StatementNode(TryNode(clauses, orelse != []), lineno)
 
 def ExceptHandler(lineno, col_offset, type, name, body):
-    return ExceptClauseNode(type, name, SeqNode(body))
+    return ExceptClauseNode(type, name, SeqNode(body), False)
 
 def With(lineno, col_offset, items, body):
-    return StatementNode(ContainerNode(WithClauseNode(items, SeqNode(body))), lineno)
+    return StatementNode(ContainerNode(WithClauseNode(items, SeqNode(body), False)), lineno)
 
 def Compare(lineno, col_offset, left, ops, comparators):
     return ExpressionNode(ListopNode(([left] + comparators), ops))

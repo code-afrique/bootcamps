@@ -4,7 +4,9 @@ import tokenize
 import ast
 import io
 import keyword
+import tkinter as tk
 import pmod
+import block
 
 class Shared():
     def __init__(self):
@@ -17,6 +19,8 @@ class Shared():
         self.confarea = None
         self.canvas = None
         self.keeping = False
+        self.program = None
+        self.stack = []
         self.trap = False
 
     def startKeeping(self):
@@ -92,3 +96,20 @@ class Shared():
             else:
                 row.commentR = comment
         return n
+
+    # save for undo later
+    def save(self):
+        if self.program != None:
+            self.cvtError = True
+            n = self.program.toNode()
+            self.stack.append(n)
+
+    def undo(self):
+        if len(self.stack) == 0:
+            return
+        self.program.grid_forget()
+        n = self.stack.pop()
+        self.program = block.ModuleBlock(self.scrollable.stuff, self, n)
+        self.program.grid(sticky=tk.W)
+        self.scrollable.scrollUpdate()
+        self.saved = False

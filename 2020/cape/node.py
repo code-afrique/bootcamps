@@ -71,9 +71,10 @@ class StatementNode(Node):
             print(s, file=fd, end="")
 
 class ClauseNode(Node):
-    def __init__(self, body):
+    def __init__(self, body, minimized):
         super().__init__()
         self.body = body
+        self.minimized = minimized
         self.commentU = ""
         self.commentR = None
         self.lineno = 0
@@ -105,8 +106,8 @@ class ClauseNode(Node):
         self.body.print(fd, level + 1)
 
 class DefClauseNode(ClauseNode):
-    def __init__(self, name, args, defaults, vararg, kwarg, body, decorator_list):
-        super().__init__(body)
+    def __init__(self, name, args, defaults, vararg, kwarg, body, minimized, decorator_list):
+        super().__init__(body, minimized)
         self.name = name
         self.args = args
         self.defaults = defaults
@@ -225,8 +226,8 @@ class LambdaNode(Node):
 
 class ClassClauseNode(ClauseNode):
 
-    def __init__(self, name, bases, body, decorator_list):
-        super().__init__(body)
+    def __init__(self, name, bases, body, minimized, decorator_list):
+        super().__init__(body, minimized)
         self.name = name
         self.bases = bases
         self.decorator_list = decorator_list
@@ -260,8 +261,8 @@ class ClassClauseNode(ClauseNode):
         self.printBody(fd, level)
 
 class BasicClauseNode(ClauseNode):
-    def __init__(self, type, body):
-        super().__init__(body)
+    def __init__(self, type, body, minimized):
+        super().__init__(body, minimized)
         self.type = type
 
     def merge(self, q):
@@ -283,8 +284,8 @@ class BasicClauseNode(ClauseNode):
             self.printBody(fd, level)
 
 class CondClauseNode(ClauseNode):
-    def __init__(self, type, cond, body):
-        super().__init__(body)
+    def __init__(self, type, cond, body, minimized):
+        super().__init__(body, minimized)
         self.type = type
         self.cond = cond
 
@@ -361,8 +362,8 @@ class TryNode(CompoundNode):
         return block.newTryBlock(frame, self)
 
 class ExceptClauseNode(ClauseNode):
-    def __init__(self, type, name, body):
-        super().__init__(body)
+    def __init__(self, type, name, body, minimized):
+        super().__init__(body, minimized)
         self.type = type
         self.name = name
 
@@ -393,8 +394,8 @@ class ExceptClauseNode(ClauseNode):
 
 class WithClauseNode(ClauseNode):
 
-    def __init__(self, items, body):
-        super().__init__(body)
+    def __init__(self, items, body, minimized):
+        super().__init__(body, minimized)
         self.items = items
 
     def toBlock(self, frame, block):
@@ -447,8 +448,8 @@ class ForNode(CompoundNode):
 
 class ForClauseNode(ClauseNode):
 
-    def __init__(self, target, expr, body):
-        super().__init__(body)
+    def __init__(self, target, expr, body, minimized):
+        super().__init__(body, minimized)
         self.target = target
         self.expr = expr
 
@@ -1293,13 +1294,17 @@ class ExpressionNode(Node):
         self.what = what
 
     def merge(self, q):
-        self.what.merge(q)
+        if self.what != None:
+            self.what.merge(q)
 
     def toBlock(self, frame, block):
         return block.newExpressionBlock(frame, self)
 
     def print(self, fd, level):
-        self.what.print(fd, 0)
+        if self.what == None:
+            print("__CAPE_UNINITIALIZED__", end="", file=fd)
+        else:
+            self.what.print(fd, 0)
 
 class SeqNode(Node):
     def __init__(self, rows):

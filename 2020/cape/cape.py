@@ -70,7 +70,6 @@ class CAPE(tk.Frame):
         self.parent = parent
         self.shared = shared
         self.curfile = None
-        self.program = None
         menu = tk.Menu(parent)
         parent.config(menu=menu)
         file = tk.Menu(menu)
@@ -85,6 +84,7 @@ class CAPE(tk.Frame):
         edit.add_command(label="Cut", command=self.cut)
         edit.add_command(label="Copy", command=self.copy)
         edit.add_command(label="Paste", command=self.paste)
+        edit.add_command(label="Undo", command=self.undo)
         menu.add_cascade(label="Edit", menu=edit)
         actions = tk.Menu(menu)
         actions.add_command(label="Show code", command=self.text)
@@ -108,11 +108,7 @@ class CAPE(tk.Frame):
         if filename:
             self.load(filename)
         else:
-            self.program = ModuleBlock(self.shared.scrollable.stuff, shared, None)
-            self.program.grid(sticky=tk.W)
-            self.program.setBlock(self.program.clauses[0].body.rows[0].what)
-            self.shared.scrollable.scrollUpdate()
-            self.shared.saved = True
+            self.new()
 
         self.errormsgs = tk.scrolledtext.ScrolledText(self, wrap=tk.WORD, width=100, height=3, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2)
         self.errormsgs.insert(tk.INSERT, "...error output from running programs will appear here...")
@@ -135,7 +131,7 @@ class CAPE(tk.Frame):
             (line, col, err) = self.evq.get()
             print("ERROR", line, col, err)
             # if 0 <= line < len(self.shared.linebuf):
-            #   self.program.setBlock(self.shared.linebuf[line])
+            #   self.shared.program.setBlock(self.shared.linebuf[line])
             # tk.messagebox.showinfo("Run Error", err)
             self.displayErr(line, err)
 
@@ -152,11 +148,11 @@ class CAPE(tk.Frame):
             assert type == "clause"
             row = b
         blk = self.shared.linebuf[int(row.commentR)]
-        self.program.setBlock(blk)
+        self.shared.program.setBlock(blk)
 
     def printx(self):
         self.shared.cvtError = False
-        n = self.program.toNode()
+        n = self.shared.program.toNode()
         if (not self.shared.cvtError):
             print("'=== START OF PROGRAM ==='")
             n.print(sys.stdout, 0)
@@ -177,18 +173,22 @@ class CAPE(tk.Frame):
                     keywords.put((tokval, row, col))
         return (keywords, comments)
 
+    def undo(self):
+        self.shared.undo()
+
     def new(self):
         if (not self.shared.saved):
             tk.messagebox.showinfo("Warning", "You must save the program first")
             self.shared.saved = True
             return
-        if (self.program != None):
-            self.program.grid_forget()
-        self.program = ModuleBlock(self.shared.scrollable.stuff, self.shared, None)
-        self.program.grid(sticky=tk.W)
-        self.program.setBlock(self.program.clauses[0].body.rows[0].what)
+        if (self.shared.program != None):
+            self.shared.program.grid_forget()
+        self.shared.program = ModuleBlock(self.shared.scrollable.stuff, self.shared, None)
+        self.shared.program.grid(sticky=tk.W)
+        self.shared.program.setBlock(self.shared.program.clauses[0].body.rows[0].what)
         self.shared.scrollable.scrollUpdate()
         self.shared.saved = True
+        self.shared.save()
 
     def open(self):
         if (not self.shared.saved):
@@ -206,6 +206,7 @@ class CAPE(tk.Frame):
             code = fd.read()
             self.parse(code)
             self.shared.saved = True
+            self.shared.save()
             # self.shared.trap = True
 
     def getComment(self, text):
@@ -216,12 +217,12 @@ class CAPE(tk.Frame):
 
     def parse(self, code):
         n = self.shared.parse(code);
-        if self.program != None:
-            self.program.grid_forget()
-        self.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
-        self.program.grid(sticky=tk.W)
+        if self.shared.program != None:
+            self.shared.program.grid_forget()
+        self.shared.program = n.toBlock(self.shared.scrollable.stuff, self.shared.scrollable.stuff)
+        self.shared.program.grid(sticky=tk.W)
         self.shared.scrollable.scrollUpdate()
-        self.program.setBlock(self.program.clauses[0].body)
+        self.shared.program.setBlock(self.shared.program.clauses[0].body)
 
         # verify that conversion has been done right
         # print("verify")
@@ -230,7 +231,7 @@ class CAPE(tk.Frame):
         tree2 = ast.dump(mod2, include_attributes=False)
         with open("tree2", "w") as fd:
             fd.write(tree2)
-        n3 = self.program.toNode()
+        n3 = self.shared.program.toNode()
         f3 = io.StringIO("")
         n3.print(f3, 0)
         code3 = f3.getvalue()
@@ -249,7 +250,7 @@ class CAPE(tk.Frame):
             self.saveAs()
         else:
             self.shared.cvtError = True
-            n = self.program.toNode()
+            n = self.shared.program.toNode()
             with open(self.curfile, "w") as fd:
                 n.print(fd, 0)
                 print("saved")
@@ -257,7 +258,7 @@ class CAPE(tk.Frame):
 
     def saveAs(self):
         self.shared.cvtError = True
-        n = self.program.toNode()
+        n = self.shared.program.toNode()
         if (self.curfile == None):
             filename = tk.filedialog.asksaveasfilename(defaultextension=".py", filetypes=(("Python source files", "*.py"), ("All files", "*.*")))
         else:
@@ -280,7 +281,7 @@ class CAPE(tk.Frame):
 		# inserted.  Also, use # indexes into the list of StatementBlocks
 		# and ClauseBlocks as inline comments so we can find them back later
         self.shared.startKeeping()
-        n = self.program.toNode()
+        n = self.shared.program.toNode()
         self.shared.stopKeeping()
 
         if self.shared.cvtError:
@@ -311,7 +312,7 @@ class CAPE(tk.Frame):
     # another interpreter.  The disadvantage is that Python is no good at sandboxing.
     def runx(self):
         self.shared.cvtError = False
-        n = self.program.toNode()
+        n = self.shared.program.toNode()
         if self.shared.cvtError:
             print("===== Fix program first =====")
         else:
@@ -323,7 +324,7 @@ class CAPE(tk.Frame):
     def help(self):
         if (self.shared.curForm != None):
             self.shared.curForm.grid_forget()
-        self.shared.curForm = HelpForm(self.shared.confarea, self.program)
+        self.shared.curForm = HelpForm(self.shared.confarea, self.shared.program)
         self.shared.curForm.grid(row=0, column=0, sticky=tk.E)
         self.shared.curForm.update()
 
@@ -332,7 +333,7 @@ class CAPE(tk.Frame):
             self.shared.curForm.grid_forget()
         self.shared.curForm = TextForm(self.shared.confarea, self)
         self.shared.cvtError = True
-        n = self.program.toNode()
+        n = self.shared.program.toNode()
         f = io.StringIO("")
         n.print(f, 0)
         self.shared.curForm.settext(f.getvalue())

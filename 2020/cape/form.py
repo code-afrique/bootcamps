@@ -23,6 +23,9 @@ class Form(tk.Frame):
     def pasteKey(self, event):
         self.block.paste()
 
+    def undoKey(self, event):
+        self.block.undo()
+
     def leftKey(self, event):
         self.block.setBlock(self.block.goLeft())
 
@@ -39,6 +42,7 @@ class Form(tk.Frame):
         self.bind("<<Cut>>", self.cutKey)
         self.bind("<<Copy>>", self.copyKey)
         self.bind("<<Paste>>", self.pasteKey)
+        self.bind("<<Undo>>", self.undoKey)
         self.bind("<Delete>", self.deleteKey)
         self.bind("<Left>", self.leftKey)
         self.bind("<Right>", self.rightKey)

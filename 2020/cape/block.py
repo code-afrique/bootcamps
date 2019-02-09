@@ -144,6 +144,9 @@ class Block(tk.Frame):
         assert not self.shared.trap
         self.shared.saved = False
 
+        # save for undo purposes
+        self.shared.save()
+
     def cut(self, doCopy):
         if doCopy:
             self.copy()
@@ -169,6 +172,9 @@ class Block(tk.Frame):
 
     def paste(self):
         tk.messagebox.showinfo('Paste Error', 'paste only allowed into uninitialized expression or rows')
+
+    def undo(self):
+        self.shared.undo()
 
     def delExpr(self):
         self.copyExpr()
@@ -687,15 +693,16 @@ class ListopBlock(Block):
 # A clause block consists of a header and a body
 class ClauseBlock(Block):
 
-    def __init__(self, parent, shared, node, minimized, title):
+    def __init__(self, parent, shared, node, title):
         super().__init__(parent, shared)
         self.commentR = tk.StringVar()
         self.commentU = tk.StringVar()
         self.commentButton = tk.Frame(self, bd=2, highlightbackground='brown', highlightcolor='brown', highlightthickness=2)
         tk.Button(self.commentButton, textvariable=self.commentU, fg='brown', command=self.listcmd, font='-slant italic', justify=tk.LEFT).grid()
         if (node != None):
-            self.setCommentU(node.commentU[:(- 1)])
-            if (node.commentR != None):
+            if node.commentU != None and node.commentU != "":
+                self.setCommentU(node.commentU[:(- 1)])
+            if (node.commentR != None and node.commentR != ""):
                 # self.commentR.set(("# " + node.commentR))
                 self.commentR.set(self.commentize(node.commentR))
         self.body_node = (SeqNode([StatementNode(PassNode())]) if ((node == None) or (node.body == None)) else node.body)
@@ -716,7 +723,7 @@ class ClauseBlock(Block):
         self.body = None
         self.minimized = True
         self.row = None
-        if (not minimized):
+        if node == None or not node.minimized:
             self.minmax()
 
     def newHeader(self):
@@ -807,7 +814,7 @@ class ClauseBlock(Block):
 class BasicClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, False, '{} clause'.format(node.type))
+        super().__init__(parent, shared, node, '{} clause'.format(node.type))
         self.type = node.type
         tk.Button(self.hdr, text=node.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
         self.hdr.grid()
@@ -819,14 +826,14 @@ class BasicClauseBlock(ClauseBlock):
         self.setBlock(self)
 
     def toNodeRaw(self):
-        return BasicClauseNode(self.type, self.getBody())
+        return BasicClauseNode(self.type, self.getBody(), self.minimized)
 
 # An 'if' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
 # clauses.
 class CondClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, False, '{} clause'.format(node.type))
+        super().__init__(parent, shared, node, '{} clause'.format(node.type))
         if (node.cond == None):
             self.cond = ExpressionBlock(self.hdr, shared, None)
         else:
@@ -846,7 +853,7 @@ class CondClauseBlock(ClauseBlock):
     # def goRight(self):
     #     return self.cond
     def toNodeRaw(self):
-        return CondClauseNode(self.type, self.cond.toNode(), self.getBody())
+        return CondClauseNode(self.type, self.cond.toNode(), self.getBody(), self.minimized)
 
 # A compound block consists of a list of clause blocks.
 class CompoundBlock(Block):
@@ -867,7 +874,7 @@ class ModuleBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
-            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode('module', None))]
+            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode('module', None, self.minimized))]
         else:
             self.clauses = [c.toBlock(self, self) for c in node.clauses]
         self.clauses[0].grid()
@@ -901,7 +908,7 @@ class ContainerBlock(CompoundBlock):
 class ClassClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, (node.body != None), 'def clause')
+        super().__init__(parent, shared, node, 'def clause')
         self.cname = tk.StringVar()
         self.cname.set(node.name)
         btn = tk.Button(self.hdr, text='class', fg='red', width=0, command=self.cb)
@@ -954,7 +961,7 @@ class ClassClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo('Convert Error', 'Fix bad class name')
                 self.shared.cvtError = True
-        return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody(), self.decorator_list)
+        return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody(), self.minimized, self.decorator_list)
 
 class CallBlock(Block):
 
@@ -1522,7 +1529,7 @@ class ExpressionBlock(Block):
                 self.setBlock(self)
                 tk.messagebox.showinfo('Convert Error', 'Fix uninitialized expression')
                 self.shared.cvtError = True
-            return ExpressionNode(NameNode('__CAPE_UNINITIALIZED__'))
+            return ExpressionNode(None)
         return ExpressionNode(self.what.toNode())
 
 class AssignBlock(Block):
@@ -1647,29 +1654,29 @@ class PassBlock(Block):
         self.setBlock(self.rowblk.what.expr)
 
     def stmtIf(self):
-        self.stmtPut(IfNode([CondClauseNode('if', None, None)], False))
+        self.stmtPut(IfNode([CondClauseNode('if', None, None, False)], False))
         self.setBlock(self.rowblk.what.clauses[0].cond)
 
     def stmtWhile(self):
-        self.stmtPut(WhileNode([CondClauseNode('while', None, None)], False))
+        self.stmtPut(WhileNode([CondClauseNode('while', None, None, False)], False))
         self.setBlock(self.rowblk.what.clauses[0].cond)
 
     def stmtFor(self):
-        self.stmtPut(ForNode([ForClauseNode(ExpressionNode(None), ExpressionNode(None), None)], False))
+        self.stmtPut(ForNode([ForClauseNode(ExpressionNode(None), ExpressionNode(None), None, False)], False))
         self.setBlock(self.rowblk.what.clauses[0].target)
 
     def stmtDef(self):
-        self.stmtPut(ContainerNode(DefClauseNode('', [], [], None, None, None, [])))
+        self.stmtPut(ContainerNode(DefClauseNode('', [], [], None, None, None, False, [])))
         self.setBlock(self.rowblk.what.clauses[0])
         self.shared.curForm.entry.focus()
 
     def stmtClass(self):
-        self.stmtPut(ContainerNode(ClassClauseNode('', [], None, [])))
+        self.stmtPut(ContainerNode(ClassClauseNode('', [], None, False, [])))
         self.setBlock(self.rowblk.what.clauses[0])
         self.shared.curForm.entry.focus()
 
     def stmtWith(self):
-        self.stmtPut(ContainerNode(WithClauseNode([(ExpressionNode(None), None)], None)))
+        self.stmtPut(ContainerNode(WithClauseNode([(ExpressionNode(None), None)], None, False)))
         self.setBlock(self.rowblk.what.clauses[0])
 
     def stmtReturn(self):
@@ -2031,9 +2038,10 @@ class StatementBlock(Block):
         if (node == None):
             self.what = PassBlock(self.frame, self.shared, None)
         else:
-            self.setCommentU(node.commentU[:(- 1)])
+            if node.commentU != None and node.commentU != "":
+                self.setCommentU(node.commentU[:(- 1)])
             self.what = node.what.toBlock(self.frame, self)
-            if (node.commentR != None):
+            if (node.commentR != None and node.commentR != ""):
                 # self.commentR.set(("# " + node.commentR))
                 self.commentR.set(self.commentize(node.commentR))
         self.what.grid(row=1, column=0, sticky=tk.W)
@@ -2218,7 +2226,7 @@ class DefClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
         parent.isWithinDef = True
-        super().__init__(parent, shared, node, (node.body != None), 'def clause')
+        super().__init__(parent, shared, node, 'def clause')
         self.mname = tk.StringVar()
         self.mname.set(node.name)
         self.args = node.args
@@ -2313,14 +2321,14 @@ class DefClauseBlock(ClauseBlock):
                 self.setBlock(self)
                 tk.messagebox.showinfo('Convert Error', 'Fix bad function name')
                 self.shared.cvtError = True
-        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.decorator_list)
+        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.minimized, self.decorator_list)
 
 class IfBlock(CompoundBlock):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
-            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('if', None, None))]
+            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('if', None, None, False))]
             self.hasElse = False
         else:
             self.clauses = [n.toBlock(self, self) for n in node.clauses]
@@ -2334,7 +2342,7 @@ class IfBlock(CompoundBlock):
         self.setBlock(self)
 
     def insertElif(self):
-        clause = CondClauseBlock(self, self.shared, CondClauseNode('elif', None, None))
+        clause = CondClauseBlock(self, self.shared, CondClauseNode('elif', None, None, False))
         n = len(self.clauses)
         self.clauses.insert(((n - 1) if self.hasElse else n), clause)
         self.gridUpdate()
@@ -2343,7 +2351,7 @@ class IfBlock(CompoundBlock):
 
     def addElse(self):
         if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None))
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
             self.clauses.append(clause)
             self.gridUpdate()
             self.setBlock(clause.body.rows[0].what)
@@ -2373,7 +2381,7 @@ class WhileBlock(CompoundBlock):
         super().__init__(parent, shared)
         self.isWithinLoop = True
         if (node == None):
-            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('while', None, None))]
+            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('while', None, None, False))]
             self.isWithinLoop = False
             self.hasElse = False
         else:
@@ -2392,7 +2400,7 @@ class WhileBlock(CompoundBlock):
 
     def addElse(self):
         if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None))
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
             self.clauses.append(clause)
             self.gridUpdate()
             self.setBlock(clause.body.rows[0].what)
@@ -2422,7 +2430,7 @@ class ForBlock(CompoundBlock):
         super().__init__(parent, shared)
         self.isWithinLoop = True
         if (node == None):
-            self.clauses = [ForClauseBlock(self, shared, ForClauseNode(None, None, None))]
+            self.clauses = [ForClauseBlock(self, shared, ForClauseNode(None, None, None, False))]
             self.isWithinLoop = False
             self.hasElse = False
         else:
@@ -2441,7 +2449,7 @@ class ForBlock(CompoundBlock):
 
     def addElse(self):
         if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None))
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
             self.clauses.append(clause)
             self.gridUpdate()
             self.setBlock(clause.body.rows[0].what)
@@ -2470,7 +2478,7 @@ class TryBlock(CompoundBlock):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         if (node == None):
-            self.clauses = [BasicClauseBlock(self, shared, BasicClauseNode('try', None))]
+            self.clauses = [BasicClauseBlock(self, shared, BasicClauseNode('try', None, False))]
             self.hasElse = False
         else:
             self.clauses = [n.toBlock(self, self) for n in node.clauses]
@@ -2485,7 +2493,7 @@ class TryBlock(CompoundBlock):
 
     def addElse(self):
         if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None))
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
             self.clauses.append(clause)
             self.gridUpdate()
             self.setBlock(clause.body.rows[0].what)
@@ -2512,7 +2520,7 @@ class TryBlock(CompoundBlock):
 class ExceptClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, False, 'except clause')
+        super().__init__(parent, shared, node, 'except clause')
         tk.Button(self.hdr, text='except', fg='red', width=0, command=self.cb).grid(row=1, column=0)
         column = 1
         if (node.type == None):
@@ -2539,12 +2547,12 @@ class ExceptClauseBlock(ClauseBlock):
         self.setBlock(self)
 
     def toNodeRaw(self):
-        return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), self.getBody())
+        return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), self.getBody(), self.minimized)
 
 class WithClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, False, 'with clause')
+        super().__init__(parent, shared, node, 'with clause')
         self.items = []
         tk.Button(self.hdr, text='with', fg='red', width=0, command=self.cb).grid(row=1, column=0)
         column = 1
@@ -2571,12 +2579,12 @@ class WithClauseBlock(ClauseBlock):
         self.setBlock(self)
 
     def toNodeRaw(self):
-        return WithClauseNode([(e.toNode(), (None if (v == None) else v.toNode())) for (e, v) in self.items], self.getBody())
+        return WithClauseNode([(e.toNode(), (None if (v == None) else v.toNode())) for (e, v) in self.items], self.getBody(), self.minimized)
 
 class ForClauseBlock(ClauseBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, False, 'for clause')
+        super().__init__(parent, shared, node, 'for clause')
         self.hdr.isWithinStore = True
         if (node.target == None):
             self.target = ExpressionBlock(self.hdr, shared, None)
@@ -2600,4 +2608,4 @@ class ForClauseBlock(ClauseBlock):
         self.setBlock(self)
 
     def toNodeRaw(self):
-        return ForClauseNode(self.target.toNode(), self.expr.toNode(), self.getBody())
+        return ForClauseNode(self.target.toNode(), self.expr.toNode(), self.getBody(), self.minimized)
