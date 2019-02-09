@@ -348,8 +348,8 @@ class PassForm(Form):
         row += 1
         tk.Message(self, width=350, font="Helvetica 14", text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement:").grid(row=row, columnspan=4)
         row += 1
-        statements = [("assert", self.stmtAssert), ("break", self.stmtBreak), ("class", self.stmtClass), ("continue", self.stmtContinue), ("def", self.stmtDef), ("del", self.stmtDel), ("for", self.stmtFor), ("global", self.stmtGlobal), ("if", self.stmtIf), ("import", self.stmtImport), ("print", self.stmtPrint), ("return", self.stmtReturn), ("try", self.stmtTry), ("while", self.stmtWhile), ("with", self.stmtWith), ("yield", self.stmtYield)]
-        ncolumns = 4
+        statements = [("assert", self.stmtAssert), ("break", self.stmtBreak), ("class", self.stmtClass), ("continue", self.stmtContinue), ("def", self.stmtDef), ("del", self.stmtDel), ("for", self.stmtFor), ("global", self.stmtGlobal), ("if", self.stmtIf), ("import", self.stmtImport), ("print", self.stmtPrint), ("return", self.stmtReturn), ("try", self.stmtTry), ("while", self.stmtWhile), ("with", self.stmtWith)]
+        ncolumns = 3
         n = len(statements)
         nrows = (((n + ncolumns) - 1) // ncolumns)
         r = 0
@@ -421,9 +421,6 @@ class PassForm(Form):
     def stmtWith(self):
         self.block.stmtWith()
 
-    def stmtYield(self):
-        self.block.stmtYield()
-
     def stmtBreak(self):
         if self.block.isWithinLoop:
             self.block.stmtBreak()
@@ -467,8 +464,6 @@ class PassForm(Form):
             self.stmtTry()
         elif (ev.char == "w"):
             self.stmtWhile()
-        elif (self.block.isWithinDef and (ev.char == "y")):
-            self.stmtYield()
         elif (ev.char == "="):
             self.block.stmtAugassign("=")
         elif (ev.char == "+"):
@@ -524,6 +519,9 @@ class ExpressionForm(Form):
             tk.Button(self, text="{...: ...}", command=self.exprDict).grid(row=row, column=1, sticky=tk.W)
             tk.Button(self, text="x if c else y", command=self.exprIfelse).grid(row=row, column=2, sticky=tk.W)
             row += 1
+            tk.Button(self, text="yield", command=self.exprYield).grid(row=row, column=0, sticky=tk.W)
+            tk.Button(self, text="yield ?", command=self.exprYieldExpr).grid(row=row, column=1, sticky=tk.W)
+            row += 1
             tk.Label(self, text="").grid(row=row)
             row += 1
             tk.Button(self, text="x <op> y", command=self.exprBinaryop).grid(row=row, sticky=tk.W)
@@ -537,6 +535,8 @@ class ExpressionForm(Form):
             self.unaryop.set("-")
             ops = tk.OptionMenu(self, self.unaryop, "-", "not")
             ops.grid(row=row, column=1, sticky=tk.W)
+            row += 1
+            tk.Label(self, text="").grid(row=row)
             row += 1
         tk.Message(self, width=350, font="Helvetica 14", text="You can also paste in an expression you have copied or deleted (see Edit menu).").grid(row=100, columnspan=3)
 
@@ -593,6 +593,12 @@ class ExpressionForm(Form):
 
     def exprIfelse(self):
         self.block.exprIfelse()
+
+    def exprYield(self):
+        self.block.exprYield()
+
+    def exprYieldExpr(self):
+        self.block.exprYieldExpr()
 
     def key(self, ev):
         if ((ev.type != "2") or (len(ev.char) != 1)):    # check if normal KeyPress
@@ -776,7 +782,7 @@ class YieldForm(Form):
         self.isExpression = True
         self.isStatement = False
         self.block = block
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="'yield' statement").grid()
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="'yield' expression").grid()
         tk.Message(self, width=350, font="Helvetica 14", text="A yield expression is used to create generator expressions.").grid(row=1)
         if (block.expr == None):
             rv = tk.Button(self, text="Add a value", command=self.yieldValue)

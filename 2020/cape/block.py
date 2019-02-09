@@ -1456,6 +1456,12 @@ class ExpressionBlock(Block):
     def exprIfelse(self):
         self.setValue(IfelseNode(ExpressionNode(None), ExpressionNode(None), ExpressionNode(None)))
 
+    def exprYield(self):
+        self.setValue(YieldNode(None))
+
+    def exprYieldExpr(self):
+        self.setValue(YieldNode(ExpressionNode(None)))
+
     def gotKey(self, c):
         if isinstance(self.what, NameBlock):
             self.what.vname.set(self.what.vname.get() + c)
@@ -1670,10 +1676,6 @@ class PassBlock(Block):
 
     def stmtReturn(self):
         self.stmtPut(ReturnNode(None))
-        self.setBlock(self.rowblk.what)
-
-    def stmtYield(self):
-        self.stmtPut(YieldNode(None))
         self.setBlock(self.rowblk.what)
 
     def stmtDel(self):
