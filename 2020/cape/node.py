@@ -1232,7 +1232,7 @@ class StringNode(Node):
 
     # like repr, but uses triple quotes when possible
     def mrepr(self, s):
-        if s.count("\n") == 0:
+        if len(s) < 4 or s.count("\n") == 0:
             return repr(s)
         fd = io.StringIO(s)
         lines = s.split("\n")
