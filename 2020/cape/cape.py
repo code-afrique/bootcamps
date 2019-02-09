@@ -16,7 +16,7 @@ import ast
 import argparse
 import pmod
 import shared
-from form import HelpForm, TextForm
+from form import HelpForm, TextForm, FindForm
 from block import Block, ModuleBlock
 import console
 
@@ -84,7 +84,10 @@ class CAPE(tk.Frame):
         edit.add_command(label="Cut", command=self.cut)
         edit.add_command(label="Copy", command=self.copy)
         edit.add_command(label="Paste", command=self.paste)
+        edit.add_separator()
         edit.add_command(label="Undo", command=self.undo)
+        edit.add_separator()
+        edit.add_command(label="Find", command=self.find)
         menu.add_cascade(label="Edit", menu=edit)
         actions = tk.Menu(menu)
         actions.add_command(label="Show code", command=self.text)
@@ -327,6 +330,13 @@ class CAPE(tk.Frame):
         if (self.shared.curForm != None):
             self.shared.curForm.grid_forget()
         self.shared.curForm = HelpForm(self.shared.confarea, self.shared.program)
+        self.shared.curForm.grid(row=0, column=0, sticky=tk.E)
+        self.shared.curForm.update()
+
+    def find(self):
+        if (self.shared.curForm != None):
+            self.shared.curForm.grid_forget()
+        self.shared.curForm = FindForm(self.shared.confarea, self.shared.program)
         self.shared.curForm.grid(row=0, column=0, sticky=tk.E)
         self.shared.curForm.update()
 

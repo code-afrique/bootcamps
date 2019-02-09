@@ -4,7 +4,7 @@ import keyword
 class Node():
 
     def toBlock(self, frame, block):
-        print("toBlock not implemented by {}".format(self))
+        print('toBlock not implemented by {}'.format(self))
         return None
 
     def findLine(self, lineno):
@@ -12,7 +12,7 @@ class Node():
 
     def printIndent(self, fd, level):
         for i in range(level):
-            print("    ", end="", file=fd)
+            print('    ', end='', file=fd)
 
 class PassNode(Node):
 
@@ -21,15 +21,18 @@ class PassNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "pass"
+        assert (kw == 'pass')
         self.lineno = line
+
+    def contains(self, s):
+        return s == "pass"
 
     def toBlock(self, frame, block):
         return block.newPassBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("pass", file=fd)
+        print('pass', file=fd)
 
 class StatementNode(Node):
 
@@ -37,12 +40,15 @@ class StatementNode(Node):
         super().__init__()
         self.what = what
         self.lineno = lineno
-        self.commentU = ""
+        self.commentU = ''
         self.commentR = None
         self.index = 0
- 
+
     def merge(self, q):
         self.what.merge(q)
+
+    def contains(self, s):
+        return self.what.contains(s)
 
     def toBlock(self, frame, block):
         return block.newStatementBlock(frame, self)
@@ -55,27 +61,27 @@ class StatementNode(Node):
         f = io.StringIO(self.commentU)
         for line in f:
             self.printIndent(fd, level)
-            print("# {}".format(line), end="", file=fd)
-
-        if self.commentR == None or self.commentR.strip() == "":
+            print('# {}'.format(line), end='', file=fd)
+        if ((self.commentR == None) or (self.commentR.strip() == '')):
             self.what.print(fd, level)
         else:
             # print into a string buffer
-            f = io.StringIO("")
+            f = io.StringIO('')
             self.what.print(f, level)
             s = f.getvalue()
             # insert the comment, if any, after the first line
-            if "\n" in s:
-                i = s.index("\n")
-                s = ((s[:i] + "    # ") + self.commentR) + s[i:]
-            print(s, file=fd, end="")
+            if ('\n' in s):
+                i = s.index('\n')
+                s = (((s[:i] + '    # ') + self.commentR) + s[i:])
+            print(s, file=fd, end='')
 
 class ClauseNode(Node):
+
     def __init__(self, body, minimized):
         super().__init__()
         self.body = body
         self.minimized = minimized
-        self.commentU = ""
+        self.commentU = ''
         self.commentR = None
         self.lineno = 0
         self.index = 0
@@ -83,29 +89,29 @@ class ClauseNode(Node):
 
     def findLine(self, lineno):
         assert isinstance(self.body, SeqNode)
-        if not isinstance(self, BasicClauseNode) or self.type != "module":
+        if ((not isinstance(self, BasicClauseNode)) or (self.type != 'module')):
             if (self.lineno >= lineno):
-                return ("clause", self, self.lineno)
+                return ('clause', self, self.lineno)
         return self.body.findLine(lineno)
 
     def printComment(self, fd, level):
         f = io.StringIO(self.commentU)
         for line in f:
             self.printIndent(fd, level)
-            print("# {}".format(line), end="", file=fd)
+            print('# {}'.format(line), end='', file=fd)
 
     def printBody(self, fd, level):
         """
         self.commentR = "{}".format(self.index)
         """
-
-        if self.commentR == None or self.commentR.strip() == "":
-            print(":", file=fd)
+        if ((self.commentR == None) or (self.commentR.strip() == '')):
+            print(':', file=fd)
         else:
-            print(":\t# {}".format(self.commentR), file=fd)
-        self.body.print(fd, level + 1)
+            print(':\t# {}'.format(self.commentR), file=fd)
+        self.body.print(fd, (level + 1))
 
 class DefClauseNode(ClauseNode):
+
     def __init__(self, name, args, defaults, vararg, kwarg, body, minimized, decorator_list):
         super().__init__(body, minimized)
         self.name = name
@@ -119,11 +125,14 @@ class DefClauseNode(ClauseNode):
         for d in self.decorator_list:
             d.merge(q)
         (kw, line, col) = q.get()
-        assert kw == "def"
+        assert (kw == 'def')
         self.lineno = line
         for d in self.defaults:
             d.merge(q)
         self.body.merge(q)
+
+    def contains(self, s):
+        return False
 
     def toBlock(self, frame, block):
         return block.newDefClauseBlock(frame, self)
@@ -132,41 +141,41 @@ class DefClauseNode(ClauseNode):
         print(file=fd)
         for d in self.decorator_list:
             self.printIndent(fd, level)
-            print("@", end="", file=fd)
+            print('@', end='', file=fd)
             d.print(fd, 0)
             print(file=fd)
         self.printComment(fd, level)
         self.printIndent(fd, level)
-        print("def {}(".format(self.name), end="", file=fd)
+        print('def {}('.format(self.name), end='', file=fd)
         first = True
         nargs = len(self.args)
         ndefaults = len(self.defaults)
-        delta = nargs - ndefaults
+        delta = (nargs - ndefaults)
         for i in range(delta):
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
-            print(self.args[i], end="", file=fd)
-        if self.vararg != None:
+                print(', ', end='', file=fd)
+            print(self.args[i], end='', file=fd)
+        if (self.vararg != None):
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
-            print("*{}".format(self.vararg), end="", file=fd)
+                print(', ', end='', file=fd)
+            print('*{}'.format(self.vararg), end='', file=fd)
         for i in range(delta, nargs):
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
-            print(self.args[i], end="", file=fd)
-            print("=", end="", file=fd)
-            self.defaults[i - delta].print(fd, 0)
-        if self.kwarg != None:
-            if not first:
-                print(", ", end="", file=fd)
-            print("**{}".format(self.kwarg), end="", file=fd)
-        print(")", end="", file=fd)
+                print(', ', end='', file=fd)
+            print(self.args[i], end='', file=fd)
+            print('=', end='', file=fd)
+            self.defaults[(i - delta)].print(fd, 0)
+        if (self.kwarg != None):
+            if (not first):
+                print(', ', end='', file=fd)
+            print('**{}'.format(self.kwarg), end='', file=fd)
+        print(')', end='', file=fd)
         self.printBody(fd, level)
 
 class LambdaNode(Node):
@@ -181,48 +190,51 @@ class LambdaNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "lambda"
+        assert (kw == 'lambda')
         self.lineno = line
         for d in self.defaults:
             d.merge(q)
         self.body.merge(q)
 
+    def contains(self, s):
+        return False
+
     def toBlock(self, frame, block):
         return block.newLambdaBlock(frame, self)
 
     def print(self, fd, level):
-        print("(lambda ", end="", file=fd)
+        print('(lambda ', end='', file=fd)
         nargs = len(self.args)
         ndefaults = len(self.defaults)
-        delta = nargs - ndefaults
+        delta = (nargs - ndefaults)
         first = True
         for i in range(delta):
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
-            print(self.args[i], end="", file=fd)
-        if self.vararg != None:
+                print(', ', end='', file=fd)
+            print(self.args[i], end='', file=fd)
+        if (self.vararg != None):
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
-            print("*{}".format(self.vararg), end="", file=fd)
+                print(', ', end='', file=fd)
+            print('*{}'.format(self.vararg), end='', file=fd)
         for i in range(delta, nargs):
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
-            print(self.args[i], end="", file=fd)
-            print("=", end="", file=fd)
-            self.defaults[i - delta].print(fd, 0)
-        if self.kwarg != None:
-            if not first:
-                print(", ", end="", file=fd)
-            print("**{}".format(self.kwarg), end="", file=fd)
-        print(": ", end="", file=fd)
+                print(', ', end='', file=fd)
+            print(self.args[i], end='', file=fd)
+            print('=', end='', file=fd)
+            self.defaults[(i - delta)].print(fd, 0)
+        if (self.kwarg != None):
+            if (not first):
+                print(', ', end='', file=fd)
+            print('**{}'.format(self.kwarg), end='', file=fd)
+        print(': ', end='', file=fd)
         self.body.print(fd, 0)
-        print(")", end="", file=fd)
+        print(')', end='', file=fd)
 
 class ClassClauseNode(ClauseNode):
 
@@ -236,7 +248,7 @@ class ClassClauseNode(ClauseNode):
         for d in self.decorator_list:
             d.merge(q)
         (kw, line, col) = q.get()
-        assert kw == "class"
+        assert (kw == 'class')
         self.lineno = line
         self.body.merge(q)
 
@@ -247,43 +259,48 @@ class ClassClauseNode(ClauseNode):
         print(file=fd)
         for d in self.decorator_list:
             self.printIndent(fd, level)
-            print("@", end="", file=fd)
+            print('@', end='', file=fd)
             d.print(fd, 0)
             print(file=fd)
         self.printComment(fd, level)
         self.printIndent(fd, level)
-        print("class {}(".format(self.name), end="", file=fd)
+        print('class {}('.format(self.name), end='', file=fd)
         for i in range(len(self.bases)):
             if (i != 0):
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             self.bases[i].print(fd, 0)
-        print(")", end="", file=fd)
+        print(')', end='', file=fd)
         self.printBody(fd, level)
 
 class BasicClauseNode(ClauseNode):
+
     def __init__(self, type, body, minimized):
         super().__init__(body, minimized)
         self.type = type
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == self.type
+        assert (kw == self.type)
         self.lineno = line
         self.body.merge(q)
+
+    def contains(self, s):
+        return self.type == s
 
     def toBlock(self, frame, block):
         return block.newBasicClauseBlock(frame, self)
 
     def print(self, fd, level):
-        if self.type == "module":
+        if (self.type == 'module'):
             self.body.print(fd, level)
         else:
             self.printComment(fd, level)
             self.printIndent(fd, level)
-            print("{}".format(self.type), end="", file=fd)
+            print('{}'.format(self.type), end='', file=fd)
             self.printBody(fd, level)
 
 class CondClauseNode(ClauseNode):
+
     def __init__(self, type, cond, body, minimized):
         super().__init__(body, minimized)
         self.type = type
@@ -292,10 +309,13 @@ class CondClauseNode(ClauseNode):
     def toBlock(self, frame, block):
         return block.newCondClauseBlock(frame, self)
 
+    def contains(self, s):
+        return self.type == s or self.cond.contains(s)
+
     def merge(self, q):
         (kw, line, col) = q.get()
         # print("cc", kw, self.type, line)
-        assert kw == self.type
+        assert (kw == self.type)
         self.lineno = line
         self.cond.merge(q)
         self.body.merge(q)
@@ -303,11 +323,12 @@ class CondClauseNode(ClauseNode):
     def print(self, fd, level):
         self.printComment(fd, level)
         self.printIndent(fd, level)
-        print("{} ".format(self.type), end="", file=fd)
+        print('{} '.format(self.type), end='', file=fd)
         self.cond.print(fd, 0)
         self.printBody(fd, level)
 
 class CompoundNode(Node):
+
     def __init__(self, clauses):
         super().__init__()
         self.clauses = clauses
@@ -315,6 +336,12 @@ class CompoundNode(Node):
     def merge(self, q):
         for c in self.clauses:
             c.merge(q)
+
+    def contains(self, s):
+        for c in self.clauses:
+            if c.contains(s):
+                return True
+        return False
 
     def findLine(self, lineno):
         for c in self.clauses:
@@ -362,6 +389,7 @@ class TryNode(CompoundNode):
         return block.newTryBlock(frame, self)
 
 class ExceptClauseNode(ClauseNode):
+
     def __init__(self, type, name, body, minimized):
         super().__init__(body, minimized)
         self.type = type
@@ -369,12 +397,15 @@ class ExceptClauseNode(ClauseNode):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "except"
+        assert (kw == 'except')
         self.lineno = line
-        if self.type != None and self.name != None:
+        if ((self.type != None) and (self.name != None)):
             (kw2, line2, col2) = q.get()
-            assert kw2 == "as"
+            assert (kw2 == 'as')
         self.body.merge(q)
+
+    def contains(self, s):
+        return False
 
     def toBlock(self, frame, block):
         return block.newExceptClauseBlock(frame, self)
@@ -383,12 +414,12 @@ class ExceptClauseNode(ClauseNode):
         self.printComment(fd, level)
         self.printIndent(fd, level)
         if (self.type == None):
-            print("except", end="", file=fd)
+            print('except', end='', file=fd)
         else:
-            print("except ", end="", file=fd)
+            print('except ', end='', file=fd)
             self.type.print(fd, 0)
             if (self.name != None):
-                print(" as ", end="", file=fd)
+                print(' as ', end='', file=fd)
                 self.name.print(fd, 0)
         self.printBody(fd, level)
 
@@ -401,30 +432,33 @@ class WithClauseNode(ClauseNode):
     def toBlock(self, frame, block):
         return block.newWithClauseBlock(frame, self)
 
+    def contains(self, s):
+        return False
+
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "with"
+        assert (kw == 'with')
         self.lineno = line
         for (expr, var) in self.items:
             expr.merge(q)
-            if var != None:
+            if (var != None):
                 (kw2, line2, col2) = q.get()
-                assert kw2 == "as"
+                assert (kw2 == 'as')
         self.body.merge(q)
 
     def print(self, fd, level):
         self.printComment(fd, level)
         self.printIndent(fd, level)
-        print("with ", end="", file=fd)
+        print('with ', end='', file=fd)
         first = True
         for (expr, var) in self.items:
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             expr.print(fd, 0)
             if (var != None):
-                print(" as ", end="", file=fd)
+                print(' as ', end='', file=fd)
                 var.print(fd, 0)
         self.printBody(fd, level)
 
@@ -455,13 +489,18 @@ class ForClauseNode(ClauseNode):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "for"
+        assert (kw == 'for')
         self.lineno = line
         self.target.merge(q)
         (kw2, line2, col2) = q.get()
-        assert kw2 == "in"
+        assert (kw2 == 'in')
         self.expr.merge(q)
         self.body.merge(q)
+
+    def contains(self, s):
+        if self.target.contains(s):
+            return True
+        return self.body.contains(s)
 
     def toBlock(self, frame, block):
         return block.newForClauseBlock(frame, self)
@@ -469,9 +508,9 @@ class ForClauseNode(ClauseNode):
     def print(self, fd, level):
         self.printComment(fd, level)
         self.printIndent(fd, level)
-        print("for ", end="", file=fd)
+        print('for ', end='', file=fd)
         self.target.print(fd, 0)
-        print(" in ", end="", file=fd)
+        print(' in ', end='', file=fd)
         self.expr.print(fd, 0)
         self.printBody(fd, level)
 
@@ -483,10 +522,13 @@ class ReturnNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "return"
+        assert (kw == 'return')
         self.lineno = line
-        if self.what != None:
+        if (self.what != None):
             self.what.merge(q)
+
+    def contains(self, s):
+        return s == "return" or (self.what != None and self.what.contains(s))
 
     def toBlock(self, frame, block):
         return block.newReturnBlock(frame, self)
@@ -494,11 +536,11 @@ class ReturnNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         if (self.what == None):
-            print("return", file=fd)
+            print('return', file=fd)
         else:
-            print("return ", end="", file=fd)
+            print('return ', end='', file=fd)
             self.what.print(fd, 0)
-            print("", file=fd)
+            print('', file=fd)
 
 class YieldNode(Node):
 
@@ -508,10 +550,13 @@ class YieldNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "yield"
+        assert (kw == 'yield')
         self.lineno = line
-        if self.what != None:
+        if (self.what != None):
             self.what.merge(q)
+
+    def contains(self, s):
+        return s == "yield" or (self.what != None and self.what.contains(s))
 
     def toBlock(self, frame, block):
         return block.newYieldBlock(frame, self)
@@ -519,11 +564,11 @@ class YieldNode(Node):
     def print(self, fd, level):
         self.printIndent(fd, level)
         if (self.what == None):
-            print("yield", file=fd)
+            print('yield', file=fd)
         else:
-            print("yield ", end="", file=fd)
+            print('yield ', end='', file=fd)
             self.what.print(fd, 0)
-            print("", file=fd)
+            print('', file=fd)
 
 class AssertNode(Node):
 
@@ -534,21 +579,24 @@ class AssertNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "assert"
+        assert (kw == 'assert')
         self.lineno = line
         self.test.merge(q)
+
+    def contains(self, s):
+        return self.test.contains(s)
 
     def toBlock(self, frame, block):
         return block.newAssertBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("assert ", end="", file=fd)
+        print('assert ', end='', file=fd)
         self.test.print(fd, 0)
         if (self.msg != None):
-            print(", ", end="", file=fd)
+            print(', ', end='', file=fd)
             self.msg.print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class BreakNode(Node):
 
@@ -557,15 +605,18 @@ class BreakNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "break"
+        assert (kw == 'break')
         self.lineno = line
+
+    def contains(self, s):
+        return s == "break"
 
     def toBlock(self, frame, block):
         return block.newBreakBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("break", file=fd)
+        print('break', file=fd)
 
 class ContinueNode(Node):
 
@@ -574,15 +625,18 @@ class ContinueNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "continue"
+        assert (kw == 'continue')
         self.lineno = line
+
+    def contains(self, s):
+        return s == "continue"
 
     def toBlock(self, frame, block):
         return block.newContinueBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("continue", file=fd)
+        print('continue', file=fd)
 
 class ImportNode(Node):
 
@@ -593,23 +647,26 @@ class ImportNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "import"
+        assert (kw == 'import')
         self.lineno = line
-        if self.asname != None:
+        if (self.asname != None):
             (kw2, line2, col2) = q.get()
-            assert kw2 == "as"
+            assert (kw2 == 'as')
+
+    def contains(self, s):
+        return False
 
     def toBlock(self, frame, block):
         return block.newImportBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("import ", end="", file=fd)
+        print('import ', end='', file=fd)
         self.name.print(fd, 0)
         if (self.asname != None):
-            print(" as ", end="", file=fd)
+            print(' as ', end='', file=fd)
             self.asname.print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class ImportfromNode(Node):
 
@@ -620,30 +677,33 @@ class ImportfromNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "from"
+        assert (kw == 'from')
         self.lineno = line
         (kw2, line2, col2) = q.get()
-        assert kw2 == "import"
+        assert (kw2 == 'import')
 
     def toBlock(self, frame, block):
         return block.newImportfromBlock(frame, self)
 
+    def contains(self, s):
+        return False
+
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("from ", end="", file=fd)
+        print('from ', end='', file=fd)
         self.module.print(fd, 0)
-        print(" import ", end="", file=fd)
+        print(' import ', end='', file=fd)
         first = True
         for (name, asname) in self.names:
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             name.print(fd, 0)
             if (asname != None):
-                print(" as ", end="", file=fd)
+                print(' as ', end='', file=fd)
                 asname.print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class GlobalNode(Node):
 
@@ -653,20 +713,26 @@ class GlobalNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "global"
+        assert (kw == 'global')
         self.lineno = line
+
+    def contains(self, s):
+        for name in self.names:
+            if name == s:
+                return True
+        return False
 
     def toBlock(self, frame, block):
         return block.newGlobalBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("global ", end="", file=fd)
+        print('global ', end='', file=fd)
         for i in range(len(self.names)):
             if (i > 0):
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             self.names[i].print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class DelNode(Node):
 
@@ -676,22 +742,28 @@ class DelNode(Node):
 
     def merge(self, q):
         (kw, line, col) = q.get()
-        assert kw == "del"
+        assert (kw == 'del')
         self.lineno = line
         for t in self.targets:
             t.merge(q)
+
+    def contains(self, s):
+        for t in self.targets:
+            if t.contains(s):
+                return True
+        return False
 
     def toBlock(self, frame, block):
         return block.newDelBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
-        print("del ", end="", file=fd)
+        print('del ', end='', file=fd)
         for i in range(len(self.targets)):
             if (i > 0):
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             self.targets[i].print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class IfelseNode(Node):
 
@@ -704,23 +776,26 @@ class IfelseNode(Node):
     def merge(self, q):
         self.ifTrue.merge(q)
         (kw, line, col) = q.get()
-        assert kw == "if"
+        assert (kw == 'if')
         self.cond.merge(q)
         (kw2, line2, col2) = q.get()
-        assert kw2 == "else"
+        assert (kw2 == 'else')
         self.ifFalse.merge(q)
+
+    def contains(self, s):
+        return self.cond.contains(s) or self.ifTrue.contains(s) or self.ifFalse.contains(s)
 
     def toBlock(self, frame, block):
         return block.newIfelseBlock(frame, self)
 
     def print(self, fd, level):
-        print("(", end="", file=fd)
+        print('(', end='', file=fd)
         self.ifTrue.print(fd, 0)
-        print(" if ", end="", file=fd)
+        print(' if ', end='', file=fd)
         self.cond.print(fd, 0)
-        print(" else ", end="", file=fd)
+        print(' else ', end='', file=fd)
         self.ifFalse.print(fd, 0)
-        print(")", end="", file=fd)
+        print(')', end='', file=fd)
 
 class AssignNode(Node):
 
@@ -734,6 +809,12 @@ class AssignNode(Node):
             t.merge(q)
         self.value.merge(q)
 
+    def contains(self, s):
+        for t in self.targets:
+            if t.contains(s):
+                return True
+        return self.value.contains(s)
+
     def toBlock(self, frame, block):
         return block.newAssignBlock(frame, self)
 
@@ -741,9 +822,9 @@ class AssignNode(Node):
         self.printIndent(fd, level)
         for t in self.targets:
             t.print(fd, 0)
-            print(" = ", end="", file=fd)
+            print(' = ', end='', file=fd)
         self.value.print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class AugassignNode(Node):
 
@@ -757,15 +838,18 @@ class AugassignNode(Node):
         self.left.merge(q)
         self.right.merge(q)
 
+    def contains(self, s):
+        return self.left.contains(s) or self.right.contains(s)
+
     def toBlock(self, frame, block):
         return block.newAugassignBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
         self.left.print(fd, 0)
-        print(" {} ".format(self.op), end="", file=fd)
+        print(' {} '.format(self.op), end='', file=fd)
         self.right.print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class BinaryopNode(Node):
 
@@ -779,21 +863,24 @@ class BinaryopNode(Node):
         self.left.merge(q)
         if keyword.iskeyword(self.op):
             (kw, line, col) = q.get()
-            assert kw == self.op
+            assert (kw == self.op)
             self.lineno = line
         self.right.merge(q)
+
+    def contains(self, s):
+        return self.left.contains(s) or self.right.contains(s)
 
     def toBlock(self, frame, block):
         return block.newBinaryopBlock(frame, self)
 
     def print(self, fd, level):
-        print("(", end="", file=fd)
+        print('(', end='', file=fd)
         self.left.print(fd, 0)
-        print(" {} ".format(self.op), end="", file=fd)
+        print(' {} '.format(self.op), end='', file=fd)
         self.right.print(fd, 0)
-        print(")", end="", file=fd)
-# n values separated by n-1 operators
+        print(')', end='', file=fd)
 
+# n values separated by n-1 operators
 class ListopNode(Node):
 
     def __init__(self, values, ops):
@@ -808,21 +895,27 @@ class ListopNode(Node):
             self.values[i].merge(q)
             if keyword.iskeyword(self.ops[i]):
                 (kw, line, col) = q.get()
-                assert kw == self.ops[i]
+                assert (kw == self.ops[i])
         self.values[n].merge(q)
+
+    def contains(self, s):
+        for v in self.values:
+            if v.contains(s):
+                return True
+        return False
 
     def toBlock(self, frame, block):
         return block.newListopBlock(frame, self)
 
     def print(self, fd, level):
-        print("(", end="", file=fd)
+        print('(', end='', file=fd)
         i = 0
         n = len(self.ops)
         for i in range(n):
             self.values[i].print(fd, 0)
-            print(" {} ".format(self.ops[i]), end="", file=fd)
+            print(' {} '.format(self.ops[i]), end='', file=fd)
         self.values[n].print(fd, 0)
-        print(")", end="", file=fd)
+        print(')', end='', file=fd)
 
 class UnaryopNode(Node):
 
@@ -834,17 +927,20 @@ class UnaryopNode(Node):
     def merge(self, q):
         if keyword.iskeyword(self.op):
             (kw, line, col) = q.get()
-            assert kw == self.op
+            assert (kw == self.op)
             self.lineno = line
         self.right.merge(q)
+
+    def contains(self, s):
+        return self.right.contains(s)
 
     def toBlock(self, frame, block):
         return block.newUnaryopBlock(frame, self)
 
     def print(self, fd, level):
-        print("({} ".format(self.op), end="", file=fd)
+        print('({} '.format(self.op), end='', file=fd)
         self.right.print(fd, 0)
-        print(")", end="", file=fd)
+        print(')', end='', file=fd)
 
 class SubscriptNode(Node):
 
@@ -856,12 +952,22 @@ class SubscriptNode(Node):
     def merge(self, q):
         self.array.merge(q)
         (isSlice, lower, upper, step) = self.slice
-        if lower != None:
+        if (lower != None):
             lower.merge(q)
-        if upper != None:
+        if (upper != None):
             upper.merge(q)
-        if step != None:
+        if (step != None):
             step.merge(q)
+
+    def contains(self, s):
+        if self.array.contains(s):
+            return True
+        (isSlice, lower, upper, step) = self.slice
+        if lower != None and lower.contains(s):
+            return True
+        if upper != None and upper.contains(s):
+            return True
+        return step != None and step.contains(s)
 
     def toBlock(self, frame, block):
         return block.newSubscriptBlock(frame, self)
@@ -869,17 +975,17 @@ class SubscriptNode(Node):
     def print(self, fd, level):
         self.array.print(fd, 0)
         (isSlice, lower, upper, step) = self.slice
-        print("[", end="", file=fd)
+        print('[', end='', file=fd)
         if (lower != None):
             lower.print(fd, 0)
         if isSlice:
-            print(":", end="", file=fd)
+            print(':', end='', file=fd)
             if (upper != None):
                 upper.print(fd, 0)
             if (step != None):
-                print(":", end="", file=fd)
+                print(':', end='', file=fd)
                 step.print(fd, 0)
-        print("]", end="", file=fd)
+        print(']', end='', file=fd)
 
 class CallNode(Node):
 
@@ -896,30 +1002,41 @@ class CallNode(Node):
         for (arg, val) in self.keywords:
             val.merge(q)
 
+    def contains(self, s):
+        if self.func.contains(s):
+            return True
+        for arg in self.args:
+            if arg.contains(s):
+                return True
+        for (arg, val) in self.keywords:
+            if ((arg == s) or val.contains(s)):
+                return True
+        return False
+
     def toBlock(self, frame, block):
         return block.newCallBlock(frame, self)
 
     def print(self, fd, level):
         self.func.print(fd, 0)
-        print("(", end="", file=fd)
+        print('(', end='', file=fd)
         first = True
         for arg in self.args:
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             arg.print(fd, 0)
         for (arg, val) in self.keywords:
             if first:
                 first = False
             else:
-                print(", ", end="", file=fd)
-            if arg == None:
-                print("**", end="", file=fd)
+                print(', ', end='', file=fd)
+            if (arg == None):
+                print('**', end='', file=fd)
             else:
-                print("{}=".format(arg), end="", file=fd)
+                print('{}='.format(arg), end='', file=fd)
             val.print(fd, 0)
-        print(")", end="", file=fd)
+        print(')', end='', file=fd)
 
 class ListNode(Node):
 
@@ -931,16 +1048,22 @@ class ListNode(Node):
         for e in self.entries:
             e.merge(q)
 
+    def contains(self, s):
+        for e in self.entries:
+            if e.contains(s):
+                return True
+        return False
+
     def toBlock(self, frame, block):
         return block.newListBlock(frame, self)
 
     def print(self, fd, level):
-        print("[", end="", file=fd)
+        print('[', end='', file=fd)
         for i in range(len(self.entries)):
             if (i != 0):
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             self.entries[i].print(fd, 0)
-        print("]", end="", file=fd)
+        print(']', end='', file=fd)
 
 class SetNode(Node):
 
@@ -952,18 +1075,25 @@ class SetNode(Node):
         for e in self.entries:
             e.merge(q)
 
+    def contains(self, s):
+        for e in self.entries:
+            if e.contains(s):
+                return True
+        return False
+
     def toBlock(self, frame, block):
         return block.newSetBlock(frame, self)
 
     def print(self, fd, level):
-        print("{", end="", file=fd)
+        print('{', end='', file=fd)
         for i in range(len(self.entries)):
             if (i != 0):
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             self.entries[i].print(fd, 0)
-        print("}", end="", file=fd)
+        print('}', end='', file=fd)
 
 class GenexpNode(Node):
+
     def __init__(self, elt, generators):
         super().__init__()
         self.elt = elt
@@ -973,33 +1103,37 @@ class GenexpNode(Node):
         self.elt.merge(q)
         for (target, iter, ifs, is_async) in self.generators:
             (kw, line, col) = q.get()
-            assert kw == "for"
+            assert (kw == 'for')
             target.merge(q)
             (kw2, line2, col2) = q.get()
-            assert kw2 == "in"
+            assert (kw2 == 'in')
             iter.merge(q)
             for i in ifs:
                 (kw3, line3, col3) = q.get()
-                assert kw2 == "if"
+                assert (kw3 == 'if')
                 i.merge(q)
+
+    def contains(self, s):
+        return False
 
     def toBlock(self, frame, block):
         return block.newGenexpBlock(frame, self)
 
     def print(self, fd, level):
-        print("(", end="", file=fd)
+        print('(', end='', file=fd)
         self.elt.print(fd, 0)
         for (target, iter, ifs, is_async) in self.generators:
-            print(" for ", end="", file=fd)
+            print(' for ', end='', file=fd)
             target.print(fd, 0)
-            print(" in ", end="", file=fd)
+            print(' in ', end='', file=fd)
             iter.print(fd, 0)
             for i in ifs:
-                print(" if ", end="", file=fd)
+                print(' if ', end='', file=fd)
                 i.print(fd, 0)
-        print(")", end="", file=fd)
+        print(')', end='', file=fd)
 
 class ListcompNode(Node):
+
     def __init__(self, elt, generators):
         super().__init__()
         self.elt = elt
@@ -1009,33 +1143,37 @@ class ListcompNode(Node):
         self.elt.merge(q)
         for (target, iter, ifs, is_async) in self.generators:
             (kw, line, col) = q.get()
-            assert kw == "for"
+            assert (kw == 'for')
             target.merge(q)
             (kw2, line2, col2) = q.get()
-            assert kw2 == "in"
+            assert (kw2 == 'in')
             iter.merge(q)
             for i in ifs:
                 (kw3, line3, col3) = q.get()
-                assert kw2 == "if"
+                assert (kw3 == 'if')
                 i.merge(q)
+
+    def contains(self, s):
+        return False
 
     def toBlock(self, frame, block):
         return block.newListcompBlock(frame, self)
 
     def print(self, fd, level):
-        print("[", end="", file=fd)
+        print('[', end='', file=fd)
         self.elt.print(fd, 0)
         for (target, iter, ifs, is_async) in self.generators:
-            print(" for ", end="", file=fd)
+            print(' for ', end='', file=fd)
             target.print(fd, 0)
-            print(" in ", end="", file=fd)
+            print(' in ', end='', file=fd)
             iter.print(fd, 0)
             for i in ifs:
-                print(" if ", end="", file=fd)
+                print(' if ', end='', file=fd)
                 i.print(fd, 0)
-        print("]", end="", file=fd)
+        print(']', end='', file=fd)
 
 class SetcompNode(Node):
+
     def __init__(self, elt, generators):
         super().__init__()
         self.elt = elt
@@ -1045,33 +1183,37 @@ class SetcompNode(Node):
         self.elt.merge(q)
         for (target, iter, ifs, is_async) in self.generators:
             (kw, line, col) = q.get()
-            assert kw == "for"
+            assert (kw == 'for')
             target.merge(q)
             (kw2, line2, col2) = q.get()
-            assert kw2 == "in"
+            assert (kw2 == 'in')
             iter.merge(q)
             for i in ifs:
                 (kw3, line3, col3) = q.get()
-                assert kw2 == "if"
+                assert (kw3 == 'if')
                 i.merge(q)
+
+    def contains(self, s):
+        return False
 
     def toBlock(self, frame, block):
         return block.newSetcompBlock(frame, self)
 
     def print(self, fd, level):
-        print("{", end="", file=fd)
+        print('{', end='', file=fd)
         self.elt.print(fd, 0)
         for (target, iter, ifs, is_async) in self.generators:
-            print(" for ", end="", file=fd)
+            print(' for ', end='', file=fd)
             target.print(fd, 0)
-            print(" in ", end="", file=fd)
+            print(' in ', end='', file=fd)
             iter.print(fd, 0)
             for i in ifs:
-                print(" if ", end="", file=fd)
+                print(' if ', end='', file=fd)
                 i.print(fd, 0)
-        print("}", end="", file=fd)
+        print('}', end='', file=fd)
 
 class DictcompNode(Node):
+
     def __init__(self, key, value, generators):
         super().__init__()
         self.key = key
@@ -1083,33 +1225,36 @@ class DictcompNode(Node):
         self.value.merge(q)
         for (target, iter, ifs, is_async) in self.generators:
             (kw, line, col) = q.get()
-            assert kw == "for"
+            assert (kw == 'for')
             target.merge(q)
             (kw2, line2, col2) = q.get()
-            assert kw2 == "in"
+            assert (kw2 == 'in')
             iter.merge(q)
             for i in ifs:
                 (kw3, line3, col3) = q.get()
-                assert kw2 == "if"
+                assert (kw3 == 'if')
                 i.merge(q)
+
+    def contains(self, s):
+        return False
 
     def toBlock(self, frame, block):
         return block.newDictcompBlock(frame, self)
 
     def print(self, fd, level):
-        print("{", end="", file=fd)
+        print('{', end='', file=fd)
         self.key.print(fd, 0)
-        print(" : ", end="", file=fd)
+        print(' : ', end='', file=fd)
         self.value.print(fd, 0)
         for (target, iter, ifs, is_async) in self.generators:
-            print(" for ", end="", file=fd)
+            print(' for ', end='', file=fd)
             target.print(fd, 0)
-            print(" in ", end="", file=fd)
+            print(' in ', end='', file=fd)
             iter.print(fd, 0)
             for i in ifs:
-                print(" if ", end="", file=fd)
+                print(' if ', end='', file=fd)
                 i.print(fd, 0)
-        print("}", end="", file=fd)
+        print('}', end='', file=fd)
 
 class DictNode(Node):
 
@@ -1123,18 +1268,27 @@ class DictNode(Node):
             self.keys[i].merge(q)
             self.values[i].merge(q)
 
+    def contains(self, s):
+        for e in self.keys:
+            if e.contains(s):
+                return True
+        for e in self.values:
+            if e.contains(s):
+                return True
+        return False
+
     def toBlock(self, frame, block):
         return block.newDictBlock(frame, self)
 
     def print(self, fd, level):
-        print("{", end="", file=fd)
+        print('{', end='', file=fd)
         for i in range(len(self.keys)):
             if (i != 0):
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             self.keys[i].print(fd, 0)
-            print(": ", end="", file=fd)
+            print(': ', end='', file=fd)
             self.values[i].print(fd, 0)
-        print("}", end="", file=fd)
+        print('}', end='', file=fd)
 
 class TupleNode(Node):
 
@@ -1146,19 +1300,25 @@ class TupleNode(Node):
         for e in self.entries:
             e.merge(q)
 
+    def contains(self, s):
+        for e in self.entries:
+            if e.contains(s):
+                return True
+        return False
+
     def toBlock(self, frame, block):
         return block.newTupleBlock(frame, self)
 
     def print(self, fd, level):
-        print("(", end="", file=fd)
+        print('(', end='', file=fd)
         n = len(self.entries)
         for i in range(n):
             if (i != 0):
-                print(", ", end="", file=fd)
+                print(', ', end='', file=fd)
             self.entries[i].print(fd, 0)
         if (n == 1):
-            print(",", end="", file=fd)
-        print(")", end="", file=fd)
+            print(',', end='', file=fd)
+        print(')', end='', file=fd)
 
 class AttrNode(Node):
 
@@ -1171,12 +1331,15 @@ class AttrNode(Node):
         self.array.merge(q)
         self.ref.merge(q)
 
+    def contains(self, s):
+        return self.ref == what or self.array.contains(s)
+
     def toBlock(self, frame, block):
         return block.newAttrBlock(frame, self)
 
     def print(self, fd, level):
         self.array.print(fd, 0)
-        print(".", end="", file=fd)
+        print('.', end='', file=fd)
         self.ref.print(fd, 0)
 
 class EvalNode(Node):
@@ -1188,13 +1351,16 @@ class EvalNode(Node):
     def merge(self, q):
         self.what.merge(q)
 
+    def contains(self, s):
+        return self.what.contains(s)
+
     def toBlock(self, frame, block):
         return block.newEvalBlock(frame, self)
 
     def print(self, fd, level):
         self.printIndent(fd, level)
         self.what.print(fd, 0)
-        print("", file=fd)
+        print('', file=fd)
 
 class NumberNode(Node):
 
@@ -1205,11 +1371,14 @@ class NumberNode(Node):
     def merge(self, q):
         pass
 
+    def contains(self, s):
+        return s == what
+
     def toBlock(self, frame, block):
         return block.newNumberBlock(frame, self)
 
     def print(self, fd, level):
-        print(self.what, end="", file=fd)
+        print(self.what, end='', file=fd)
 
 class ConstantNode(Node):
 
@@ -1220,14 +1389,17 @@ class ConstantNode(Node):
     def merge(self, q):
         (kw, line, col) = q.get()
         # print("const", kw, self.what, line)
-        assert kw == self.what
+        assert (kw == self.what)
         self.lineno = line
+
+    def contains(self, s):
+        return s == what
 
     def toBlock(self, frame, block):
         return block.newConstantBlock(frame, self)
 
     def print(self, fd, level):
-        print(self.what, end="", file=fd)
+        print(self.what, end='', file=fd)
 
 class NameNode(Node):
 
@@ -1238,11 +1410,14 @@ class NameNode(Node):
     def merge(self, q):
         pass
 
+    def contains(self, s):
+        return (s == what)
+
     def toBlock(self, frame, block):
         return block.newNameBlock(frame, self)
 
     def print(self, fd, level):
-        print(self.what, end="", file=fd)
+        print(self.what, end='', file=fd)
 
 class StringNode(Node):
 
@@ -1253,24 +1428,27 @@ class StringNode(Node):
     def merge(self, q):
         pass
 
+    def contains(self, s):
+        return False
+
     def toBlock(self, frame, block):
         return block.newStringBlock(frame, self)
 
     # like repr, but uses triple quotes when possible
     def mrepr(self, s):
-        if len(s) < 4 or s.count("\n") == 0:
+        if ((len(s) < 4) or (s.count('\n') == 0)):
             return repr(s)
         fd = io.StringIO(s)
-        lines = s.split("\n")
-        print('"""', end="", file=fd)
-        for line in lines[:-1]:
-            print(repr(line)[1:-1], file=fd)
-        print(repr(lines[-1])[1:-1], end="", file=fd)
-        print('"""', end="", file=fd)
+        lines = s.split('\n')
+        print('"""', end='', file=fd)
+        for line in lines[:(- 1)]:
+            print(repr(line)[1:(- 1)], file=fd)
+        print(repr(lines[(- 1)])[1:(- 1)], end='', file=fd)
+        print('"""', end='', file=fd)
         return fd.getvalue()
 
     def print(self, fd, level):
-        print(self.mrepr(self.what), end="", file=fd)
+        print(self.mrepr(self.what), end='', file=fd)
 
 class BytesNode(Node):
 
@@ -1281,11 +1459,14 @@ class BytesNode(Node):
     def merge(self, q):
         pass
 
+    def contains(self, s):
+        return False
+
     def toBlock(self, frame, block):
         return block.newBytesBlock(frame, self)
 
     def print(self, fd, level):
-        print(self.what, end="", file=fd)
+        print(self.what, end='', file=fd)
 
 class ExpressionNode(Node):
 
@@ -1294,19 +1475,23 @@ class ExpressionNode(Node):
         self.what = what
 
     def merge(self, q):
-        if self.what != None:
+        if (self.what != None):
             self.what.merge(q)
+
+    def contains(self, s):
+        return False if self.what == None else self.what.contains(s)
 
     def toBlock(self, frame, block):
         return block.newExpressionBlock(frame, self)
 
     def print(self, fd, level):
-        if self.what == None:
-            print("__CAPE_UNINITIALIZED__", end="", file=fd)
+        if (self.what == None):
+            print('__CAPE_UNINITIALIZED__', end='', file=fd)
         else:
             self.what.print(fd, 0)
 
 class SeqNode(Node):
+
     def __init__(self, rows):
         super().__init__()
         self.rows = rows
@@ -1315,14 +1500,20 @@ class SeqNode(Node):
         for r in self.rows:
             r.merge(q)
 
+    def contains(self, s):
+        for r in self.rows:
+            if r.contains(s):
+                return True
+        return False
+
     def toBlock(self, frame, block):
         return block.newSeqBlock(frame, self)
 
     def findLine(self, lineno):
         for i in range(len(self.rows)):
             assert isinstance(self.rows[i], StatementNode)
-            if not isinstance(self.rows[i].what, CompoundNode) and self.rows[i].lineno >= lineno:
-                return ("row", self, i)
+            if ((not isinstance(self.rows[i].what, CompoundNode)) and (self.rows[i].lineno >= lineno)):
+                return ('row', self, i)
             r = self.rows[i].findLine(lineno)
             if (r != None):
                 return r
