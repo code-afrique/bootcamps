@@ -141,9 +141,8 @@ class Block(tk.Frame):
     def needsSaving(self):
         # This assertion helps find places where we accidentally invoke
         # needsSaving() when we don't need to
-        assert not self.shared.trap
+        assert (not self.shared.trap)
         self.shared.saved = False
-
         # save for undo purposes
         self.shared.save()
 
@@ -390,6 +389,298 @@ class HeaderBlock(Block):
     def __init__(self, parent, shared):
         super().__init__(parent, shared)
 
+# A clause block consists of a header and a body
+class ClauseBlock(Block):
+
+    def __init__(self, parent, shared, node, title):
+        super().__init__(parent, shared)
+        self.commentR = tk.StringVar()
+        self.commentU = tk.StringVar()
+        self.commentButton = tk.Frame(self)
+        tk.Button(self.commentButton, textvariable=self.commentU, fg='brown', command=self.listcmd, font='-slant italic', justify=tk.LEFT).grid()
+        if (node != None):
+            if ((node.commentU != None) and (node.commentU != '')):
+                self.setCommentU(node.commentU[:(- 1)])
+            if ((node.commentR != None) and (node.commentR != '')):
+                # self.commentR.set(("# " + node.commentR))
+                self.commentR.set(self.commentize(node.commentR))
+        self.body_node = (SeqNode([StatementNode(PassNode())]) if ((node == None) or (node.body == None)) else node.body)
+        self.title = title
+        # decorators are in rows 1 .. 1 + #decorators
+        self.decorator_list = ([] if (node == None) else node.decorator_list)
+        r = 1
+        for d in self.decorator_list:
+            frame = FrameBlock(self, shared)
+            tk.Button(frame, text='@', command=self.cb).grid(row=0, column=0, sticky=tk.W)
+            d.toBlock(frame, self).grid(row=0, column=1, sticky=tk.W)
+            frame.grid(row=r, column=0, sticky=tk.W)
+            r += 1
+        self.hdr = None
+        self.newHeader()
+        self.body = None
+        self.minimized = True
+        self.row = None
+        if ((node == None) or (not node.minimized)):
+            self.minmax()
+
+    def newHeader(self):
+        if (self.hdr != None):
+            self.hdr.destroy()
+        self.hdr = HeaderBlock(self, self.shared)
+        self.colon = tk.Button(self.hdr, highlightbackground='yellow', text='+', command=self.minmax)
+        self.colon.grid(row=1, column=1000, sticky=tk.W)
+        tk.Button(self.hdr, textvariable=self.commentR, fg='brown', command=self.listcmd, font='-slant italic').grid(row=1, column=1001, sticky=(tk.N + tk.W))
+        self.hdr.grid(row=(1 + len(self.decorator_list)), column=0, sticky=tk.W)
+
+    def setComment(self, commentR, commentU):
+        if (commentR == ''):
+            self.commentR.set('')
+        else:
+            self.commentR.set(self.commentize(commentR))
+        self.setCommentU(commentU)
+        self.needsSaving()
+
+    def setCommentU(self, comment):
+        comment = ('' if (comment == None) else comment)
+        if (comment == ''):
+            self.commentU.set('')
+            self.commentButton.grid_forget()
+        else:
+            self.commentU.set(self.commentize(comment))
+            self.commentButton.grid(row=0, sticky=tk.W)
+
+    def listcmd(self):
+        self.setBlock(self)
+
+    def genForm(self):
+        self.setForm(ClauseForm(self.shared.confarea, self))
+
+    def goRight(self):
+        return (self if (self.body == None) else self.body)
+
+    def goUp(self):
+        if ((self.row != None) and (self.row > 0)):
+            return self.parent.clauses[(self.row - 1)]
+        else:
+            return self
+
+    def goDown(self):
+        if ((self.row != None) and (self.row < (len(self.parent.clauses) - 1))):
+            return self.parent.clauses[(self.row + 1)]
+        else:
+            return self
+
+    def minmax(self):
+        if self.minimized:
+            if (self.body == None):
+                self.body = self.body_node.toBlock(self, self)
+            self.body.grid(row=(2 + len(self.decorator_list)), column=0, sticky=tk.W)
+            self.update()
+            self.minimized = False
+            self.colon.configure(highlightbackground='white', text=':')
+        else:
+            self.body.grid_forget()
+            self.minimized = True
+            self.colon.configure(highlightbackground='yellow', text='+')
+        self.scrollUpdate()
+
+    def getBody(self):
+        if self.minimized:
+            return self.body_node
+        else:
+            return self.body.toNode()
+
+    def toNode(self):
+        r = self.toNodeRaw()
+        cu = self.uncommentize(self.commentU.get())
+        r.commentU = (None if (cu == '') else (cu + '\n'))
+        if self.shared.keeping:
+            r.index = self.shared.keep(self)
+            r.commentR = '{}'.format(r.index)
+        else:
+            c = self.commentR.get()
+            if (c != ''):
+                assert (c[0:2] == '# ')
+                r.commentR = self.uncommentize(c)
+            else:
+                r.commentR = ''
+        return r
+
+# A compound block consists of a list of clause blocks.
+class CompoundBlock(Block):
+
+    def __init__(self, parent, shared):
+        super().__init__(parent, shared)
+        self.clauses = []
+
+    def gridUpdate(self):
+        for row in range(len(self.clauses)):
+            self.clauses[row].row = row
+
+    def goRight(self):
+        return self.clauses[0]
+
+# A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
+# 'finally' clauses.
+class BasicClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, '{} clause'.format(node.type))
+        self.type = node.type
+        tk.Button(self.hdr, text=node.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
+        self.hdr.grid()
+
+    def genForm(self):
+        self.setForm(BasicClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNodeRaw(self):
+        return BasicClauseNode(self.type, self.getBody(), self.minimized)
+
+# An 'if' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
+# clauses.
+class CondClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, '{} clause'.format(node.type))
+        if (node.cond == None):
+            self.cond = ExpressionBlock(self.hdr, shared, None)
+        else:
+            self.cond = node.cond.toBlock(self.hdr, self)
+        self.type = node.type
+        self.cond.grid(row=1, column=1)
+        tk.Button(self.hdr, text=self.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
+        self.cond.grid(row=1, column=1)
+        self.hdr.grid(row=1, sticky=tk.W)
+
+    def genForm(self):
+        self.setForm(CondClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    # def goRight(self):
+    #     return self.cond
+    def toNodeRaw(self):
+        return CondClauseNode(self.type, self.cond.toNode(), self.getBody(), self.minimized)
+
+class AttrBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.isWithinStore = False
+        if (node == None):
+            self.array = ExpressionBlock(self, shared, None)
+        else:
+            self.array = node.array.toBlock(self, self)
+        self.array.grid(row=0, column=0)
+        tk.Button(self, text='.', command=self.cb).grid(row=0, column=1)
+        if (node == None):
+            self.ref = NameBlock(self, shared, NameNode(''))
+        else:
+            self.ref = node.ref.toBlock(self, self)
+        self.ref.grid(row=0, column=2)
+
+    def cb(self):
+        self.setBlock(self)
+
+    def genForm(self):
+        self.setForm(AttrForm(self.shared.confarea, self))
+
+    def toNode(self):
+        return AttrNode(self.array.toNode(), self.ref.toNode())
+
+class BinaryopBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.left = ExpressionBlock(self, shared, node.left)
+        self.middle = tk.Button(self, text=node.op, fg='purple', width=0, command=self.cb)
+        self.right = ExpressionBlock(self, shared, node.right)
+        self.op = node.op
+        self.left.grid(row=0, column=0)
+        self.middle.grid(row=0, column=1)
+        self.right.grid(row=0, column=2)
+
+    def genForm(self):
+        self.setForm(BinaryopForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return BinaryopNode(self.left.toNode(), self.right.toNode(), self.op)
+
+class BytesBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.bytes = tk.StringVar()
+        tk.Button(self, text="b'", command=self.cb).grid(row=0, column=0)
+        self.btn = tk.Button(self, textvariable=self.bytes, fg='green', width=0, command=self.cb)
+        self.bytes.set(node.what.decode())
+        self.btn.grid(row=0, column=1)
+        tk.Button(self, text="'", command=self.cb).grid(row=0, column=2)
+
+    def genForm(self):
+        f = BytesForm(self.shared.confarea, self)
+        self.setForm(f)
+
+    # f.entry.focus()
+    def cb(self):
+        self.setBlock(self)
+
+    def setContents(self, s):
+        self.bytes.set(s)
+        self.btn.config(width=0)
+        self.scrollUpdate()
+        self.needsSaving()
+
+    def toNode(self):
+        return BytesNode(self.bytes.get().encode())
+
+class ConstantBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.value = tk.StringVar()
+        self.value.set(node.what)
+        self.btn = tk.Button(self, textvariable=self.value, fg='purple', width=0, command=self.cb)
+        self.btn.grid(row=0, column=0)
+
+    def genForm(self):
+        self.setForm(ConstantForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ConstantNode(self.value.get())
+
+class ListopBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.values = [ExpressionBlock(self, shared, v) for v in node.values]
+        self.ops = node.ops
+        n = len(node.ops)
+        for i in range(n):
+            self.values[i].grid(row=0, column=(2 * i))
+            op = tk.Button(self, text=node.ops[i], fg='purple', width=0, command=self.cb)
+            op.grid(row=0, column=((2 * i) + 1))
+        self.values[n].grid(row=0, column=(2 * n))
+
+    def genForm(self):
+        self.setForm(ListopForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ListopNode([v.toNode() for v in self.values], self.ops)
+
 class NameBlock(Block):
 
     def __init__(self, parent, shared, node):
@@ -456,24 +747,6 @@ class NumberBlock(Block):
                 self.shared.cvtError = True
         return NumberNode(v)
 
-class ConstantBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.value = tk.StringVar()
-        self.value.set(node.what)
-        self.btn = tk.Button(self, textvariable=self.value, fg='purple', width=0, command=self.cb)
-        self.btn.grid(row=0, column=0)
-
-    def genForm(self):
-        self.setForm(ConstantForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return ConstantNode(self.value.get())
-
 class StringBlock(Block):
 
     def __init__(self, parent, shared, node):
@@ -502,34 +775,6 @@ class StringBlock(Block):
 
     def toNode(self):
         return StringNode(self.string.get())
-
-class BytesBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.bytes = tk.StringVar()
-        tk.Button(self, text="b'", command=self.cb).grid(row=0, column=0)
-        self.btn = tk.Button(self, textvariable=self.bytes, fg='green', width=0, command=self.cb)
-        self.bytes.set(node.what.decode())
-        self.btn.grid(row=0, column=1)
-        tk.Button(self, text="'", command=self.cb).grid(row=0, column=2)
-
-    def genForm(self):
-        f = BytesForm(self.shared.confarea, self)
-        self.setForm(f)
-
-    # f.entry.focus()
-    def cb(self):
-        self.setBlock(self)
-
-    def setContents(self, s):
-        self.bytes.set(s)
-        self.btn.config(width=0)
-        self.scrollUpdate()
-        self.needsSaving()
-
-    def toNode(self):
-        return BytesNode(self.bytes.get().encode())
 
 class SubscriptBlock(Block):
 
@@ -602,32 +847,6 @@ class SubscriptBlock(Block):
     def toNode(self):
         return SubscriptNode(self.array.toNode(), (self.isSlice, (None if (self.lower == None) else self.lower.toNode()), (None if (self.upper == None) else self.upper.toNode()), (None if (self.step == None) else self.step.toNode())))
 
-class AttrBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.isWithinStore = False
-        if (node == None):
-            self.array = ExpressionBlock(self, shared, None)
-        else:
-            self.array = node.array.toBlock(self, self)
-        self.array.grid(row=0, column=0)
-        tk.Button(self, text='.', command=self.cb).grid(row=0, column=1)
-        if (node == None):
-            self.ref = NameBlock(self, shared, NameNode(''))
-        else:
-            self.ref = node.ref.toBlock(self, self)
-        self.ref.grid(row=0, column=2)
-
-    def cb(self):
-        self.setBlock(self)
-
-    def genForm(self):
-        self.setForm(AttrForm(self.shared.confarea, self))
-
-    def toNode(self):
-        return AttrNode(self.array.toNode(), self.ref.toNode())
-
 class UnaryopBlock(Block):
 
     def __init__(self, parent, shared, node):
@@ -646,228 +865,6 @@ class UnaryopBlock(Block):
 
     def toNode(self):
         return UnaryopNode(self.right.toNode(), self.op)
-
-class BinaryopBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.left = ExpressionBlock(self, shared, node.left)
-        self.middle = tk.Button(self, text=node.op, fg='purple', width=0, command=self.cb)
-        self.right = ExpressionBlock(self, shared, node.right)
-        self.op = node.op
-        self.left.grid(row=0, column=0)
-        self.middle.grid(row=0, column=1)
-        self.right.grid(row=0, column=2)
-
-    def genForm(self):
-        self.setForm(BinaryopForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return BinaryopNode(self.left.toNode(), self.right.toNode(), self.op)
-
-class ListopBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.values = [ExpressionBlock(self, shared, v) for v in node.values]
-        self.ops = node.ops
-        n = len(node.ops)
-        for i in range(n):
-            self.values[i].grid(row=0, column=(2 * i))
-            op = tk.Button(self, text=node.ops[i], fg='purple', width=0, command=self.cb)
-            op.grid(row=0, column=((2 * i) + 1))
-        self.values[n].grid(row=0, column=(2 * n))
-
-    def genForm(self):
-        self.setForm(ListopForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return ListopNode([v.toNode() for v in self.values], self.ops)
-
-# A clause block consists of a header and a body
-class ClauseBlock(Block):
-
-    def __init__(self, parent, shared, node, title):
-        super().__init__(parent, shared)
-        self.commentR = tk.StringVar()
-        self.commentU = tk.StringVar()
-        self.commentButton = tk.Frame(self, bd=2, highlightbackground='brown', highlightcolor='brown', highlightthickness=2)
-        tk.Button(self.commentButton, textvariable=self.commentU, fg='brown', command=self.listcmd, font='-slant italic', justify=tk.LEFT).grid()
-        if (node != None):
-            if node.commentU != None and node.commentU != "":
-                self.setCommentU(node.commentU[:(- 1)])
-            if (node.commentR != None and node.commentR != ""):
-                # self.commentR.set(("# " + node.commentR))
-                self.commentR.set(self.commentize(node.commentR))
-        self.body_node = (SeqNode([StatementNode(PassNode())]) if ((node == None) or (node.body == None)) else node.body)
-        self.title = title
-
-        # decorators are in rows 1 .. 1 + #decorators
-        self.decorator_list = [] if node == None else node.decorator_list
-        r = 1
-        for d in self.decorator_list:
-            frame = FrameBlock(self, shared)
-            tk.Button(frame, text='@', command=self.cb).grid(row=0, column=0, sticky=tk.W)
-            d.toBlock(frame, self).grid(row=0, column=1, sticky=tk.W)
-            frame.grid(row=r, column=0, sticky=tk.W)
-            r += 1
-
-        self.hdr = None
-        self.newHeader()
-        self.body = None
-        self.minimized = True
-        self.row = None
-        if node == None or not node.minimized:
-            self.minmax()
-
-    def newHeader(self):
-        if (self.hdr != None):
-            self.hdr.destroy()
-        self.hdr = HeaderBlock(self, self.shared)
-        self.colon = tk.Button(self.hdr, highlightbackground='yellow', text='+', command=self.minmax)
-        self.colon.grid(row=1, column=1000, sticky=tk.W)
-        tk.Button(self.hdr, textvariable=self.commentR, fg='brown', command=self.listcmd, font='-slant italic').grid(row=1, column=1001, sticky=(tk.N + tk.W))
-        self.hdr.grid(row=1+len(self.decorator_list), column=0, sticky=tk.W)
-
-    def setComment(self, commentR, commentU):
-        if (commentR == ''):
-            self.commentR.set('')
-        else:
-            self.commentR.set(self.commentize(commentR))
-        self.setCommentU(commentU)
-        self.needsSaving()
-
-    def setCommentU(self, comment):
-        comment = ('' if (comment == None) else comment)
-        if (comment == ''):
-            self.commentU.set('')
-            self.commentButton.grid_forget()
-        else:
-            self.commentU.set(self.commentize(comment))
-            self.commentButton.grid(row=0, sticky=tk.W)
-
-    def listcmd(self):
-        self.setBlock(self)
-
-    def genForm(self):
-        self.setForm(ClauseForm(self.shared.confarea, self))
-
-    def goRight(self):
-        return (self if (self.body == None) else self.body)
-
-    def goUp(self):
-        if ((self.row != None) and (self.row > 0)):
-            return self.parent.clauses[(self.row - 1)]
-        else:
-            return self
-
-    def goDown(self):
-        if ((self.row != None) and (self.row < (len(self.parent.clauses) - 1))):
-            return self.parent.clauses[(self.row + 1)]
-        else:
-            return self
-
-    def minmax(self):
-        if self.minimized:
-            if (self.body == None):
-                self.body = self.body_node.toBlock(self, self)
-            self.body.grid(row=2+len(self.decorator_list), column=0, sticky=tk.W)
-            self.update()
-            self.minimized = False
-            self.colon.configure(highlightbackground='white', text=':')
-        else:
-            self.body.grid_forget()
-            self.minimized = True
-            self.colon.configure(highlightbackground='yellow', text='+')
-        self.scrollUpdate()
-
-    def getBody(self):
-        if self.minimized:
-            return self.body_node
-        else:
-            return self.body.toNode()
-
-    def toNode(self):
-        r = self.toNodeRaw()
-        cu = self.uncommentize(self.commentU.get())
-        r.commentU = (None if (cu == '') else (cu + '\n'))
-        if self.shared.keeping:
-            r.index = self.shared.keep(self)
-            r.commentR = '{}'.format(r.index)
-        else:
-            c = self.commentR.get()
-            if (c != ''):
-                assert (c[0:2] == '# ')
-                r.commentR = self.uncommentize(c)
-            else:
-                r.commentR = ''
-        return r
-
-# A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
-# 'finally' clauses.
-class BasicClauseBlock(ClauseBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, '{} clause'.format(node.type))
-        self.type = node.type
-        tk.Button(self.hdr, text=node.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
-        self.hdr.grid()
-
-    def genForm(self):
-        self.setForm(BasicClauseForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNodeRaw(self):
-        return BasicClauseNode(self.type, self.getBody(), self.minimized)
-
-# An 'if' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
-# clauses.
-class CondClauseBlock(ClauseBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, '{} clause'.format(node.type))
-        if (node.cond == None):
-            self.cond = ExpressionBlock(self.hdr, shared, None)
-        else:
-            self.cond = node.cond.toBlock(self.hdr, self)
-        self.type = node.type
-        self.cond.grid(row=1, column=1)
-        tk.Button(self.hdr, text=self.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
-        self.cond.grid(row=1, column=1)
-        self.hdr.grid(row=1, sticky=tk.W)
-
-    def genForm(self):
-        self.setForm(CondClauseForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    # def goRight(self):
-    #     return self.cond
-    def toNodeRaw(self):
-        return CondClauseNode(self.type, self.cond.toNode(), self.getBody(), self.minimized)
-
-# A compound block consists of a list of clause blocks.
-class CompoundBlock(Block):
-
-    def __init__(self, parent, shared):
-        super().__init__(parent, shared)
-        self.clauses = []
-
-    def gridUpdate(self):
-        for row in range(len(self.clauses)):
-            self.clauses[row].row = row
-
-    def goRight(self):
-        return self.clauses[0]
 
 class ModuleBlock(CompoundBlock):
 
@@ -1794,12 +1791,10 @@ class LambdaBlock(Block):
         # fake...
         self.node = node
         tk.Button(self, text='lambda', fg='red', command=self.cb).grid(row=0, column=0)
-
         self.args = node.args
         self.defaults = node.defaults
         self.vararg = node.vararg
         self.kwarg = node.kwarg
-
         column = 1
         first = True
         nargs = len(self.args)
@@ -1837,7 +1832,6 @@ class LambdaBlock(Block):
                 column += 1
             tk.Button(self, text=('**' + self.kwarg), fg='blue', command=self.cb).grid(row=0, column=column)
             column += 1
-
         tk.Button(self, text=':', fg='red', command=self.cb).grid(row=0, column=column)
         column += 1
         node.body.toBlock(self, self).grid(row=0, column=column)
@@ -2031,15 +2025,15 @@ class StatementBlock(Block):
         menu = tk.Button(self, text='-', width=3, command=self.listcmd)
         menu.grid(row=0, column=0, sticky=tk.W)
         self.frame = FrameBlock(self, shared)
-        self.commentButton = tk.Frame(self.frame, bd=2, highlightbackground='brown', highlightcolor='brown', highlightthickness=2)
+        self.commentButton = tk.Frame(self.frame)
         tk.Button(self.commentButton, textvariable=self.commentU, fg='brown', command=self.listcmd, font='-slant italic', justify=tk.LEFT).grid()
         if (node == None):
             self.what = PassBlock(self.frame, self.shared, None)
         else:
-            if node.commentU != None and node.commentU != "":
+            if ((node.commentU != None) and (node.commentU != '')):
                 self.setCommentU(node.commentU[:(- 1)])
             self.what = node.what.toBlock(self.frame, self)
-            if (node.commentR != None and node.commentR != ""):
+            if ((node.commentR != None) and (node.commentR != '')):
                 # self.commentR.set(("# " + node.commentR))
                 self.commentR.set(self.commentize(node.commentR))
         self.what.grid(row=1, column=0, sticky=tk.W)
