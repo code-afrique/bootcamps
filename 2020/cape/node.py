@@ -114,6 +114,8 @@ class DefClauseNode(ClauseNode):
         self.decorator_list = decorator_list
 
     def merge(self, q):
+        for d in self.decorator_list:
+            d.merge(q)
         (kw, line, col) = q.get()
         assert kw == "def"
         self.lineno = line
@@ -206,6 +208,8 @@ class ClassClauseNode(ClauseNode):
         self.decorator_list = decorator_list
 
     def merge(self, q):
+        for d in self.decorator_list:
+            d.merge(q)
         (kw, line, col) = q.get()
         assert kw == "class"
         self.lineno = line
