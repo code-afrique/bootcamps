@@ -701,13 +701,14 @@ class ClauseBlock(Block):
         self.body_node = (SeqNode([StatementNode(PassNode())]) if ((node == None) or (node.body == None)) else node.body)
         self.title = title
 
+		# decorators are in rows 1 .. 1 + #decorators
         self.decorator_list = [] if node == None else node.decorator_list
         r = 1
         for d in self.decorator_list:
             frame = FrameBlock(self, shared)
             tk.Button(frame, text='@', command=self.cb).grid(row=0, column=0, sticky=tk.W)
             d.toBlock(frame, self).grid(row=0, column=1, sticky=tk.W)
-            frame.grid(row=0, column=0, sticky=tk.W)
+            frame.grid(row=r, column=0, sticky=tk.W)
             r += 1
 
         self.hdr = None
