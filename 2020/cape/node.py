@@ -132,7 +132,12 @@ class DefClauseNode(ClauseNode):
         self.body.merge(q)
 
     def contains(self, s):
-        return False
+        if s == 'def' or s == self.name or s in self.args or s == self.vararg or s == self.kwarg:
+            return True
+        for d in self.defaults:
+            if d.contains(s):
+                return True
+        return self.body.contains(s)
 
     def toBlock(self, frame, block):
         return block.newDefClauseBlock(frame, self)
@@ -252,6 +257,14 @@ class ClassClauseNode(ClauseNode):
         self.lineno = line
         self.body.merge(q)
 
+    def contains(self, s):
+        if s == 'class' or s == self.name:
+            return True
+        for b in self.bases:
+            if b.contains(s):
+                return True
+        return self.body.contains(s)
+
     def toBlock(self, frame, block):
         return block.newClassClauseBlock(frame, self)
 
@@ -285,7 +298,7 @@ class BasicClauseNode(ClauseNode):
         self.body.merge(q)
 
     def contains(self, s):
-        return self.type == s
+        return self.type == s or self.body.contains(s)
 
     def toBlock(self, frame, block):
         return block.newBasicClauseBlock(frame, self)
@@ -310,7 +323,7 @@ class CondClauseNode(ClauseNode):
         return block.newCondClauseBlock(frame, self)
 
     def contains(self, s):
-        return self.type == s or self.cond.contains(s)
+        return self.type == s or self.cond.contains(s) or self.body.contains(s)
 
     def merge(self, q):
         (kw, line, col) = q.get()
@@ -1332,7 +1345,7 @@ class AttrNode(Node):
         self.ref.merge(q)
 
     def contains(self, s):
-        return self.ref == what or self.array.contains(s)
+        return self.array.contains(s) or self.ref.contains(s)
 
     def toBlock(self, frame, block):
         return block.newAttrBlock(frame, self)
@@ -1372,7 +1385,7 @@ class NumberNode(Node):
         pass
 
     def contains(self, s):
-        return s == what
+        return s == self.what
 
     def toBlock(self, frame, block):
         return block.newNumberBlock(frame, self)
@@ -1393,7 +1406,7 @@ class ConstantNode(Node):
         self.lineno = line
 
     def contains(self, s):
-        return s == what
+        return s == self.what
 
     def toBlock(self, frame, block):
         return block.newConstantBlock(frame, self)
@@ -1411,7 +1424,7 @@ class NameNode(Node):
         pass
 
     def contains(self, s):
-        return (s == what)
+        return (s == self.what)
 
     def toBlock(self, frame, block):
         return block.newNameBlock(frame, self)
