@@ -84,7 +84,8 @@ class FindForm(Form):
     def cb(self):
         n = self.block.toNode()
         s = self.entry.get()
-        print(n.contains(s))
+        # print(n.contains(s))
+        self.block.contains(s)
 
     def keyEnter(self, x):
         self.cb()

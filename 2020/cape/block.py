@@ -11,14 +11,21 @@ import tokenize
 
 class Block(tk.Frame):
 
-    def __init__(self, parent, shared, borderwidth=0):
-        super().__init__(parent, borderwidth=borderwidth, relief=tk.SUNKEN)
+    def __init__(self, parent, shared, *args, borderwidth=0, **kwargs):
+        super().__init__(parent, *args, borderwidth=borderwidth, relief=tk.SUNKEN, **kwargs)
         self.parent = parent
         self.shared = shared
         self.isTop = False
         self.isWithinDef = (False if (parent == None) else parent.isWithinDef)
         self.isWithinLoop = (False if (parent == None) else parent.isWithinLoop)
         self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
+
+    def markFound(self, r):
+        print("MF", self, r)
+        return r
+
+    def contains(self, s):
+        return False
 
     # get the width and height of a multiline comment
     def bb(self, comment):
@@ -328,6 +335,13 @@ class ClauseBlock(Block):
         if ((node == None) or (not node.minimized)):
             self.minmax()
 
+    def contains(self, s):
+        if self.body == None:
+            r = self.body_node.contains(s)
+        else:
+            r = self.body.contains(s)
+        return self.markFound(r)
+
     def newHeader(self):
         if (self.hdr != None):
             self.hdr.destroy()
@@ -418,6 +432,14 @@ class CompoundBlock(Block):
         super().__init__(parent, shared)
         self.clauses = []
 
+    def contains(self, s):
+        r = False
+        for c in self.clauses:
+            if c.contains(s):
+                r = True
+                break
+        return self.markFound(r)
+
     def gridUpdate(self):
         for row in range(len(self.clauses)):
             self.clauses[row].row = row
@@ -434,6 +456,10 @@ class BasicClauseBlock(ClauseBlock):
         self.type = node.type
         tk.Button(self.hdr, text=node.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
         self.hdr.grid()
+
+    def contains(self, s):
+        r = s == self.type or super().contains(s)
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(BasicClauseForm(self.shared.confarea, self))
@@ -459,6 +485,10 @@ class CondClauseBlock(ClauseBlock):
         tk.Button(self.hdr, text=self.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
         self.cond.grid(row=1, column=1)
         self.hdr.grid(row=1, sticky=tk.W)
+
+    def contains(self, s):
+        r = s == self.type or self.cond.contains(s) or super().contains(s)
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(CondClauseForm(self.shared.confarea, self))
@@ -488,6 +518,10 @@ class AttrBlock(Block):
             self.ref = node.ref.toBlock(self, self)
         self.ref.grid(row=0, column=2)
 
+    def search(self, s):
+        r = self.array.contains(s) or self.ref.contains(s)
+        return self.markFound(r)
+
     def cb(self):
         self.setBlock(self)
 
@@ -508,6 +542,10 @@ class BinaryopBlock(Block):
         self.left.grid(row=0, column=0)
         self.middle.grid(row=0, column=1)
         self.right.grid(row=0, column=2)
+
+    def contains(self, s):
+        r = self.op == s or self.left.contains(s) or self.right.contains(s)
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(BinaryopForm(self.shared.confarea, self))
@@ -555,6 +593,10 @@ class ConstantBlock(Block):
         self.btn = tk.Button(self, textvariable=self.value, fg='purple', width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
 
+    def contains(self, s):
+        r = self.value.get() == s
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(ConstantForm(self.shared.confarea, self))
 
@@ -577,6 +619,14 @@ class ListopBlock(Block):
             op.grid(row=0, column=((2 * i) + 1))
         self.values[n].grid(row=0, column=(2 * n))
 
+    def contains(self, s):
+        r = False
+        for v in self.values:
+            if v.contains(s):
+                r = True
+                break
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(ListopForm(self.shared.confarea, self))
 
@@ -594,6 +644,10 @@ class NameBlock(Block):
         self.btn = tk.Button(self, textvariable=self.vname, fg='blue', width=0, command=self.cb)
         self.vname.set(node.what)
         self.btn.grid(row=0, column=0)
+
+    def contains(self, s):
+        r = self.vname.get() == s
+        return self.markFound(r)
 
     def genForm(self):
         f = NameForm(self.shared.confarea, self)
@@ -626,6 +680,10 @@ class NumberBlock(Block):
         self.value.set(node.what)
         self.btn = tk.Button(self, textvariable=self.value, fg='blue', width=0, command=self.cb)
         self.btn.grid(row=0, column=0)
+
+    def contains(self, s):
+        r = self.value.get() == s
+        return self.markFound(r)
 
     def genForm(self):
         f = NumberForm(self.shared.confarea, self)
@@ -710,6 +768,19 @@ class SubscriptBlock(Block):
             self.upper = self.step = None
         self.updateGrid()
 
+    def contains(self, s):
+        if self.array.contains(s):
+            r = True
+        elif self.lower != None and self.lower.contains(s):
+            r = True
+        elif self.upper != None and self.upper.contains(s):
+            r = True
+        elif self.step != None and self.step.contains(s):
+            r = True
+        else:
+            r = False
+        return self.markFound(r)
+
     def cb(self):
         self.setBlock(self)
 
@@ -761,6 +832,10 @@ class UnaryopBlock(Block):
         self.right = ExpressionBlock(self, shared, node.right)
         self.op = node.op
         self.right.grid(row=0, column=1)
+
+    def contains(self, s):
+        r = self.op == s or self.right.contains(s)
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(UnaryopForm(self.shared.confarea, self))
@@ -827,6 +902,17 @@ class ClassClauseBlock(ClauseBlock):
         self.setHeader()
         self.hdr.grid()
 
+    def contains(self, s):
+        r = s == "class" or self.cname.get() == s
+        if not r:
+            for b in self.bases:
+                if b.contains(s):
+                    r = True
+                    break
+        if not r:
+            r = super().contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(ClassClauseForm(self.shared.confarea, self))
 
@@ -883,6 +969,15 @@ class CallBlock(Block):
             for kw in node.keywords:
                 self.addKeyword(kw)
         self.gridUpdate()
+
+    def contains(self, s):
+        r = self.func.contains(s) or s in self.args
+        if not r:
+            for (k, v) in self.keywords:
+                if k == s or v.contains(s):
+                    r = True
+                    break
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(CallForm(self.shared.confarea, self))
@@ -962,6 +1057,14 @@ class ListBlock(Block):
                 self.addEntry(e)
         self.gridUpdate()
 
+    def contains(self, s):
+        r = False
+        for e in self.entries:
+            if e.contains(s):
+                r = True
+                break
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(ListForm(self.shared.confarea, self))
 
@@ -997,6 +1100,14 @@ class SetBlock(Block):
             for e in node.entries:
                 self.addEntry(e)
         self.gridUpdate()
+
+    def contains(self, s):
+        r = False
+        for e in self.entries:
+            if e.contains(s):
+                r = True
+                break
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(SetForm(self.shared.confarea, self))
@@ -1183,6 +1294,14 @@ class DictBlock(Block):
                 self.addEntry(node.keys[i], node.values[i])
         self.gridUpdate()
 
+    def contains(self, s):
+        r = False
+        for (k, v) in self.entries:
+            if k.contains(s) or v.contains(s):
+                r = True
+                break
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(DictForm(self.shared.confarea, self))
 
@@ -1232,6 +1351,14 @@ class TupleBlock(Block):
                 self.addEntry(e)
         self.gridUpdate()
 
+    def contains(self, s):
+        r = False
+        for e in self.entries:
+            if e.contains(s):
+                r = True
+                break
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(TupleForm(self.shared.confarea, self))
 
@@ -1276,6 +1403,10 @@ class ExpressionBlock(Block):
             assert isinstance(node, ExpressionNode)
             self.what = node.what.toBlock(self, self)
             self.what.grid()
+
+    def contains(self, s):
+        r = self.what != None and self.what.contains(s)
+        return self.markFound(r)
 
     def goRight(self):
         return (self if (self.what == None) else self.what)
@@ -1454,6 +1585,15 @@ class AssignBlock(Block):
             column += 1
         self.value.grid(row=0, column=column)
 
+    def contains(self, s):
+        r = False
+        for t in self.targets:
+            if t.contains(s):
+                r = True
+                break
+        r = r or self.value.contains(s)
+        return self.markFound(r)
+
     def goRight(self):
         return self.targets[0]
 
@@ -1484,6 +1624,10 @@ class IfelseBlock(Block):
         tk.Button(self, text='else', fg='purple', command=self.cb).grid(row=0, column=3)
         self.ifFalse.grid(row=0, column=4)
 
+    def contains(self, s):
+        r = self.cond.contains(s) or self.ifTrue.contains(s) or self.ifFalse.contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(IfelseForm(self.shared.confarea, self))
 
@@ -1507,6 +1651,10 @@ class AugassignBlock(Block):
         middle.grid(row=0, column=1)
         self.right.grid(row=0, column=2)
 
+    def contains(self, s):
+        r = self.left.contains(s) or self.right.contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(AugassignForm(self.shared.confarea, self))
 
@@ -1524,6 +1672,10 @@ class PassBlock(Block):
         assert isinstance(self.rowblk, StatementBlock)
         btn = tk.Button(self, text='pass', fg='red', width=0, command=self.cb)
         btn.grid(row=0, column=0)
+
+    def contains(self, s):
+        r = s == "pass"
+        return self.markFound(r)
 
     def genForm(self):
         f = PassForm(self.shared.confarea, self)
@@ -1630,6 +1782,10 @@ class EvalBlock(Block):
             self.expr = ExpressionBlock(self, shared, node.what)
         self.expr.grid()
 
+    def contains(self, s):
+        r = self.expr.contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(EvalForm(self.shared.confarea, self))
 
@@ -1649,6 +1805,10 @@ class ReturnBlock(Block):
         else:
             self.expr = ExpressionBlock(self, shared, node.what)
             self.expr.grid(row=0, column=1)
+
+    def contains(self, s):
+        r = s == "return" or self.expr.contains(s)
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(ReturnForm(self.shared.confarea, self))
@@ -1674,6 +1834,10 @@ class YieldBlock(Block):
         else:
             self.expr = ExpressionBlock(self, shared, node.what)
             self.expr.grid(row=0, column=1)
+
+    def contains(self, s):
+        r = s == "yield" or self.expr.contains(s)
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(YieldForm(self.shared.confarea, self))
@@ -1741,6 +1905,9 @@ class LambdaBlock(Block):
         column += 1
         node.body.toBlock(self, self).grid(row=0, column=column)
 
+    def contains(self, s):
+        return self.markFound(False)
+
     def genForm(self):
         self.setForm(LambdaForm(self.shared.confarea, self))
 
@@ -1771,6 +1938,14 @@ class DelBlock(Block):
             t.grid(row=0, column=column)
             column += 1
 
+    def contains(self, s):
+        r = False
+        for t in self.targets:
+            if t.contains(s):
+                r = True
+                break
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(DelForm(self.shared.confarea, self))
 
@@ -1796,6 +1971,10 @@ class AssertBlock(Block):
             tk.Button(self, text=',', fg='red', command=self.cb).grid(row=0, column=2)
             self.msg.grid(row=0, column=3)
 
+    def contains(self, s):
+        r = self.test.contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(AssertForm(self.shared.confarea, self))
 
@@ -1811,6 +1990,10 @@ class BreakBlock(Block):
         super().__init__(parent, shared)
         tk.Button(self, text='break', fg='red', command=self.cb).grid(row=0, column=0)
 
+    def contains(self, s):
+        r = s == "break"
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(BreakForm(self.shared.confarea, self))
 
@@ -1825,6 +2008,10 @@ class ContinueBlock(Block):
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
         tk.Button(self, text='continue', fg='red', command=self.cb).grid(row=0, column=0)
+
+    def contains(self, s):
+        r = s == "continue"
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(ContinueForm(self.shared.confarea, self))
@@ -1851,6 +2038,17 @@ class GlobalBlock(Block):
                 column += 1
             self.vars[i].grid(row=0, column=column)
             column += 1
+
+    def contains(self, s):
+        if s == "global":   
+            r = True
+        else:
+            r = False
+            for v in self.vars:
+                if v.contains(s):
+                    r = True
+                    break
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(GlobalForm(self.shared.confarea, self))
@@ -1944,6 +2142,10 @@ class StatementBlock(Block):
         self.what.grid(row=1, column=0, sticky=tk.W)
         tk.Button(self.frame, textvariable=self.commentR, fg='brown', command=self.listcmd, font='-slant italic').grid(row=1, column=1, sticky=(tk.N + tk.W))
         self.frame.grid(row=0, column=1, sticky=tk.W)
+
+    def contains(self, s):
+        r = self.what.contains(s)
+        return self.markFound(r)
 
     def isCompound(self):
         return isinstance(self.what, CompoundBlock)
@@ -2060,6 +2262,14 @@ class SeqBlock(Block):
                 self.rows.append(StatementBlock(self, shared, node.rows[i]))
             self.gridUpdate()
 
+    def contains(self, s):
+        r = False
+        for row in self.rows:
+            if row.contains(s):
+                r = True
+                break
+        return self.markFound(r)
+
     def findLine(n):
         lineno = 0
         for i in range(len(node.rows)):
@@ -2132,6 +2342,17 @@ class DefClauseBlock(ClauseBlock):
         self.kwarg = node.kwarg
         self.decorator_list = node.decorator_list
         self.setHeader()
+
+    def contains(self, s):
+        r = s == "def" or self.mname.contains(s) or self.args.contains(s) or self.vararg == s or self.kwarg == s
+        if not r:
+            for d in self.defaults:
+                if d.contains(s):
+                    r = True
+                    break
+        if not r:
+            r = super().contains(s)
+        return self.markFound(r)
 
     def setHeader(self):
         self.newHeader()
@@ -2382,6 +2603,10 @@ class TryBlock(CompoundBlock):
             self.hasElse = node.hasElse
         self.gridUpdate()
 
+    def contains(self, s):
+        r = s == "try" or self.body.contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(TryForm(self.shared.confarea, self))
 
@@ -2437,6 +2662,16 @@ class ExceptClauseBlock(ClauseBlock):
                 column += 1
         self.hdr.grid()
 
+    def contains(self, s):
+        r = s == "except"
+        if not r and self.type != None:
+            r = self.type.contains(s)
+        if not r and self.name != None:
+            r = self.name.contains(s)
+        if not r:
+            r = self.super.contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(ExceptClauseForm(self.shared.confarea, self))
 
@@ -2469,6 +2704,19 @@ class WithClauseBlock(ClauseBlock):
                 self.items.append((b, v))
         self.hdr.grid()
 
+    def contains(self, s):
+        r = s == "with"
+        if not r:
+            for (expr, var) in self.items:
+                r = expr.contains(s)
+                if not r and var != None:
+                    r = var.contains(s)
+                if r:
+                    break
+        if not r:
+            r = super().contains(s)
+        return self.markFound(r)
+
     def genForm(self):
         self.setForm(WithClauseForm(self.shared.confarea, self))
 
@@ -2497,6 +2745,10 @@ class ForClauseBlock(ClauseBlock):
         tk.Button(self.hdr, text='in', fg='red', command=self.cb).grid(row=1, column=2)
         self.expr.grid(row=1, column=3)
         self.hdr.grid()
+
+    def contains(self, s):
+        r = s == "for" or self.target.contains(s) or self.expr.contains(s) or super().contains(s)
+        return self.markFound(r)
 
     def genForm(self):
         self.setForm(ForClauseForm(self.shared.confarea, self))
