@@ -208,6 +208,8 @@ class Shared():
             self.cvtError = True
             n = self.program.toNode()
             self.stack.append((n, self.curBlock, self.curForm))
+            if self.search_string != None:
+                self.program.contains(self.search_string)
 
     def undo(self):
         if len(self.stack) <= 1:
