@@ -86,7 +86,7 @@ class FindForm(Form):
         s = self.entry.get()
         # print(n.contains(s))
         if not self.block.contains(s):
-            print("'{}' not found".format(s))
+            tk.messagebox.showinfo("Find", "Did not locate any instances of '{}'".format(s))
 
     def keyEnter(self, x):
         self.cb()

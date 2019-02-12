@@ -21,8 +21,6 @@ class Block(tk.Frame):
         self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
 
     def markFound(self, r):
-        if (r):
-            self.configure(bd=2, highlightbackground='green', highlightcolor='green', highlightthickness=2)
         return r
 
     def contains(self, s):
@@ -2126,8 +2124,8 @@ class StatementBlock(Block):
         self.row = None
         self.commentR = tk.StringVar()
         self.commentU = tk.StringVar()
-        menu = tk.Button(self, text='-', width=3, command=self.listcmd)
-        menu.grid(row=0, column=0, sticky=tk.W)
+        self.menu = tk.Button(self, text='-', width=3, command=self.listcmd)
+        self.menu.grid(row=0, column=0, sticky=tk.W)
         self.frame = FrameBlock(self, shared)
         self.commentButton = tk.Frame(self.frame)
         tk.Button(self.commentButton, textvariable=self.commentU, fg='brown', command=self.listcmd, font='-slant italic', justify=tk.LEFT).grid()
@@ -2143,6 +2141,11 @@ class StatementBlock(Block):
         self.what.grid(row=1, column=0, sticky=tk.W)
         tk.Button(self.frame, textvariable=self.commentR, fg='brown', command=self.listcmd, font='-slant italic').grid(row=1, column=1, sticky=(tk.N + tk.W))
         self.frame.grid(row=0, column=1, sticky=tk.W)
+
+    def markFound(self, r):
+        if (r):
+            self.menu.configure(bd=2, highlightbackground='green', highlightcolor='green', highlightthickness=2)
+        return r
 
     def contains(self, s):
         r = self.what.contains(s)
