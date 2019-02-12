@@ -21,7 +21,8 @@ class Block(tk.Frame):
         self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
 
     def markFound(self, r):
-        print("MF", self, r)
+        if (r):
+            self.configure(bd=2, highlightbackground='green', highlightcolor='green', highlightthickness=2)
         return r
 
     def contains(self, s):
@@ -518,7 +519,7 @@ class AttrBlock(Block):
             self.ref = node.ref.toBlock(self, self)
         self.ref.grid(row=0, column=2)
 
-    def search(self, s):
+    def contains(self, s):
         r = self.array.contains(s) or self.ref.contains(s)
         return self.markFound(r)
 
@@ -1807,7 +1808,7 @@ class ReturnBlock(Block):
             self.expr.grid(row=0, column=1)
 
     def contains(self, s):
-        r = s == "return" or self.expr.contains(s)
+        r = s == "return" or (self.expr != None and self.expr.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -2344,7 +2345,7 @@ class DefClauseBlock(ClauseBlock):
         self.setHeader()
 
     def contains(self, s):
-        r = s == "def" or self.mname.contains(s) or self.args.contains(s) or self.vararg == s or self.kwarg == s
+        r = s == "def" or self.mname.get() == s or s in self.args or self.vararg == s or self.kwarg == s
         if not r:
             for d in self.defaults:
                 if d.contains(s):

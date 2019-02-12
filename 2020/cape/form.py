@@ -85,7 +85,8 @@ class FindForm(Form):
         n = self.block.toNode()
         s = self.entry.get()
         # print(n.contains(s))
-        self.block.contains(s)
+        if not self.block.contains(s):
+            print("'{}' not found".format(s))
 
     def keyEnter(self, x):
         self.cb()
