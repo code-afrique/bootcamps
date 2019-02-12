@@ -1,18 +1,15 @@
 import tkinter as tk
 import tkinter.messagebox
-import tkinter.scrolledtext
 import io
 from form import *
 from node import *
 import ast
 import pmod
-import queue
-import tokenize
 
 class Block(tk.Frame):
 
     def __init__(self, parent, shared, *args, borderwidth=0, **kwargs):
-        super().__init__(parent, *args, borderwidth=borderwidth, relief=tk.SUNKEN, **kwargs)
+        super().__init__(parent, (* args), borderwidth=borderwidth, relief=tk.SUNKEN, **kwargs)
         self.parent = parent
         self.shared = shared
         self.isTop = False
@@ -21,10 +18,10 @@ class Block(tk.Frame):
         self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
 
     def find(self, s):
-        self.shared.search_string = () if s == "" else s
+        self.shared.search_string = (() if (s == '') else s)
         r = self.contains(self.shared.search_string)
-        if self.shared.search_string != () and not r:
-            tk.messagebox.showinfo("Find", "Did not locate any instances of '{}'".format(self.shared.search_string))
+        if ((self.shared.search_string != ()) and (not r)):
+            tk.messagebox.showinfo('Find', "Did not locate any instances of '{}'".format(self.shared.search_string))
 
     # logical or of all arguments)
     def orl(self, *args):
@@ -52,7 +49,7 @@ class Block(tk.Frame):
 
     def scrollUpdate(self):
         self.shared.scrollUpdate()
-    
+
     def setForm(self, f):
         self.shared.setForm(f)
 
@@ -348,14 +345,14 @@ class ClauseBlock(Block):
             self.minmax()
 
     def markFound(self, r):
-        if (r):
+        if r:
             self.hdr.configure(bd=2, highlightbackground='green', highlightcolor='green', highlightthickness=2)
         else:
             self.hdr.configure(bd=0, highlightbackground='white', highlightthickness=0)
         return r
 
     def contains(self, s):
-        if self.body == None:
+        if (self.body == None):
             r = self.body_node.contains(s)
         else:
             r = self.body.contains(s)
@@ -413,7 +410,7 @@ class ClauseBlock(Block):
             if (self.body == None):
                 self.body = self.body_node.toBlock(self, self)
             self.body.grid(row=(2 + len(self.decorator_list)), column=0, sticky=tk.W)
-            if self.shared.search_string != None:
+            if (self.shared.search_string != None):
                 self.body.contains(self.shared.search_string)
             self.update()
             self.minimized = False
@@ -446,6 +443,352 @@ class ClauseBlock(Block):
                 r.commentR = ''
         return r
 
+# A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
+# 'finally' clauses.
+class BasicClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, '{} clause'.format(node.type))
+        self.type = node.type
+        tk.Button(self.hdr, text=node.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
+        self.hdr.grid()
+
+    def contains(self, s):
+        r = self.orl((s == self.type), super().contains(s))
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(BasicClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNodeRaw(self):
+        return BasicClauseNode(self.type, self.getBody(), self.minimized)
+
+class ClassClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, 'def clause')
+        self.cname = tk.StringVar()
+        self.cname.set(node.name)
+        btn = tk.Button(self.hdr, text='class', fg='red', width=0, command=self.cb)
+        btn.grid(row=1, column=0)
+        self.name = tk.Button(self.hdr, textvariable=self.cname, fg='blue', command=self.cb)
+        self.name.grid(row=1, column=1)
+        tk.Button(self.hdr, text='(', command=self.cb).grid(row=1, column=2)
+        self.eol = tk.Button(self.hdr, text=')', command=self.cb)
+        self.bases = []
+        if (node != None):
+            for base in node.bases:
+                self.addBaseClass(base)
+        self.decorator_list = node.decorator_list
+        self.setHeader()
+        self.hdr.grid()
+
+    def contains(self, s):
+        r = self.orl((s == 'class'), (self.cname.get() == s), super().contains(s))
+        for b in self.bases:
+            if b.contains(s):
+                r = True
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(ClassClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def classUpdate(self, mname):
+        self.cname.set(mname)
+        self.needsSaving()
+
+    def addBaseClass(self, node):
+        if (node == None):
+            base = ExpressionBlock(self.hdr, self.shared, None)
+        else:
+            base = ExpressionBlock(self.hdr, self.shared, node)
+        self.bases.append(base)
+        self.setHeader()
+
+    def setHeader(self):
+        column = 3
+        for i in range(len(self.bases)):
+            if (i != 0):
+                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
+                column += 1
+            self.bases[i].grid(row=1, column=column)
+            column += 1
+        self.eol.grid(row=1, column=column)
+
+    def toNodeRaw(self):
+        v = self.cname.get()
+        if (not v.isidentifier()):
+            if (not self.shared.cvtError):
+                self.setBlock(self)
+                tk.messagebox.showinfo('Convert Error', 'Fix bad class name')
+                self.shared.cvtError = True
+        return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody(), self.minimized, self.decorator_list)
+
+# An 'cond' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
+# clauses.
+class CondClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, '{} clause'.format(node.type))
+        if (node.cond == None):
+            self.cond = ExpressionBlock(self.hdr, shared, None)
+        else:
+            self.cond = node.cond.toBlock(self.hdr, self)
+        self.type = node.type
+        self.cond.grid(row=1, column=1)
+        tk.Button(self.hdr, text=self.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
+        self.cond.grid(row=1, column=1)
+        self.hdr.grid(row=1, sticky=tk.W)
+
+    def contains(self, s):
+        r = self.orl((s == self.type), self.cond.contains(s), super().contains(s))
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(CondClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    # def goRight(self):
+    #     return self.cond
+    def toNodeRaw(self):
+        return CondClauseNode(self.type, self.cond.toNode(), self.getBody(), self.minimized)
+
+class DefClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        parent.isWithinDef = True
+        super().__init__(parent, shared, node, 'def clause')
+        self.mname = tk.StringVar()
+        self.mname.set(node.name)
+        self.args = node.args
+        self.defaults = node.defaults
+        self.vararg = node.vararg
+        self.kwarg = node.kwarg
+        self.decorator_list = node.decorator_list
+        self.setHeader()
+
+    def contains(self, s):
+        r = self.orl((s == 'def'), (self.mname.get() == s), (s in self.args), (self.vararg == s), (self.kwarg == s), super().contains(s))
+        for d in self.defaults:
+            if d.contains(s):
+                r = True
+        return self.markFound(r)
+
+    def setHeader(self):
+        self.newHeader()
+        btn = tk.Button(self.hdr, text='def', fg='red', width=0, command=self.cb)
+        btn.grid(row=1, column=0)
+        self.name = tk.Button(self.hdr, textvariable=self.mname, fg='blue', command=self.cb)
+        self.name.grid(row=1, column=1)
+        tk.Button(self.hdr, text='(', command=self.cb).grid(row=1, column=2)
+        column = 3
+        first = True
+        nargs = len(self.args)
+        ndefaults = len(self.defaults)
+        delta = (nargs - ndefaults)
+        for i in range(delta):
+            if first:
+                first = False
+            else:
+                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
+                column += 1
+            tk.Button(self.hdr, text=self.args[i], fg='blue', command=self.cb).grid(row=1, column=column)
+            column += 1
+        if (self.vararg != None):
+            if (not first):
+                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
+                column += 1
+            tk.Button(self.hdr, text=('*' + self.vararg), fg='blue', command=self.cb).grid(row=1, column=column)
+            column += 1
+        for i in range(delta, nargs):
+            if first:
+                first = False
+            else:
+                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
+                column += 1
+            tk.Button(self.hdr, text=self.args[i], fg='blue', command=self.cb).grid(row=1, column=column)
+            column += 1
+            tk.Button(self.hdr, text='=', command=self.cb).grid(row=1, column=column)
+            column += 1
+            self.defaults[(i - delta)].toBlock(self.hdr, self).grid(row=1, column=column)
+            column += 1
+        if (self.kwarg != None):
+            if (not first):
+                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
+                column += 1
+            tk.Button(self.hdr, text=('**' + self.kwarg), fg='blue', command=self.cb).grid(row=1, column=column)
+            column += 1
+        tk.Button(self.hdr, text=')', command=self.cb).grid(row=1, column=column)
+
+    # TODO.  This function may be obsolete
+    def addArg(self, name):
+        self.args.insert(len(self.defaults), name)
+        self.setHeader()
+
+    def genForm(self):
+        f = DefClauseForm(self.shared.confarea, self)
+        self.setForm(f)
+
+    def cb(self):
+        self.setBlock(self)
+
+    def incArg(self, name, type):
+        if (type == 'normal'):
+            pos = (len(self.args) - len(self.defaults))
+            self.args.insert(pos, name)
+        elif (type == 'keyword'):
+            self.args.append(name)
+            self.defaults.append(ExpressionNode(None))
+        elif (type == '*vararg'):
+            self.vararg = name
+        else:
+            assert (type == '**vararg')
+            self.kwarg = name
+        self.setHeader()
+        self.needsSaving()
+
+    def defUpdate(self, mname):
+        self.mname.set(mname)
+        self.setHeader()
+        self.needsSaving()
+
+    def toNodeRaw(self):
+        v = self.mname.get()
+        if (not v.isidentifier()):
+            if (not self.shared.cvtError):
+                self.setBlock(self)
+                tk.messagebox.showinfo('Convert Error', 'Fix bad function name')
+                self.shared.cvtError = True
+        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.minimized, self.decorator_list)
+
+class ExceptClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, 'except clause')
+        tk.Button(self.hdr, text='except', fg='red', width=0, command=self.cb).grid(row=1, column=0)
+        column = 1
+        if (node.type == None):
+            self.type = None
+            self.name = None
+        else:
+            self.type = node.type.toBlock(self, self)
+            self.type.grid(row=1, column=column)
+            column += 1
+            if (node.name == None):
+                self.name = None
+            else:
+                tk.Button(hdr, text='as', fg='red', width=0, command=self.cb).grid(row=1, column=column)
+                column += 1
+                self.name = node.name.toBlock(self, self)
+                self.name.grid(row=1, column=column)
+                column += 1
+        self.hdr.grid()
+
+    def contains(self, s):
+        r = (s == 'except')
+        if ((not r) and (self.type != None)):
+            r = self.type.contains(s)
+        if ((not r) and (self.name != None)):
+            r = self.name.contains(s)
+        if (not r):
+            r = self.super.contains(s)
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(ExceptClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNodeRaw(self):
+        return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), self.getBody(), self.minimized)
+
+class ForClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, 'for clause')
+        self.hdr.isWithinStore = True
+        if (node.target == None):
+            self.target = ExpressionBlock(self.hdr, shared, None)
+        else:
+            self.target = node.target.toBlock(self.hdr, self)
+        self.hdr.isWithinStore = False
+        if (node.expr == None):
+            self.expr = ExpressionBlock(self.hdr, shared, None)
+        else:
+            self.expr = ExpressionBlock(self.hdr, shared, node.expr)
+        tk.Button(self.hdr, text='for', fg='red', width=0, command=self.cb).grid(row=1, column=0)
+        self.target.grid(row=1, column=1)
+        tk.Button(self.hdr, text='in', fg='red', command=self.cb).grid(row=1, column=2)
+        self.expr.grid(row=1, column=3)
+        self.hdr.grid()
+
+    def contains(self, s):
+        r = self.orl((s == 'for'), self.target.contains(s), self.expr.contains(s), super().contains(s))
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(ForClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNodeRaw(self):
+        return ForClauseNode(self.target.toNode(), self.expr.toNode(), self.getBody(), self.minimized)
+
+class WithClauseBlock(ClauseBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared, node, 'with clause')
+        self.items = []
+        tk.Button(self.hdr, text='with', fg='red', width=0, command=self.cb).grid(row=1, column=0)
+        column = 1
+        if (node != None):
+            for (expr, var) in node.items:
+                b = expr.toBlock(self.hdr, self)
+                b.grid(row=1, column=column)
+                column += 1
+                if (var == None):
+                    v = None
+                else:
+                    tk.Button(self.hdr, text='as', fg='red', width=0, command=self.cb).grid(row=1, column=column)
+                    column += 1
+                    v = var.toBlock(self.hdr, self)
+                    v.grid(row=1, column=column)
+                    column += 1
+                self.items.append((b, v))
+        self.hdr.grid()
+
+    def contains(self, s):
+        r = (s == 'with')
+        if (not r):
+            for (expr, var) in self.items:
+                r = expr.contains(s)
+                if ((not r) and (var != None)):
+                    r = var.contains(s)
+                if r:
+                    break
+        if (not r):
+            r = super().contains(s)
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(WithClauseForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNodeRaw(self):
+        return WithClauseNode([(e.toNode(), (None if (v == None) else v.toNode())) for (e, v) in self.items], self.getBody(), self.minimized)
+
 # A compound block consists of a list of clause blocks.
 class CompoundBlock(Block):
 
@@ -467,59 +810,280 @@ class CompoundBlock(Block):
     def goRight(self):
         return self.clauses[0]
 
-# A 'basic' clause consists of a header and a body.  It's used for 'module', 'else', and
-# 'finally' clauses.
-class BasicClauseBlock(ClauseBlock):
+# A container block is a compound block with a single clause in it.
+class ContainerBlock(CompoundBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, '{} clause'.format(node.type))
-        self.type = node.type
-        tk.Button(self.hdr, text=node.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
-        self.hdr.grid()
-
-    def contains(self, s):
-        r = self.orl(s == self.type, super().contains(s))
-        return self.markFound(r)
+        super().__init__(parent, shared)
+        self.clauses = [c.toBlock(self, self) for c in node.clauses]
+        self.clauses[0].grid()
 
     def genForm(self):
-        self.setForm(BasicClauseForm(self.shared.confarea, self))
+        self.setForm(ContainerForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
 
-    def toNodeRaw(self):
-        return BasicClauseNode(self.type, self.getBody(), self.minimized)
+    def toNode(self):
+        return ContainerNode(self.clauses[0].toNode())
 
-# An 'cond' clause consists of a condition and a body.  It's used for 'if', 'elif', and 'while'
-# clauses.
-class CondClauseBlock(ClauseBlock):
+class ForBlock(CompoundBlock):
 
     def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, '{} clause'.format(node.type))
-        if (node.cond == None):
-            self.cond = ExpressionBlock(self.hdr, shared, None)
+        super().__init__(parent, shared)
+        self.isWithinLoop = True
+        if (node == None):
+            self.clauses = [ForClauseBlock(self, shared, ForClauseNode(None, None, None, False))]
+            self.isWithinLoop = False
+            self.hasElse = False
         else:
-            self.cond = node.cond.toBlock(self.hdr, self)
-        self.type = node.type
-        self.cond.grid(row=1, column=1)
-        tk.Button(self.hdr, text=self.type, fg='red', width=0, command=self.cb).grid(row=1, column=0)
-        self.cond.grid(row=1, column=1)
-        self.hdr.grid(row=1, sticky=tk.W)
-
-    def contains(self, s):
-        r = self.orl(s == self.type, self.cond.contains(s), super().contains(s))
-        return self.markFound(r)
+            self.clauses = [node.clauses[0].toBlock(self, self)]
+            self.isWithinLoop = False
+            if node.hasElse:
+                self.clauses.append(node.clauses[1].toBlock(self, self))
+            self.hasElse = node.hasElse
+        self.gridUpdate()
 
     def genForm(self):
-        self.setForm(CondClauseForm(self.shared.confarea, self))
+        self.setForm(ForForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
 
-    # def goRight(self):
-    #     return self.cond
-    def toNodeRaw(self):
-        return CondClauseNode(self.type, self.cond.toNode(), self.getBody(), self.minimized)
+    def addElse(self):
+        if (not self.hasElse):
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
+
+    def removeElse(self):
+        if self.hasElse:
+            self.clauses[(- 1)].grid_forget()
+            del self.clauses[(- 1)]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
+
+    def gridUpdate(self):
+        super().gridUpdate()
+        for i in range(len(self.clauses)):
+            self.clauses[i].grid(row=i, sticky=tk.W)
+        self.scrollUpdate()
+
+    def toNode(self):
+        return ForNode([c.toNode() for c in self.clauses], self.hasElse)
+
+class IfBlock(CompoundBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        if (node == None):
+            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('if', None, None, False))]
+            self.hasElse = False
+        else:
+            self.clauses = [n.toBlock(self, self) for n in node.clauses]
+            self.hasElse = node.hasElse
+        self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(IfForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def insertElif(self):
+        clause = CondClauseBlock(self, self.shared, CondClauseNode('elif', None, None, False))
+        n = len(self.clauses)
+        self.clauses.insert(((n - 1) if self.hasElse else n), clause)
+        self.gridUpdate()
+        self.setBlock(clause.body.rows[0].what)
+        self.needsSaving()
+
+    def addElse(self):
+        if (not self.hasElse):
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
+
+    def removeElse(self):
+        if self.hasElse:
+            self.clauses[(- 1)].grid_forget()
+            del self.clauses[(- 1)]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
+
+    def gridUpdate(self):
+        super().gridUpdate()
+        for i in range(len(self.clauses)):
+            self.clauses[i].grid(row=i, sticky=tk.W)
+        self.scrollUpdate()
+
+    def toNode(self):
+        return IfNode([c.toNode() for c in self.clauses], self.hasElse)
+
+class ModuleBlock(CompoundBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        if (node == None):
+            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode('module', None, False))]
+        else:
+            self.clauses = [c.toBlock(self, self) for c in node.clauses]
+        self.clauses[0].grid()
+
+    def genForm(self):
+        self.setForm(ModuleForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ModuleNode(self.clauses[0].toNode())
+
+class TryBlock(CompoundBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        if (node == None):
+            self.clauses = [BasicClauseBlock(self, shared, BasicClauseNode('try', None, False))]
+            self.hasElse = False
+        else:
+            self.clauses = [n.toBlock(self, self) for n in node.clauses]
+            self.hasElse = node.hasElse
+        self.gridUpdate()
+
+    def contains(self, s):
+        r = self.orl((s == 'try'), self.body.contains(s))
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(TryForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addElse(self):
+        if (not self.hasElse):
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
+
+    def removeElse(self):
+        if self.hasElse:
+            self.clauses[(- 1)].grid_forget()
+            del self.clauses[(- 1)]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
+
+    def gridUpdate(self):
+        super().gridUpdate()
+        for i in range(len(self.clauses)):
+            self.clauses[i].grid(row=i, sticky=tk.W)
+        self.scrollUpdate()
+
+    def toNode(self):
+        return TryNode([c.toNode() for c in self.clauses], self.hasElse)
+
+class WhileBlock(CompoundBlock):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.isWithinLoop = True
+        if (node == None):
+            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('while', None, None, False))]
+            self.isWithinLoop = False
+            self.hasElse = False
+        else:
+            self.clauses = [node.clauses[0].toBlock(self, self)]
+            self.isWithinLoop = False
+            if node.hasElse:
+                self.clauses.append(node.clauses[1].toBlock(self, self))
+            self.hasElse = node.hasElse
+        self.gridUpdate()
+
+    def genForm(self):
+        self.setForm(WhileForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addElse(self):
+        if (not self.hasElse):
+            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
+            self.clauses.append(clause)
+            self.gridUpdate()
+            self.setBlock(clause.body.rows[0].what)
+            self.hasElse = True
+            self.needsSaving()
+
+    def removeElse(self):
+        if self.hasElse:
+            self.clauses[(- 1)].grid_forget()
+            del self.clauses[(- 1)]
+            self.setBlock(self)
+            self.hasElse = False
+            self.needsSaving()
+
+    def gridUpdate(self):
+        super().gridUpdate()
+        for i in range(len(self.clauses)):
+            self.clauses[i].grid(row=i, sticky=tk.W)
+        self.scrollUpdate()
+
+    def toNode(self):
+        return WhileNode([c.toNode() for c in self.clauses], self.hasElse)
+
+class AssignBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        if (node == None):
+            self.isWithinStore = True
+            self.targets = [ExpressionBlock(self, shared, None)]
+            self.isWithinStore = False
+            self.value = ExpressionBlock(self, shared, None)
+        else:
+            self.isWithinStore = True
+            self.targets = [t.toBlock(self, self) for t in node.targets]
+            self.isWithinStore = False
+            self.value = node.value.toBlock(self, self)
+        column = 0
+        for t in self.targets:
+            t.grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text='=', fg='purple', command=self.cb).grid(row=0, column=column)
+            column += 1
+        self.value.grid(row=0, column=column)
+
+    def contains(self, s):
+        r = self.value.contains(s)
+        for t in self.targets:
+            if t.contains(s):
+                r = True
+        return self.markFound(r)
+
+    def goRight(self):
+        return self.targets[0]
+
+    def genForm(self):
+        self.setForm(AssignForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return AssignNode([t.toNode() for t in self.targets], self.value.toNode())
 
 class AttrBlock(Block):
 
@@ -564,7 +1128,7 @@ class BinaryopBlock(Block):
         self.right.grid(row=0, column=2)
 
     def contains(self, s):
-        r = self.orl(self.op == s, self.left.contains(s), self.right.contains(s))
+        r = self.orl((self.op == s), self.left.contains(s), self.right.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -604,366 +1168,6 @@ class BytesBlock(Block):
     def toNode(self):
         return BytesNode(self.bytes.get().encode())
 
-class ConstantBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.value = tk.StringVar()
-        self.value.set(node.what)
-        self.btn = tk.Button(self, textvariable=self.value, fg='purple', width=0, command=self.cb)
-        self.btn.grid(row=0, column=0)
-
-    def contains(self, s):
-        r = self.value.get() == s
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(ConstantForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return ConstantNode(self.value.get())
-
-class ListopBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.values = [ExpressionBlock(self, shared, v) for v in node.values]
-        self.ops = node.ops
-        n = len(node.ops)
-        for i in range(n):
-            self.values[i].grid(row=0, column=(2 * i))
-            op = tk.Button(self, text=node.ops[i], fg='purple', width=0, command=self.cb)
-            op.grid(row=0, column=((2 * i) + 1))
-        self.values[n].grid(row=0, column=(2 * n))
-
-    def contains(self, s):
-        r = False
-        for v in self.values:
-            if v.contains(s):
-                r = True
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(ListopForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return ListopNode([v.toNode() for v in self.values], self.ops)
-
-class NameBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.vname = tk.StringVar()
-        self.btn = tk.Button(self, textvariable=self.vname, fg='blue', width=0, command=self.cb)
-        self.vname.set(node.what)
-        self.btn.grid(row=0, column=0)
-
-    def contains(self, s):
-        r = self.vname.get() == s
-        return self.markFound(r)
-
-    def genForm(self):
-        f = NameForm(self.shared.confarea, self)
-        self.setForm(f)
-
-    # f.entry.focus()
-    def cb(self):
-        self.setBlock(self)
-
-    def setName(self, v):
-        self.vname.set(v)
-        self.btn.config(width=0)
-        self.needsSaving()
-        self.setBlock(self.goLeft())
-
-    def toNode(self):
-        v = self.vname.get()
-        if (not v.isidentifier()):
-            if (not self.shared.cvtError):
-                self.setBlock(self)
-                tk.messagebox.showinfo('Convert Error', 'Fix bad variable name')
-                self.shared.cvtError = True
-        return NameNode(v)
-
-class NumberBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.value = tk.StringVar()
-        self.value.set(node.what)
-        self.btn = tk.Button(self, textvariable=self.value, fg='blue', width=0, command=self.cb)
-        self.btn.grid(row=0, column=0)
-
-    def contains(self, s):
-        r = self.value.get() == s
-        return self.markFound(r)
-
-    def genForm(self):
-        f = NumberForm(self.shared.confarea, self)
-        self.setForm(f)
-
-    # f.entry.focus()
-    def cb(self):
-        self.setBlock(self)
-
-    def setValue(self, v):
-        self.value.set(v)
-        self.btn.config(width=0)
-        self.needsSaving()
-        self.setBlock(self.goLeft())
-
-    def toNode(self):
-        v = self.value.get()
-        try:
-            float(v)
-        except ValueError:
-            if (not self.shared.cvtError):
-                self.setBlock(self)
-                tk.messagebox.showinfo('Convert Error', 'Fix bad number')
-                self.shared.cvtError = True
-        return NumberNode(v)
-
-class StringBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.string = tk.StringVar()
-        tk.Button(self, text='"', command=self.cb).grid(row=0, column=0)
-        self.btn = tk.Button(self, textvariable=self.string, fg='green', width=0, command=self.cb, justify=tk.LEFT)
-        self.string.set(node.what)
-        self.btn.grid(row=0, column=1)
-        tk.Button(self, text='"', command=self.cb).grid(row=0, column=2)
-
-    def genForm(self):
-        f = StringForm(self.shared.confarea, self)
-        self.setForm(f)
-
-    # f.entry.focus()
-    def cb(self):
-        self.setBlock(self)
-
-    def setContents(self, s):
-        self.string.set(s)
-        self.btn.config(width=0)
-        self.scrollUpdate()
-        self.needsSaving()
-        self.setBlock(self.goLeft())
-
-    def toNode(self):
-        return StringNode(self.string.get())
-
-class SubscriptBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.isWithinStore = False
-        self.array = ExpressionBlock(self, shared, node.array)
-        self.array.grid(row=0, column=0)
-        tk.Button(self, text='[', command=self.cb).grid(row=0, column=1)
-        self.colon1 = tk.Button(self, text=':', command=self.cb)
-        self.colon2 = tk.Button(self, text=':', command=self.cb)
-        self.eol = tk.Button(self, text=']', command=self.cb)
-        (self.isSlice, lower, upper, step) = node.slice
-        if (lower == None):
-            self.lower = None
-        else:
-            self.lower = lower.toBlock(self, self)
-        if self.isSlice:
-            if (upper == None):
-                self.upper = None
-            else:
-                self.upper = upper.toBlock(self, self)
-            if (step == None):
-                self.step = None
-            else:
-                self.step = step.toBlock(self, self)
-        else:
-            self.upper = self.step = None
-        self.updateGrid()
-
-    def contains(self, s):
-        r = False
-        if self.array.contains(s):
-            r = True
-        if self.lower != None and self.lower.contains(s):
-            r = True
-        if self.upper != None and self.upper.contains(s):
-            r = True
-        if self.step != None and self.step.contains(s):
-            r = True
-        return self.markFound(r)
-
-    def cb(self):
-        self.setBlock(self)
-
-    def genForm(self):
-        self.setForm(SubscriptForm(self.shared.confarea, self))
-
-    def updateGrid(self):
-        column = 2
-        if (self.lower != None):
-            self.lower.grid(row=0, column=column)
-            column += 1
-        if self.isSlice:
-            self.colon1.grid(row=0, column=column)
-            column += 1
-            if (self.upper != None):
-                self.upper.grid(row=0, column=column)
-                column += 1
-            if (self.step != None):
-                self.colon2.grid(row=0, column=column)
-                column += 1
-                self.step.grid(row=0, column=column)
-                column += 1
-        self.eol.grid(row=0, column=column)
-
-    def addLower(self):
-        self.lower = ExpressionBlock(self, self.shared, None)
-        self.updateGrid()
-        self.setBlock(self.lower)
-
-    def addUpper(self):
-        self.upper = ExpressionBlock(self, self.shared, None)
-        self.updateGrid()
-        self.setBlock(self.upper)
-
-    def addStep(self):
-        self.step = ExpressionBlock(self, self.shared, None)
-        self.updateGrid()
-        self.setBlock(self.step)
-
-    def toNode(self):
-        return SubscriptNode(self.array.toNode(), (self.isSlice, (None if (self.lower == None) else self.lower.toNode()), (None if (self.upper == None) else self.upper.toNode()), (None if (self.step == None) else self.step.toNode())))
-
-class UnaryopBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        left = tk.Button(self, text=node.op, fg='purple', width=0, command=self.cb)
-        left.grid(row=0, column=0)
-        self.right = ExpressionBlock(self, shared, node.right)
-        self.op = node.op
-        self.right.grid(row=0, column=1)
-
-    def contains(self, s):
-        r = self.orl(self.op == s, self.right.contains(s))
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(UnaryopForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return UnaryopNode(self.right.toNode(), self.op)
-
-class ModuleBlock(CompoundBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        if (node == None):
-            self.clauses = [BasicClauseBlock(self, self.shared, BasicClauseNode('module', None, False))]
-        else:
-            self.clauses = [c.toBlock(self, self) for c in node.clauses]
-        self.clauses[0].grid()
-
-    def genForm(self):
-        self.setForm(ModuleForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return ModuleNode(self.clauses[0].toNode())
-
-# A container block is a compound block with a single clause in it.
-class ContainerBlock(CompoundBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.clauses = [c.toBlock(self, self) for c in node.clauses]
-        self.clauses[0].grid()
-
-    def genForm(self):
-        self.setForm(ContainerForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        return ContainerNode(self.clauses[0].toNode())
-
-class ClassClauseBlock(ClauseBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, 'def clause')
-        self.cname = tk.StringVar()
-        self.cname.set(node.name)
-        btn = tk.Button(self.hdr, text='class', fg='red', width=0, command=self.cb)
-        btn.grid(row=1, column=0)
-        self.name = tk.Button(self.hdr, textvariable=self.cname, fg='blue', command=self.cb)
-        self.name.grid(row=1, column=1)
-        tk.Button(self.hdr, text='(', command=self.cb).grid(row=1, column=2)
-        self.eol = tk.Button(self.hdr, text=')', command=self.cb)
-        self.bases = []
-        if (node != None):
-            for base in node.bases:
-                self.addBaseClass(base)
-        self.decorator_list = node.decorator_list
-        self.setHeader()
-        self.hdr.grid()
-
-    def contains(self, s):
-        r = self.orl(s == "class", self.cname.get() == s, super().contains(s))
-        for b in self.bases:
-            if b.contains(s):
-                r = True
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(ClassClauseForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def classUpdate(self, mname):
-        self.cname.set(mname)
-        self.needsSaving()
-
-    def addBaseClass(self, node):
-        if (node == None):
-            base = ExpressionBlock(self.hdr, self.shared, None)
-        else:
-            base = ExpressionBlock(self.hdr, self.shared, node)
-        self.bases.append(base)
-        self.setHeader()
-
-    def setHeader(self):
-        column = 3
-        for i in range(len(self.bases)):
-            if (i != 0):
-                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
-                column += 1
-            self.bases[i].grid(row=1, column=column)
-            column += 1
-        self.eol.grid(row=1, column=column)
-
-    def toNodeRaw(self):
-        v = self.cname.get()
-        if (not v.isidentifier()):
-            if (not self.shared.cvtError):
-                self.setBlock(self)
-                tk.messagebox.showinfo('Convert Error', 'Fix bad class name')
-                self.shared.cvtError = True
-        return ClassClauseNode(v, [b.toNode() for b in self.bases], self.getBody(), self.minimized, self.decorator_list)
-
 class CallBlock(Block):
 
     def __init__(self, parent, shared, node):
@@ -985,9 +1189,9 @@ class CallBlock(Block):
         self.gridUpdate()
 
     def contains(self, s):
-        r = self.orl(self.func.contains(s), s in self.args)
+        r = self.orl(self.func.contains(s), (s in self.args))
         for (k, v) in self.keywords:
-            if k == s or v.contains(s):
+            if ((k == s) or v.contains(s)):
                 r = True
         return self.markFound(r)
 
@@ -1057,239 +1261,27 @@ class CallBlock(Block):
     def toNode(self):
         return CallNode(self.func.toNode(), [arg.toNode() for arg in self.args], [(k, v.toNode()) for (k, v) in self.keywords])
 
-class ListBlock(Block):
+class ConstantBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        tk.Button(self, text='[', width=0, command=self.cb).grid(row=0, column=0)
-        self.eol = tk.Button(self, text=']', width=0, command=self.cb)
-        self.entries = []
-        if (node != None):
-            for e in node.entries:
-                self.addEntry(e)
-        self.gridUpdate()
+        self.value = tk.StringVar()
+        self.value.set(node.what)
+        self.btn = tk.Button(self, textvariable=self.value, fg='purple', width=0, command=self.cb)
+        self.btn.grid(row=0, column=0)
 
     def contains(self, s):
-        r = False
-        for e in self.entries:
-            if e.contains(s):
-                r = True
+        r = (self.value.get() == s)
         return self.markFound(r)
 
     def genForm(self):
-        self.setForm(ListForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def addEntry(self, node):
-        if (node == None):
-            e = ExpressionBlock(self, self.shared, None)
-        else:
-            e = ExpressionBlock(self, self.shared, node)
-        self.entries.append(e)
-        self.gridUpdate()
-
-    def gridUpdate(self):
-        for i in range(len(self.entries)):
-            if (i != 0):
-                tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=((2 * i) + 1))
-            self.entries[i].grid(row=0, column=((2 * i) + 2))
-        self.eol.grid(row=0, column=((2 * len(self.entries)) + 2))
-
-    def toNode(self):
-        return ListNode([entry.toNode() for entry in self.entries])
-
-class SetBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        tk.Button(self, text='{', width=0, command=self.cb).grid(row=0, column=0)
-        self.eol = tk.Button(self, text='}', width=0, command=self.cb)
-        self.entries = []
-        if (node != None):
-            for e in node.entries:
-                self.addEntry(e)
-        self.gridUpdate()
-
-    def contains(self, s):
-        r = False
-        for e in self.entries:
-            if e.contains(s):
-                r = True
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(SetForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def addEntry(self, node):
-        if (node == None):
-            e = ExpressionBlock(self, self.shared, None)
-        else:
-            e = ExpressionBlock(self, self.shared, node)
-        self.entries.append(e)
-        self.gridUpdate()
-        self.needsSaving()
-
-    def gridUpdate(self):
-        for i in range(len(self.entries)):
-            if (i != 0):
-                tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=((2 * i) + 1))
-            self.entries[i].grid(row=0, column=((2 * i) + 2))
-        self.eol.grid(row=0, column=((2 * len(self.entries)) + 2))
-
-    def toNode(self):
-        return SetNode([entry.toNode() for entry in self.entries])
-
-class GenexpBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.node = node
-        tk.Button(self, text='(', width=0, command=self.cb).grid(row=0, column=0)
-        self.elt = node.elt.toBlock(self, self)
-        self.elt.grid(row=0, column=1)
-        column = 2
-        self.generators = []
-        for (target, iter, ifs, is_async) in node.generators:
-            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            target.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            iter.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            for i in ifs:
-                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
-                column += 1
-                i.toBlock(self, self).grid(row=0, column=column)
-                column += 1
-        tk.Button(self, text=')', width=0, command=self.cb).grid(row=0, column=column)
-
-    def genForm(self):
-        self.setForm(GenexpForm(self.shared.confarea, self))
+        self.setForm(ConstantForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
 
     def toNode(self):
-        # TODO fake.  Should probably extract from blocks
-        return self.node
-
-class ListcompBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.node = node
-        tk.Button(self, text='[', width=0, command=self.cb).grid(row=0, column=0)
-        self.elt = node.elt.toBlock(self, self)
-        self.elt.grid(row=0, column=1)
-        column = 2
-        self.generators = []
-        for (target, iter, ifs, is_async) in node.generators:
-            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            target.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            iter.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            for i in ifs:
-                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
-                column += 1
-                i.toBlock(self, self).grid(row=0, column=column)
-                column += 1
-        tk.Button(self, text=']', width=0, command=self.cb).grid(row=0, column=column)
-
-    def genForm(self):
-        self.setForm(ListcompForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        # TODO fake.  Should probably extract from blocks
-        return self.node
-
-class SetcompBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.node = node
-        tk.Button(self, text='{', width=0, command=self.cb).grid(row=0, column=0)
-        self.elt = node.elt.toBlock(self, self)
-        self.elt.grid(row=0, column=1)
-        column = 2
-        self.generators = []
-        for (target, iter, ifs, is_async) in node.generators:
-            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            target.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            iter.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            for i in ifs:
-                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
-                column += 1
-                i.toBlock(self, self).grid(row=0, column=column)
-                column += 1
-        tk.Button(self, text='}', width=0, command=self.cb).grid(row=0, column=column)
-
-    def genForm(self):
-        self.setForm(ListcompForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        # TODO fake.  Should probably extract from blocks
-        return self.node
-
-class DictcompBlock(Block):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.node = node
-        tk.Button(self, text='{', width=0, command=self.cb).grid(row=0, column=0)
-        self.key = node.key.toBlock(self, self)
-        self.key.grid(row=0, column=1)
-        tk.Button(self, text=' : ', width=0, command=self.cb).grid(row=0, column=2)
-        self.value = node.value.toBlock(self, self)
-        self.value.grid(row=0, column=3)
-        column = 4
-        self.generators = []
-        for (target, iter, ifs, is_async) in node.generators:
-            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            target.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-            iter.toBlock(self, self).grid(row=0, column=column)
-            column += 1
-            for i in ifs:
-                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
-                column += 1
-                i.toBlock(self, self).grid(row=0, column=column)
-                column += 1
-        tk.Button(self, text='}', width=0, command=self.cb).grid(row=0, column=column)
-
-    def genForm(self):
-        self.setForm(DictcompForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNode(self):
-        # TODO fake.  Should probably extract from blocks
-        return self.node
+        return ConstantNode(self.value.get())
 
 class DictBlock(Block):
 
@@ -1348,56 +1340,44 @@ class DictBlock(Block):
     def toNode(self):
         return DictNode([k.toNode() for k in self.keys], [v.toNode() for v in self.values])
 
-class TupleBlock(Block):
+class DictcompBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        tk.Button(self, text='(', width=0, command=self.cb).grid(row=0, column=0)
-        self.eol = tk.Button(self, text=')', width=0, command=self.cb)
-        self.entries = []
-        if (node != None):
-            for e in node.entries:
-                self.addEntry(e)
-        self.gridUpdate()
-
-    def contains(self, s):
-        r = False
-        for e in self.entries:
-            if e.contains(s):
-                r = True
-        return self.markFound(r)
+        self.node = node
+        tk.Button(self, text='{', width=0, command=self.cb).grid(row=0, column=0)
+        self.key = node.key.toBlock(self, self)
+        self.key.grid(row=0, column=1)
+        tk.Button(self, text=' : ', width=0, command=self.cb).grid(row=0, column=2)
+        self.value = node.value.toBlock(self, self)
+        self.value.grid(row=0, column=3)
+        column = 4
+        self.generators = []
+        for (target, iter, ifs, is_async) in node.generators:
+            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            target.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            iter.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            for i in ifs:
+                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                i.toBlock(self, self).grid(row=0, column=column)
+                column += 1
+        tk.Button(self, text='}', width=0, command=self.cb).grid(row=0, column=column)
 
     def genForm(self):
-        self.setForm(TupleForm(self.shared.confarea, self))
+        self.setForm(DictcompForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
 
-    def addEntry(self, node):
-        if (node == None):
-            e = ExpressionBlock(self, self.shared, None)
-        else:
-            e = ExpressionBlock(self, self.shared, node)
-        self.entries.append(e)
-        self.gridUpdate()
-        self.needsSaving()
-
-    def gridUpdate(self):
-        column = 1
-        n = len(self.entries)
-        for i in range(n):
-            if (i != 0):
-                tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=column)
-                column += 1
-            self.entries[i].grid(row=0, column=column)
-            column += 1
-        if (n == 1):
-            tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=column)
-            column += 1
-        self.eol.grid(row=0, column=column)
-
     def toNode(self):
-        return TupleNode([entry.toNode() for entry in self.entries])
+        # TODO fake.  Should probably extract from blocks
+        return self.node
 
 class ExpressionBlock(Block):
 
@@ -1413,7 +1393,7 @@ class ExpressionBlock(Block):
             self.what.grid()
 
     def contains(self, s):
-        r = self.what != None and self.what.contains(s)
+        r = ((self.what != None) and self.what.contains(s))
         return self.markFound(r)
 
     def goRight(self):
@@ -1571,46 +1551,41 @@ class ExpressionBlock(Block):
             return ExpressionNode(None)
         return ExpressionNode(self.what.toNode())
 
-class AssignBlock(Block):
+class GenexpBlock(Block):
 
     def __init__(self, parent, shared, node):
         super().__init__(parent, shared)
-        if (node == None):
-            self.isWithinStore = True
-            self.targets = [ExpressionBlock(self, shared, None)]
-            self.isWithinStore = False
-            self.value = ExpressionBlock(self, shared, None)
-        else:
-            self.isWithinStore = True
-            self.targets = [t.toBlock(self, self) for t in node.targets]
-            self.isWithinStore = False
-            self.value = node.value.toBlock(self, self)
-        column = 0
-        for t in self.targets:
-            t.grid(row=0, column=column)
+        self.node = node
+        tk.Button(self, text='(', width=0, command=self.cb).grid(row=0, column=0)
+        self.elt = node.elt.toBlock(self, self)
+        self.elt.grid(row=0, column=1)
+        column = 2
+        self.generators = []
+        for (target, iter, ifs, is_async) in node.generators:
+            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
             column += 1
-            tk.Button(self, text='=', fg='purple', command=self.cb).grid(row=0, column=column)
+            target.toBlock(self, self).grid(row=0, column=column)
             column += 1
-        self.value.grid(row=0, column=column)
-
-    def contains(self, s):
-        r = self.value.contains(s)
-        for t in self.targets:
-            if t.contains(s):
-                r = True
-        return self.markFound(r)
-
-    def goRight(self):
-        return self.targets[0]
+            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            iter.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            for i in ifs:
+                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                i.toBlock(self, self).grid(row=0, column=column)
+                column += 1
+        tk.Button(self, text=')', width=0, command=self.cb).grid(row=0, column=column)
 
     def genForm(self):
-        self.setForm(AssignForm(self.shared.confarea, self))
+        self.setForm(GenexpForm(self.shared.confarea, self))
 
     def cb(self):
         self.setBlock(self)
 
     def toNode(self):
-        return AssignNode([t.toNode() for t in self.targets], self.value.toNode())
+        # TODO fake.  Should probably extract from blocks
+        return self.node
 
 class IfelseBlock(Block):
 
@@ -1642,6 +1617,453 @@ class IfelseBlock(Block):
 
     def toNode(self):
         return IfelseNode(self.cond.toNode(), self.ifTrue.toNode(), self.ifFalse.toNode())
+
+class ListBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        tk.Button(self, text='[', width=0, command=self.cb).grid(row=0, column=0)
+        self.eol = tk.Button(self, text=']', width=0, command=self.cb)
+        self.entries = []
+        if (node != None):
+            for e in node.entries:
+                self.addEntry(e)
+        self.gridUpdate()
+
+    def contains(self, s):
+        r = False
+        for e in self.entries:
+            if e.contains(s):
+                r = True
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(ListForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addEntry(self, node):
+        if (node == None):
+            e = ExpressionBlock(self, self.shared, None)
+        else:
+            e = ExpressionBlock(self, self.shared, node)
+        self.entries.append(e)
+        self.gridUpdate()
+
+    def gridUpdate(self):
+        for i in range(len(self.entries)):
+            if (i != 0):
+                tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=((2 * i) + 1))
+            self.entries[i].grid(row=0, column=((2 * i) + 2))
+        self.eol.grid(row=0, column=((2 * len(self.entries)) + 2))
+
+    def toNode(self):
+        return ListNode([entry.toNode() for entry in self.entries])
+
+class ListcompBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.node = node
+        tk.Button(self, text='[', width=0, command=self.cb).grid(row=0, column=0)
+        self.elt = node.elt.toBlock(self, self)
+        self.elt.grid(row=0, column=1)
+        column = 2
+        self.generators = []
+        for (target, iter, ifs, is_async) in node.generators:
+            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            target.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            iter.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            for i in ifs:
+                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                i.toBlock(self, self).grid(row=0, column=column)
+                column += 1
+        tk.Button(self, text=']', width=0, command=self.cb).grid(row=0, column=column)
+
+    def genForm(self):
+        self.setForm(ListcompForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        # TODO fake.  Should probably extract from blocks
+        return self.node
+
+class ListopBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.values = [ExpressionBlock(self, shared, v) for v in node.values]
+        self.ops = node.ops
+        n = len(node.ops)
+        for i in range(n):
+            self.values[i].grid(row=0, column=(2 * i))
+            op = tk.Button(self, text=node.ops[i], fg='purple', width=0, command=self.cb)
+            op.grid(row=0, column=((2 * i) + 1))
+        self.values[n].grid(row=0, column=(2 * n))
+
+    def contains(self, s):
+        r = False
+        for v in self.values:
+            if v.contains(s):
+                r = True
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(ListopForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return ListopNode([v.toNode() for v in self.values], self.ops)
+
+class NameBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.vname = tk.StringVar()
+        self.btn = tk.Button(self, textvariable=self.vname, fg='blue', width=0, command=self.cb)
+        self.vname.set(node.what)
+        self.btn.grid(row=0, column=0)
+
+    def contains(self, s):
+        r = (self.vname.get() == s)
+        return self.markFound(r)
+
+    def genForm(self):
+        f = NameForm(self.shared.confarea, self)
+        self.setForm(f)
+
+    # f.entry.focus()
+    def cb(self):
+        self.setBlock(self)
+
+    def setName(self, v):
+        self.vname.set(v)
+        self.btn.config(width=0)
+        self.needsSaving()
+        self.setBlock(self.goLeft())
+
+    def toNode(self):
+        v = self.vname.get()
+        if (not v.isidentifier()):
+            if (not self.shared.cvtError):
+                self.setBlock(self)
+                tk.messagebox.showinfo('Convert Error', 'Fix bad variable name')
+                self.shared.cvtError = True
+        return NameNode(v)
+
+class NumberBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.value = tk.StringVar()
+        self.value.set(node.what)
+        self.btn = tk.Button(self, textvariable=self.value, fg='blue', width=0, command=self.cb)
+        self.btn.grid(row=0, column=0)
+
+    def contains(self, s):
+        r = (self.value.get() == s)
+        return self.markFound(r)
+
+    def genForm(self):
+        f = NumberForm(self.shared.confarea, self)
+        self.setForm(f)
+
+    # f.entry.focus()
+    def cb(self):
+        self.setBlock(self)
+
+    def setValue(self, v):
+        self.value.set(v)
+        self.btn.config(width=0)
+        self.needsSaving()
+        self.setBlock(self.goLeft())
+
+    def toNode(self):
+        v = self.value.get()
+        try:
+            float(v)
+        except ValueError:
+            if (not self.shared.cvtError):
+                self.setBlock(self)
+                tk.messagebox.showinfo('Convert Error', 'Fix bad number')
+                self.shared.cvtError = True
+        return NumberNode(v)
+
+class SetBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        tk.Button(self, text='{', width=0, command=self.cb).grid(row=0, column=0)
+        self.eol = tk.Button(self, text='}', width=0, command=self.cb)
+        self.entries = []
+        if (node != None):
+            for e in node.entries:
+                self.addEntry(e)
+        self.gridUpdate()
+
+    def contains(self, s):
+        r = False
+        for e in self.entries:
+            if e.contains(s):
+                r = True
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(SetForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addEntry(self, node):
+        if (node == None):
+            e = ExpressionBlock(self, self.shared, None)
+        else:
+            e = ExpressionBlock(self, self.shared, node)
+        self.entries.append(e)
+        self.gridUpdate()
+        self.needsSaving()
+
+    def gridUpdate(self):
+        for i in range(len(self.entries)):
+            if (i != 0):
+                tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=((2 * i) + 1))
+            self.entries[i].grid(row=0, column=((2 * i) + 2))
+        self.eol.grid(row=0, column=((2 * len(self.entries)) + 2))
+
+    def toNode(self):
+        return SetNode([entry.toNode() for entry in self.entries])
+
+class SetcompBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.node = node
+        tk.Button(self, text='{', width=0, command=self.cb).grid(row=0, column=0)
+        self.elt = node.elt.toBlock(self, self)
+        self.elt.grid(row=0, column=1)
+        column = 2
+        self.generators = []
+        for (target, iter, ifs, is_async) in node.generators:
+            tk.Button(self, text=' for ', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            target.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            tk.Button(self, text=' in ', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+            iter.toBlock(self, self).grid(row=0, column=column)
+            column += 1
+            for i in ifs:
+                tk.Button(self, text=' if ', width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+                i.toBlock(self, self).grid(row=0, column=column)
+                column += 1
+        tk.Button(self, text='}', width=0, command=self.cb).grid(row=0, column=column)
+
+    def genForm(self):
+        self.setForm(ListcompForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        # TODO fake.  Should probably extract from blocks
+        return self.node
+
+class StringBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.string = tk.StringVar()
+        tk.Button(self, text='"', command=self.cb).grid(row=0, column=0)
+        self.btn = tk.Button(self, textvariable=self.string, fg='green', width=0, command=self.cb, justify=tk.LEFT)
+        self.string.set(node.what)
+        self.btn.grid(row=0, column=1)
+        tk.Button(self, text='"', command=self.cb).grid(row=0, column=2)
+
+    def genForm(self):
+        f = StringForm(self.shared.confarea, self)
+        self.setForm(f)
+
+    # f.entry.focus()
+    def cb(self):
+        self.setBlock(self)
+
+    def setContents(self, s):
+        self.string.set(s)
+        self.btn.config(width=0)
+        self.scrollUpdate()
+        self.needsSaving()
+        self.setBlock(self.goLeft())
+
+    def toNode(self):
+        return StringNode(self.string.get())
+
+class SubscriptBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        self.isWithinStore = False
+        self.array = ExpressionBlock(self, shared, node.array)
+        self.array.grid(row=0, column=0)
+        tk.Button(self, text='[', command=self.cb).grid(row=0, column=1)
+        self.colon1 = tk.Button(self, text=':', command=self.cb)
+        self.colon2 = tk.Button(self, text=':', command=self.cb)
+        self.eol = tk.Button(self, text=']', command=self.cb)
+        (self.isSlice, lower, upper, step) = node.slice
+        if (lower == None):
+            self.lower = None
+        else:
+            self.lower = lower.toBlock(self, self)
+        if self.isSlice:
+            if (upper == None):
+                self.upper = None
+            else:
+                self.upper = upper.toBlock(self, self)
+            if (step == None):
+                self.step = None
+            else:
+                self.step = step.toBlock(self, self)
+        else:
+            self.upper = self.step = None
+        self.updateGrid()
+
+    def contains(self, s):
+        r = False
+        if self.array.contains(s):
+            r = True
+        if ((self.lower != None) and self.lower.contains(s)):
+            r = True
+        if ((self.upper != None) and self.upper.contains(s)):
+            r = True
+        if ((self.step != None) and self.step.contains(s)):
+            r = True
+        return self.markFound(r)
+
+    def cb(self):
+        self.setBlock(self)
+
+    def genForm(self):
+        self.setForm(SubscriptForm(self.shared.confarea, self))
+
+    def updateGrid(self):
+        column = 2
+        if (self.lower != None):
+            self.lower.grid(row=0, column=column)
+            column += 1
+        if self.isSlice:
+            self.colon1.grid(row=0, column=column)
+            column += 1
+            if (self.upper != None):
+                self.upper.grid(row=0, column=column)
+                column += 1
+            if (self.step != None):
+                self.colon2.grid(row=0, column=column)
+                column += 1
+                self.step.grid(row=0, column=column)
+                column += 1
+        self.eol.grid(row=0, column=column)
+
+    def addLower(self):
+        self.lower = ExpressionBlock(self, self.shared, None)
+        self.updateGrid()
+        self.setBlock(self.lower)
+
+    def addUpper(self):
+        self.upper = ExpressionBlock(self, self.shared, None)
+        self.updateGrid()
+        self.setBlock(self.upper)
+
+    def addStep(self):
+        self.step = ExpressionBlock(self, self.shared, None)
+        self.updateGrid()
+        self.setBlock(self.step)
+
+    def toNode(self):
+        return SubscriptNode(self.array.toNode(), (self.isSlice, (None if (self.lower == None) else self.lower.toNode()), (None if (self.upper == None) else self.upper.toNode()), (None if (self.step == None) else self.step.toNode())))
+
+class TupleBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        tk.Button(self, text='(', width=0, command=self.cb).grid(row=0, column=0)
+        self.eol = tk.Button(self, text=')', width=0, command=self.cb)
+        self.entries = []
+        if (node != None):
+            for e in node.entries:
+                self.addEntry(e)
+        self.gridUpdate()
+
+    def contains(self, s):
+        r = False
+        for e in self.entries:
+            if e.contains(s):
+                r = True
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(TupleForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def addEntry(self, node):
+        if (node == None):
+            e = ExpressionBlock(self, self.shared, None)
+        else:
+            e = ExpressionBlock(self, self.shared, node)
+        self.entries.append(e)
+        self.gridUpdate()
+
+    def gridUpdate(self):
+        column = 1
+        n = len(self.entries)
+        for i in range(n):
+            if (i != 0):
+                tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=column)
+                column += 1
+            self.entries[i].grid(row=0, column=column)
+            column += 1
+        if (n == 1):
+            tk.Button(self, text=',', width=0, command=self.cb).grid(row=0, column=column)
+            column += 1
+        self.eol.grid(row=0, column=column)
+
+    def toNode(self):
+        return TupleNode([entry.toNode() for entry in self.entries])
+
+class UnaryopBlock(Block):
+
+    def __init__(self, parent, shared, node):
+        super().__init__(parent, shared)
+        left = tk.Button(self, text=node.op, fg='purple', width=0, command=self.cb)
+        left.grid(row=0, column=0)
+        self.right = ExpressionBlock(self, shared, node.right)
+        self.op = node.op
+        self.right.grid(row=0, column=1)
+
+    def contains(self, s):
+        r = self.orl((self.op == s), self.right.contains(s))
+        return self.markFound(r)
+
+    def genForm(self):
+        self.setForm(UnaryopForm(self.shared.confarea, self))
+
+    def cb(self):
+        self.setBlock(self)
+
+    def toNode(self):
+        return UnaryopNode(self.right.toNode(), self.op)
 
 class AugassignBlock(Block):
 
@@ -1680,7 +2102,7 @@ class PassBlock(Block):
         btn.grid(row=0, column=0)
 
     def contains(self, s):
-        r = s == "pass"
+        r = (s == 'pass')
         return self.markFound(r)
 
     def genForm(self):
@@ -1813,7 +2235,7 @@ class ReturnBlock(Block):
             self.expr.grid(row=0, column=1)
 
     def contains(self, s):
-        r = self.orl(s == "return", self.expr != None and self.expr.contains(s))
+        r = self.orl((s == 'return'), ((self.expr != None) and self.expr.contains(s)))
         return self.markFound(r)
 
     def genForm(self):
@@ -1842,7 +2264,7 @@ class YieldBlock(Block):
             self.expr.grid(row=0, column=1)
 
     def contains(self, s):
-        r = self.orl(s == "yield", self.expr.contains(s))
+        r = self.orl((s == 'yield'), self.expr.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -1996,7 +2418,7 @@ class BreakBlock(Block):
         tk.Button(self, text='break', fg='red', command=self.cb).grid(row=0, column=0)
 
     def contains(self, s):
-        r = s == "break"
+        r = (s == 'break')
         return self.markFound(r)
 
     def genForm(self):
@@ -2015,7 +2437,7 @@ class ContinueBlock(Block):
         tk.Button(self, text='continue', fg='red', command=self.cb).grid(row=0, column=0)
 
     def contains(self, s):
-        r = s == "continue"
+        r = (s == 'continue')
         return self.markFound(r)
 
     def genForm(self):
@@ -2045,7 +2467,7 @@ class GlobalBlock(Block):
             column += 1
 
     def contains(self, s):
-        r =  s == "global"
+        r = (s == 'global')
         for v in self.vars:
             if v.contains(s):
                 r = True
@@ -2145,7 +2567,7 @@ class StatementBlock(Block):
         self.frame.grid(row=0, column=1, sticky=tk.W)
 
     def markFound(self, r):
-        if (r):
+        if r:
             self.menu.configure(bd=2, highlightbackground='green', highlightcolor='green', highlightthickness=2)
         else:
             self.menu.configure(bd=0, highlightbackground='white', highlightthickness=0)
@@ -2335,429 +2757,3 @@ class SeqBlock(Block):
 
     def toNode(self):
         return SeqNode([r.toNode() for r in self.rows])
-
-class DefClauseBlock(ClauseBlock):
-
-    def __init__(self, parent, shared, node):
-        parent.isWithinDef = True
-        super().__init__(parent, shared, node, 'def clause')
-        self.mname = tk.StringVar()
-        self.mname.set(node.name)
-        self.args = node.args
-        self.defaults = node.defaults
-        self.vararg = node.vararg
-        self.kwarg = node.kwarg
-        self.decorator_list = node.decorator_list
-        self.setHeader()
-
-    def contains(self, s):
-        r = self.orl(s == "def", self.mname.get() == s, s in self.args, self.vararg == s, self.kwarg == s, super().contains(s))
-        for d in self.defaults:
-            if d.contains(s):
-                r = True
-        return self.markFound(r)
-
-    def setHeader(self):
-        self.newHeader()
-        btn = tk.Button(self.hdr, text='def', fg='red', width=0, command=self.cb)
-        btn.grid(row=1, column=0)
-        self.name = tk.Button(self.hdr, textvariable=self.mname, fg='blue', command=self.cb)
-        self.name.grid(row=1, column=1)
-        tk.Button(self.hdr, text='(', command=self.cb).grid(row=1, column=2)
-        column = 3
-        first = True
-        nargs = len(self.args)
-        ndefaults = len(self.defaults)
-        delta = (nargs - ndefaults)
-        for i in range(delta):
-            if first:
-                first = False
-            else:
-                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
-                column += 1
-            tk.Button(self.hdr, text=self.args[i], fg='blue', command=self.cb).grid(row=1, column=column)
-            column += 1
-        if (self.vararg != None):
-            if (not first):
-                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
-                column += 1
-            tk.Button(self.hdr, text=('*' + self.vararg), fg='blue', command=self.cb).grid(row=1, column=column)
-            column += 1
-        for i in range(delta, nargs):
-            if first:
-                first = False
-            else:
-                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
-                column += 1
-            tk.Button(self.hdr, text=self.args[i], fg='blue', command=self.cb).grid(row=1, column=column)
-            column += 1
-            tk.Button(self.hdr, text='=', command=self.cb).grid(row=1, column=column)
-            column += 1
-            self.defaults[(i - delta)].toBlock(self.hdr, self).grid(row=1, column=column)
-            column += 1
-        if (self.kwarg != None):
-            if (not first):
-                tk.Button(self.hdr, text=',', command=self.cb).grid(row=1, column=column)
-                column += 1
-            tk.Button(self.hdr, text=('**' + self.kwarg), fg='blue', command=self.cb).grid(row=1, column=column)
-            column += 1
-        tk.Button(self.hdr, text=')', command=self.cb).grid(row=1, column=column)
-
-    # TODO.  This function may be obsolete
-    def addArg(self, name):
-        self.args.insert(len(self.defaults), name)
-        self.setHeader()
-
-    def genForm(self):
-        f = DefClauseForm(self.shared.confarea, self)
-        self.setForm(f)
-
-    def cb(self):
-        self.setBlock(self)
-
-    def incArg(self, name, type):
-        if (type == 'normal'):
-            pos = (len(self.args) - len(self.defaults))
-            self.args.insert(pos, name)
-        elif (type == 'keyword'):
-            self.args.append(name)
-            self.defaults.append(ExpressionNode(None))
-        elif (type == '*vararg'):
-            self.vararg = name
-        else:
-            assert (type == '**vararg')
-            self.kwarg = name
-        self.setHeader()
-        self.needsSaving()
-
-    def defUpdate(self, mname):
-        self.mname.set(mname)
-        self.setHeader()
-        self.needsSaving()
-
-    def toNodeRaw(self):
-        v = self.mname.get()
-        if (not v.isidentifier()):
-            if (not self.shared.cvtError):
-                self.setBlock(self)
-                tk.messagebox.showinfo('Convert Error', 'Fix bad function name')
-                self.shared.cvtError = True
-        return DefClauseNode(v, self.args, self.defaults, self.vararg, self.kwarg, self.getBody(), self.minimized, self.decorator_list)
-
-class IfBlock(CompoundBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        if (node == None):
-            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('if', None, None, False))]
-            self.hasElse = False
-        else:
-            self.clauses = [n.toBlock(self, self) for n in node.clauses]
-            self.hasElse = node.hasElse
-        self.gridUpdate()
-
-    def genForm(self):
-        self.setForm(IfForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def insertElif(self):
-        clause = CondClauseBlock(self, self.shared, CondClauseNode('elif', None, None, False))
-        n = len(self.clauses)
-        self.clauses.insert(((n - 1) if self.hasElse else n), clause)
-        self.gridUpdate()
-        self.setBlock(clause.body.rows[0].what)
-        self.needsSaving()
-
-    def addElse(self):
-        if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
-            self.clauses.append(clause)
-            self.gridUpdate()
-            self.setBlock(clause.body.rows[0].what)
-            self.hasElse = True
-            self.needsSaving()
-
-    def removeElse(self):
-        if self.hasElse:
-            self.clauses[(- 1)].grid_forget()
-            del self.clauses[(- 1)]
-            self.setBlock(self)
-            self.hasElse = False
-            self.needsSaving()
-
-    def gridUpdate(self):
-        super().gridUpdate()
-        for i in range(len(self.clauses)):
-            self.clauses[i].grid(row=i, sticky=tk.W)
-        self.scrollUpdate()
-
-    def toNode(self):
-        return IfNode([c.toNode() for c in self.clauses], self.hasElse)
-
-class WhileBlock(CompoundBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.isWithinLoop = True
-        if (node == None):
-            self.clauses = [CondClauseBlock(self, shared, CondClauseNode('while', None, None, False))]
-            self.isWithinLoop = False
-            self.hasElse = False
-        else:
-            self.clauses = [node.clauses[0].toBlock(self, self)]
-            self.isWithinLoop = False
-            if node.hasElse:
-                self.clauses.append(node.clauses[1].toBlock(self, self))
-            self.hasElse = node.hasElse
-        self.gridUpdate()
-
-    def genForm(self):
-        self.setForm(WhileForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def addElse(self):
-        if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
-            self.clauses.append(clause)
-            self.gridUpdate()
-            self.setBlock(clause.body.rows[0].what)
-            self.hasElse = True
-            self.needsSaving()
-
-    def removeElse(self):
-        if self.hasElse:
-            self.clauses[(- 1)].grid_forget()
-            del self.clauses[(- 1)]
-            self.setBlock(self)
-            self.hasElse = False
-            self.needsSaving()
-
-    def gridUpdate(self):
-        super().gridUpdate()
-        for i in range(len(self.clauses)):
-            self.clauses[i].grid(row=i, sticky=tk.W)
-        self.scrollUpdate()
-
-    def toNode(self):
-        return WhileNode([c.toNode() for c in self.clauses], self.hasElse)
-
-class ForBlock(CompoundBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        self.isWithinLoop = True
-        if (node == None):
-            self.clauses = [ForClauseBlock(self, shared, ForClauseNode(None, None, None, False))]
-            self.isWithinLoop = False
-            self.hasElse = False
-        else:
-            self.clauses = [node.clauses[0].toBlock(self, self)]
-            self.isWithinLoop = False
-            if node.hasElse:
-                self.clauses.append(node.clauses[1].toBlock(self, self))
-            self.hasElse = node.hasElse
-        self.gridUpdate()
-
-    def genForm(self):
-        self.setForm(ForForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def addElse(self):
-        if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
-            self.clauses.append(clause)
-            self.gridUpdate()
-            self.setBlock(clause.body.rows[0].what)
-            self.hasElse = True
-            self.needsSaving()
-
-    def removeElse(self):
-        if self.hasElse:
-            self.clauses[(- 1)].grid_forget()
-            del self.clauses[(- 1)]
-            self.setBlock(self)
-            self.hasElse = False
-            self.needsSaving()
-
-    def gridUpdate(self):
-        super().gridUpdate()
-        for i in range(len(self.clauses)):
-            self.clauses[i].grid(row=i, sticky=tk.W)
-        self.scrollUpdate()
-
-    def toNode(self):
-        return ForNode([c.toNode() for c in self.clauses], self.hasElse)
-
-class TryBlock(CompoundBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared)
-        if (node == None):
-            self.clauses = [BasicClauseBlock(self, shared, BasicClauseNode('try', None, False))]
-            self.hasElse = False
-        else:
-            self.clauses = [n.toBlock(self, self) for n in node.clauses]
-            self.hasElse = node.hasElse
-        self.gridUpdate()
-
-    def contains(self, s):
-        r = self.orl(s == "try", self.body.contains(s))
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(TryForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def addElse(self):
-        if (not self.hasElse):
-            clause = BasicClauseBlock(self, self.shared, BasicClauseNode('else', None, False))
-            self.clauses.append(clause)
-            self.gridUpdate()
-            self.setBlock(clause.body.rows[0].what)
-            self.hasElse = True
-            self.needsSaving()
-
-    def removeElse(self):
-        if self.hasElse:
-            self.clauses[(- 1)].grid_forget()
-            del self.clauses[(- 1)]
-            self.setBlock(self)
-            self.hasElse = False
-            self.needsSaving()
-
-    def gridUpdate(self):
-        super().gridUpdate()
-        for i in range(len(self.clauses)):
-            self.clauses[i].grid(row=i, sticky=tk.W)
-        self.scrollUpdate()
-
-    def toNode(self):
-        return TryNode([c.toNode() for c in self.clauses], self.hasElse)
-
-class ExceptClauseBlock(ClauseBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, 'except clause')
-        tk.Button(self.hdr, text='except', fg='red', width=0, command=self.cb).grid(row=1, column=0)
-        column = 1
-        if (node.type == None):
-            self.type = None
-            self.name = None
-        else:
-            self.type = node.type.toBlock(self, self)
-            self.type.grid(row=1, column=column)
-            column += 1
-            if (node.name == None):
-                self.name = None
-            else:
-                tk.Button(hdr, text='as', fg='red', width=0, command=self.cb).grid(row=1, column=column)
-                column += 1
-                self.name = node.name.toBlock(self, self)
-                self.name.grid(row=1, column=column)
-                column += 1
-        self.hdr.grid()
-
-    def contains(self, s):
-        r = s == "except"
-        if not r and self.type != None:
-            r = self.type.contains(s)
-        if not r and self.name != None:
-            r = self.name.contains(s)
-        if not r:
-            r = self.super.contains(s)
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(ExceptClauseForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNodeRaw(self):
-        return ExceptClauseNode((None if (self.type == None) else self.type.toNode()), (None if (self.name == None) else self.name.toNode()), self.getBody(), self.minimized)
-
-class WithClauseBlock(ClauseBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, 'with clause')
-        self.items = []
-        tk.Button(self.hdr, text='with', fg='red', width=0, command=self.cb).grid(row=1, column=0)
-        column = 1
-        if (node != None):
-            for (expr, var) in node.items:
-                b = expr.toBlock(self.hdr, self)
-                b.grid(row=1, column=column)
-                column += 1
-                if (var == None):
-                    v = None
-                else:
-                    tk.Button(self.hdr, text='as', fg='red', width=0, command=self.cb).grid(row=1, column=column)
-                    column += 1
-                    v = var.toBlock(self.hdr, self)
-                    v.grid(row=1, column=column)
-                    column += 1
-                self.items.append((b, v))
-        self.hdr.grid()
-
-    def contains(self, s):
-        r = s == "with"
-        if not r:
-            for (expr, var) in self.items:
-                r = expr.contains(s)
-                if not r and var != None:
-                    r = var.contains(s)
-                if r:
-                    break
-        if not r:
-            r = super().contains(s)
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(WithClauseForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNodeRaw(self):
-        return WithClauseNode([(e.toNode(), (None if (v == None) else v.toNode())) for (e, v) in self.items], self.getBody(), self.minimized)
-
-class ForClauseBlock(ClauseBlock):
-
-    def __init__(self, parent, shared, node):
-        super().__init__(parent, shared, node, 'for clause')
-        self.hdr.isWithinStore = True
-        if (node.target == None):
-            self.target = ExpressionBlock(self.hdr, shared, None)
-        else:
-            self.target = node.target.toBlock(self.hdr, self)
-        self.hdr.isWithinStore = False
-        if (node.expr == None):
-            self.expr = ExpressionBlock(self.hdr, shared, None)
-        else:
-            self.expr = ExpressionBlock(self.hdr, shared, node.expr)
-        tk.Button(self.hdr, text='for', fg='red', width=0, command=self.cb).grid(row=1, column=0)
-        self.target.grid(row=1, column=1)
-        tk.Button(self.hdr, text='in', fg='red', command=self.cb).grid(row=1, column=2)
-        self.expr.grid(row=1, column=3)
-        self.hdr.grid()
-
-    def contains(self, s):
-        r = self.orl(s == "for", self.target.contains(s), self.expr.contains(s), super().contains(s))
-        return self.markFound(r)
-
-    def genForm(self):
-        self.setForm(ForClauseForm(self.shared.confarea, self))
-
-    def cb(self):
-        self.setBlock(self)
-
-    def toNodeRaw(self):
-        return ForClauseNode(self.target.toNode(), self.expr.toNode(), self.getBody(), self.minimized)

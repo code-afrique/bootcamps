@@ -941,6 +941,7 @@ class TupleForm(Form):
 
     def addEntry(self):
         self.block.addEntry(None)
+        self.block.needsSaving()
         self.block.setBlock(self.block.entries[(- 1)])
 
 class SubscriptForm(Form):
