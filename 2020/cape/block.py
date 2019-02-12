@@ -20,6 +20,19 @@ class Block(tk.Frame):
         self.isWithinLoop = (False if (parent == None) else parent.isWithinLoop)
         self.isWithinStore = (False if (parent == None) else parent.isWithinStore)    # lvalue
 
+    def find(self, s):
+        self.shared.search_string = () if s == "" else s
+        r = self.contains(self.shared.search_string)
+        if self.shared.search_string != () and not r:
+            tk.messagebox.showinfo("Find", "Did not locate any instances of '{}'".format(self.shared.search_string))
+
+    # logical or of all arguments)
+    def orl(self, *args):
+        for a in args:
+            if a:
+                return True
+        return False
+
     def markFound(self, r):
         return r
 
@@ -334,6 +347,13 @@ class ClauseBlock(Block):
         if ((node == None) or (not node.minimized)):
             self.minmax()
 
+    def markFound(self, r):
+        if (r):
+            self.hdr.configure(bd=2, highlightbackground='green', highlightcolor='green', highlightthickness=2)
+        else:
+            self.hdr.configure(bd=0, highlightbackground='white', highlightthickness=0)
+        return r
+
     def contains(self, s):
         if self.body == None:
             r = self.body_node.contains(s)
@@ -393,6 +413,8 @@ class ClauseBlock(Block):
             if (self.body == None):
                 self.body = self.body_node.toBlock(self, self)
             self.body.grid(row=(2 + len(self.decorator_list)), column=0, sticky=tk.W)
+            if self.shared.search_string != None:
+                self.body.contains(self.shared.search_string)
             self.update()
             self.minimized = False
             self.colon.configure(highlightbackground='white', text=':')
@@ -436,7 +458,6 @@ class CompoundBlock(Block):
         for c in self.clauses:
             if c.contains(s):
                 r = True
-                break
         return self.markFound(r)
 
     def gridUpdate(self):
@@ -457,7 +478,7 @@ class BasicClauseBlock(ClauseBlock):
         self.hdr.grid()
 
     def contains(self, s):
-        r = s == self.type or super().contains(s)
+        r = self.orl(s == self.type, super().contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -486,7 +507,7 @@ class CondClauseBlock(ClauseBlock):
         self.hdr.grid(row=1, sticky=tk.W)
 
     def contains(self, s):
-        r = s == self.type or self.cond.contains(s) or super().contains(s)
+        r = self.orl(s == self.type, self.cond.contains(s), super().contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -518,7 +539,7 @@ class AttrBlock(Block):
         self.ref.grid(row=0, column=2)
 
     def contains(self, s):
-        r = self.array.contains(s) or self.ref.contains(s)
+        r = self.orl(self.array.contains(s), self.ref.contains(s))
         return self.markFound(r)
 
     def cb(self):
@@ -543,7 +564,7 @@ class BinaryopBlock(Block):
         self.right.grid(row=0, column=2)
 
     def contains(self, s):
-        r = self.op == s or self.left.contains(s) or self.right.contains(s)
+        r = self.orl(self.op == s, self.left.contains(s), self.right.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -623,7 +644,6 @@ class ListopBlock(Block):
         for v in self.values:
             if v.contains(s):
                 r = True
-                break
         return self.markFound(r)
 
     def genForm(self):
@@ -768,16 +788,15 @@ class SubscriptBlock(Block):
         self.updateGrid()
 
     def contains(self, s):
+        r = False
         if self.array.contains(s):
             r = True
-        elif self.lower != None and self.lower.contains(s):
+        if self.lower != None and self.lower.contains(s):
             r = True
-        elif self.upper != None and self.upper.contains(s):
+        if self.upper != None and self.upper.contains(s):
             r = True
-        elif self.step != None and self.step.contains(s):
+        if self.step != None and self.step.contains(s):
             r = True
-        else:
-            r = False
         return self.markFound(r)
 
     def cb(self):
@@ -833,7 +852,7 @@ class UnaryopBlock(Block):
         self.right.grid(row=0, column=1)
 
     def contains(self, s):
-        r = self.op == s or self.right.contains(s)
+        r = self.orl(self.op == s, self.right.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -902,14 +921,10 @@ class ClassClauseBlock(ClauseBlock):
         self.hdr.grid()
 
     def contains(self, s):
-        r = s == "class" or self.cname.get() == s
-        if not r:
-            for b in self.bases:
-                if b.contains(s):
-                    r = True
-                    break
-        if not r:
-            r = super().contains(s)
+        r = self.orl(s == "class", self.cname.get() == s, super().contains(s))
+        for b in self.bases:
+            if b.contains(s):
+                r = True
         return self.markFound(r)
 
     def genForm(self):
@@ -970,12 +985,10 @@ class CallBlock(Block):
         self.gridUpdate()
 
     def contains(self, s):
-        r = self.func.contains(s) or s in self.args
-        if not r:
-            for (k, v) in self.keywords:
-                if k == s or v.contains(s):
-                    r = True
-                    break
+        r = self.orl(self.func.contains(s), s in self.args)
+        for (k, v) in self.keywords:
+            if k == s or v.contains(s):
+                r = True
         return self.markFound(r)
 
     def genForm(self):
@@ -1061,7 +1074,6 @@ class ListBlock(Block):
         for e in self.entries:
             if e.contains(s):
                 r = True
-                break
         return self.markFound(r)
 
     def genForm(self):
@@ -1105,7 +1117,6 @@ class SetBlock(Block):
         for e in self.entries:
             if e.contains(s):
                 r = True
-                break
         return self.markFound(r)
 
     def genForm(self):
@@ -1296,9 +1307,8 @@ class DictBlock(Block):
     def contains(self, s):
         r = False
         for (k, v) in self.entries:
-            if k.contains(s) or v.contains(s):
+            if self.orl(k.contains(s), v.contains(s)):
                 r = True
-                break
         return self.markFound(r)
 
     def genForm(self):
@@ -1355,7 +1365,6 @@ class TupleBlock(Block):
         for e in self.entries:
             if e.contains(s):
                 r = True
-                break
         return self.markFound(r)
 
     def genForm(self):
@@ -1585,12 +1594,10 @@ class AssignBlock(Block):
         self.value.grid(row=0, column=column)
 
     def contains(self, s):
-        r = False
+        r = self.value.contains(s)
         for t in self.targets:
             if t.contains(s):
                 r = True
-                break
-        r = r or self.value.contains(s)
         return self.markFound(r)
 
     def goRight(self):
@@ -1624,7 +1631,7 @@ class IfelseBlock(Block):
         self.ifFalse.grid(row=0, column=4)
 
     def contains(self, s):
-        r = self.cond.contains(s) or self.ifTrue.contains(s) or self.ifFalse.contains(s)
+        r = self.orl(self.cond.contains(s), self.ifTrue.contains(s), self.ifFalse.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -1651,7 +1658,7 @@ class AugassignBlock(Block):
         self.right.grid(row=0, column=2)
 
     def contains(self, s):
-        r = self.left.contains(s) or self.right.contains(s)
+        r = self.orl(self.left.contains(s), self.right.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -1806,7 +1813,7 @@ class ReturnBlock(Block):
             self.expr.grid(row=0, column=1)
 
     def contains(self, s):
-        r = s == "return" or (self.expr != None and self.expr.contains(s))
+        r = self.orl(s == "return", self.expr != None and self.expr.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -1835,7 +1842,7 @@ class YieldBlock(Block):
             self.expr.grid(row=0, column=1)
 
     def contains(self, s):
-        r = s == "yield" or self.expr.contains(s)
+        r = self.orl(s == "yield", self.expr.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -1942,7 +1949,6 @@ class DelBlock(Block):
         for t in self.targets:
             if t.contains(s):
                 r = True
-                break
         return self.markFound(r)
 
     def genForm(self):
@@ -2039,14 +2045,10 @@ class GlobalBlock(Block):
             column += 1
 
     def contains(self, s):
-        if s == "global":   
-            r = True
-        else:
-            r = False
-            for v in self.vars:
-                if v.contains(s):
-                    r = True
-                    break
+        r =  s == "global"
+        for v in self.vars:
+            if v.contains(s):
+                r = True
         return self.markFound(r)
 
     def genForm(self):
@@ -2145,6 +2147,8 @@ class StatementBlock(Block):
     def markFound(self, r):
         if (r):
             self.menu.configure(bd=2, highlightbackground='green', highlightcolor='green', highlightthickness=2)
+        else:
+            self.menu.configure(bd=0, highlightbackground='white', highlightthickness=0)
         return r
 
     def contains(self, s):
@@ -2271,7 +2275,6 @@ class SeqBlock(Block):
         for row in self.rows:
             if row.contains(s):
                 r = True
-                break
         return self.markFound(r)
 
     def findLine(n):
@@ -2348,14 +2351,10 @@ class DefClauseBlock(ClauseBlock):
         self.setHeader()
 
     def contains(self, s):
-        r = s == "def" or self.mname.get() == s or s in self.args or self.vararg == s or self.kwarg == s
-        if not r:
-            for d in self.defaults:
-                if d.contains(s):
-                    r = True
-                    break
-        if not r:
-            r = super().contains(s)
+        r = self.orl(s == "def", self.mname.get() == s, s in self.args, self.vararg == s, self.kwarg == s, super().contains(s))
+        for d in self.defaults:
+            if d.contains(s):
+                r = True
         return self.markFound(r)
 
     def setHeader(self):
@@ -2608,7 +2607,7 @@ class TryBlock(CompoundBlock):
         self.gridUpdate()
 
     def contains(self, s):
-        r = s == "try" or self.body.contains(s)
+        r = self.orl(s == "try", self.body.contains(s))
         return self.markFound(r)
 
     def genForm(self):
@@ -2751,7 +2750,7 @@ class ForClauseBlock(ClauseBlock):
         self.hdr.grid()
 
     def contains(self, s):
-        r = s == "for" or self.target.contains(s) or self.expr.contains(s) or super().contains(s)
+        r = self.orl(s == "for", self.target.contains(s), self.expr.contains(s), super().contains(s))
         return self.markFound(r)
 
     def genForm(self):

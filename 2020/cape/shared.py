@@ -22,6 +22,7 @@ class Shared():
         self.program = None
         self.stack = []
         self.trap = False
+        self.search_string = None
 
     def startKeeping(self):
         assert not self.keeping
