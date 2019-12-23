@@ -7,6 +7,7 @@ import keyword
 import tkinter as tk
 import pmod
 import block
+import pp
 
 class Shared():
     def __init__(self):
@@ -58,6 +59,7 @@ class Shared():
             elif (toktype == tokenize.NAME):
                 (row, col) = begin
                 if keyword.iskeyword(tokval):
+                    print("tokval: " + str(tokval))
                     keywords.put((tokval, row, col))
         return (keywords, comments)
 
@@ -71,10 +73,16 @@ class Shared():
         # tree = pparse.pparse(code, mode="eval")
         mod = ast.parse(code, mode=mode)
         tree = ast.dump(mod, include_attributes=True)
+        print("START")
+        pp.pprint(tree)
+        print("FINISH")
         n = pmod.nodeEval(tree)
 
         # extract keywords and comments
         keywords, comments = self.extract(code, mode=mode)
+        print("START KW")
+        print(keywords)
+        print("FINISH KW")
 
         # find the line numbers corresponding to keywords
         n.merge(keywords)
