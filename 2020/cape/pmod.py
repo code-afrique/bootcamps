@@ -1,69 +1,69 @@
 from node import *
 __all__ = ["nodeEval"]
 
-def Module(body, type_ignores):
+def Module(body, **va):
     return ModuleNode(BasicClauseNode("module", SeqNode(body), False))
 
-def Lambda(lineno, col_offset, end_lineno, end_col_offset, args, body):
+def Lambda(args, body, **va):
     (argnames, defaults, vararg, kwarg) = args
     return ExpressionNode(LambdaNode(argnames, defaults, vararg, kwarg, body))
 
-def FunctionDef(lineno, col_offset, end_lineno, end_col_offset, name, args, body, decorator_list, returns):
+def FunctionDef(lineno, name, args, body, decorator_list, **va):
     (argnames, defaults, vararg, kwarg) = args
     return StatementNode(ContainerNode(DefClauseNode(name, argnames, defaults, vararg, kwarg, SeqNode(body), True, decorator_list)), lineno)
 
-def ClassDef(lineno, col_offset, end_lineno, end_col_offset, name, bases, keywords, body, decorator_list):
+def ClassDef(lineno, name, bases, body, decorator_list, **va):
     return StatementNode(ContainerNode(ClassClauseNode(name, [ExpressionNode(x.what) for x in bases], SeqNode(body), True, decorator_list)), lineno)
 
-def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
+def arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults, **va):
     return (args + kwonlyargs, defaults + kw_defaults, vararg, kwarg)
 
-def args(lineno, col_offset, end_lineno, end_col_offset, arg, annotation):
+def args(arg, **va):
     return arg
 
-def Assign(lineno, col_offset, end_lineno, end_col_offset, targets, value):
+def Assign(lineno, targets, value, **va):
     return StatementNode(AssignNode(targets, value), lineno)
 
-def AugAssign(lineno, col_offset, end_lineno, end_col_offset, target, op, value):
+def AugAssign(lineno, target, op, value, **va):
     return StatementNode(AugassignNode(target, value, (op + "=")), lineno)
 
-def Name(lineno, col_offset, end_lineno, end_col_offset, id, ctx):
+def Name(id, **va):
     if (id == "__CAPE_UNINITIALIZED__"):
         return ExpressionNode(None)
     else:
         return ExpressionNode(NameNode(id))
 
-def Subscript(lineno, col_offset, end_lineno, end_col_offset, value, slice, ctx):
+def Subscript(value, slice, **va):
     return ExpressionNode(SubscriptNode(value, slice))
 
-def Index(value):
+def Index(value, **va):
     return (False, value, None, None)
 
-def Slice(lower, upper, step):
+def Slice(lower, upper, step, **va):
     return (True, lower, upper, step)
 
-def Num(lineno, col_offset, end_lineno, end_col_offset, n):
+def Num(n, **va):
     return ExpressionNode(NumberNode(n))
 
-def Str(lineno, col_offset, end_lineno, end_col_offset, s):
+def Str(s, **va):
     return ExpressionNode(StringNode(s))
 
-def Bytes(lineno, col_offset, end_lineno, end_col_offset, s):
+def Bytes(s, **va):
     return ExpressionNode(BytesNode(s))
 
-def For(lineno, col_offset, end_lineno, end_col_offset, target, iter, body, orelse):
+def For(lineno, target, iter, body, orelse, **va):
     if orelse == []:
         return StatementNode(ForNode([ForClauseNode(target, iter, SeqNode(body), False)], False), lineno)
     else:
         return StatementNode(ForNode([ForClauseNode(target, iter, SeqNode(body), False), BasicClauseNode("else", SeqNode(orelse), False)], True), lineno)
 
-def While(lineno, col_offset, end_lineno, end_col_offset, test, body, orelse):
+def While(lineno, test, body, orelse, **va):
     if orelse == []:
         return StatementNode(WhileNode([CondClauseNode("while", test, SeqNode(body), False)], False), lineno)
     else:
         return StatementNode(WhileNode([CondClauseNode("while", test, SeqNode(body), False), BasicClauseNode("else", SeqNode(orelse), False)], True), lineno)
 
-def If(lineno, col_offset, end_lineno, end_col_offset, test, body, orelse):
+def If(lineno, test, body, orelse, **va):
     if (orelse == []):
         return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body), False)], False), lineno)
     if (len(orelse) == 1):
@@ -75,7 +75,7 @@ def If(lineno, col_offset, end_lineno, end_col_offset, test, body, orelse):
             return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body), False)] + stmt.clauses, stmt.hasElse), lineno)
     return StatementNode(IfNode([CondClauseNode("if", test, SeqNode(body), False), BasicClauseNode("else", SeqNode(orelse), False)], True), lineno)
 
-def Try(lineno, col_offset, end_lineno, end_col_offset, body, handlers, orelse, finalbody):
+def Try(lineno, body, handlers, orelse, finalbody, **va):
     clauses = [BasicClauseNode("try", SeqNode(body), False)] + handlers
     if orelse != []:
         clauses.append(BasicClauseNode("else", SeqNode(orelse), False))
@@ -83,101 +83,101 @@ def Try(lineno, col_offset, end_lineno, end_col_offset, body, handlers, orelse, 
         clauses.append(BasicClauseNode("finally", SeqNode(finalbody), False))
     return StatementNode(TryNode(clauses, orelse != []), lineno)
 
-def ExceptHandler(lineno, col_offset, end_lineno, end_col_offset, type, name, body):
+def ExceptHandler(type, name, body, **va):
     return ExceptClauseNode(type, name, SeqNode(body), False)
 
-def With(lineno, col_offset, end_lineno, end_col_offset, items, body):
+def With(lineno, items, body, **va):
     return StatementNode(ContainerNode(WithClauseNode(items, SeqNode(body), False)), lineno)
 
-def Compare(lineno, col_offset, end_lineno, end_col_offset, left, ops, comparators):
+def Compare(left, ops, comparators, **va):
     return ExpressionNode(ListopNode(([left] + comparators), ops))
 
-def Yield(lineno, col_offset, end_lineno, end_col_offset, value):
+def Yield(value, **va):
     return ExpressionNode(YieldNode(value))
 
-def Is():
+def Is(**va):
     return "is"
 
-def IsNot():
+def IsNot(**va):
     return "is not"
 
-def Eq():
+def Eq(**va):
     return "=="
 
-def NotEq():
+def NotEq(**va):
     return "!="
 
-def Lt():
+def Lt(**va):
     return "<"
 
-def LtE():
+def LtE(**va):
     return "<="
 
-def Gt():
+def Gt(**va):
     return ">"
 
-def GtE():
+def GtE(**va):
     return ">="
 
-def Return(lineno, col_offset, end_lineno, end_col_offset, value):
+def Return(lineno, value, **va):
     return StatementNode(ReturnNode(value), lineno)
 
-def Delete(lineno, col_offset, end_lineno, end_col_offset, targets):
+def Delete(lineno, targets, **va):
     return StatementNode(DelNode(targets), lineno)
 
-def Assert(lineno, col_offset, end_lineno, end_col_offset, test, msg):
+def Assert(lineno, test, msg, **va):
     return StatementNode(AssertNode(test, msg), lineno)
 
-def Break(lineno, col_offset, end_lineno, end_col_offset):
+def Break(lineno, **va):
     return StatementNode(BreakNode(), lineno)
 
-def Continue(lineno, col_offset, end_lineno, end_col_offset):
+def Continue(lineno, **va):
     return StatementNode(ContinueNode(), lineno)
 
-def Pass(lineno, end_lineno, col_offset, end_col_offset):
+def Pass(lineno, **va):
     return StatementNode(PassNode(), lineno)
 
-def Call(lineno, col_offset, end_lineno, end_col_offset, func, args, keywords, starargs=None, kwargs=None):
+def Call(func, args, keywords, **va):
     return ExpressionNode(CallNode(func, args, keywords))
 
-def Load():
+def Load(**va):
     return None
 
-def Store():
+def Store(**va):
     return None
 
-def Del():
+def Del(**va):
     return None
 
-def List(lineno, col_offset, end_lineno, end_col_offset, elts, ctx):
+def List(elts, **va):
     return ExpressionNode(ListNode(elts))
 
-def Set(lineno, col_offset, end_lineno, end_col_offset, elts):
+def Set(elts, **va):
     return ExpressionNode(SetNode(elts))
 
-def Tuple(lineno, col_offset, end_lineno, end_col_offset, elts, ctx):
+def Tuple(elts, **va):
     return ExpressionNode(TupleNode(elts))
 
-def Expr(lineno, col_offset, end_lineno, end_col_offset, value):
+def Expr(lineno, value, **va):
     return StatementNode(EvalNode(value), lineno)
 
-def Expression(body):
+def Expression(body, **va):
     return body
 
-def Interactive(body):
+def Interactive(body, **va):
     assert (len(body) == 1)
     return body[0]
 
-def Attribute(lineno, col_offset, end_lineno, end_col_offset, value, attr, ctx):
+def Attribute(value, attr, **va):
     return ExpressionNode(AttrNode(value, NameNode(attr)))
 
-def arg(lineno, col_offset, end_lineno, end_col_offset, arg, annotation):
+def arg(arg, **va):
     return arg
 
-def NameConstant(lineno, col_offset, end_lineno, end_col_offset, value):
+def NameConstant(value, **va):
     return ExpressionNode(ConstantNode(str(value)))
 
-def Constant(lineno, col_offset, end_lineno, end_col_offset, kind, value):
+def Constant(value, **va):
     t = type(value)
     if t == str:
         return ExpressionNode(StringNode(value))
@@ -187,22 +187,22 @@ def Constant(lineno, col_offset, end_lineno, end_col_offset, kind, value):
         return ExpressionNode(BytesNode(value))
     return ExpressionNode(ConstantNode(str(value)))
 
-def BinOp(lineno, col_offset, end_lineno, end_col_offset, left, op, right):
+def BinOp(left, op, right, **va):
     return ExpressionNode(BinaryopNode(left, right, op))
 
-def UnaryOp(lineno, col_offset, end_lineno, end_col_offset, op, operand):
+def UnaryOp(op, operand, **va):
     return ExpressionNode(UnaryopNode(operand, op))
 
-def Starred(lineno, col_offset, end_lineno, end_col_offset, value, ctx):
+def Starred(value, **va):
     return ExpressionNode(UnaryopNode(value, "*"))
 
-def BoolOp(lineno, col_offset, end_lineno, end_col_offset, op, values):
+def BoolOp(op, values, **va):
     return ExpressionNode(ListopNode(values, ([op] * (len(values) - 1))))
 
-def alias(name, asname):
+def alias(name, asname, **va):
     return (name, asname)
 
-def keyword(arg, value):
+def keyword(arg, value, **va):
     return (arg, value)
 
 def attrify(components):
@@ -211,85 +211,85 @@ def attrify(components):
     else:
         return AttrNode(attrify(components[:(- 1)]), NameNode(components[(- 1)]))
 
-def Import(lineno, col_offset, end_lineno, end_col_offset, names):
+def Import(lineno, names, **va):
     [(name, asname)] = names
     components = name.split(".")
     return StatementNode(ImportNode(attrify(components), (None if (asname == None) else NameNode(asname))), lineno)
 
-def ImportFrom(lineno, col_offset, end_lineno, end_col_offset, module, names, level):
+def ImportFrom(lineno, module, names, **va):
     components = module.split(".")
     return StatementNode(ImportfromNode(attrify(components), [(NameNode(name), (None if (asname == None) else NameNode(asname))) for (name, asname) in names]), lineno)
 
-def Global(lineno, col_offset, end_lineno, end_col_offset, names):
+def Global(lineno, names, **va):
     return StatementNode(GlobalNode([NameNode(n) for n in names]), lineno)
 
-def Dict(lineno, col_offset, end_lineno, end_col_offset, keys, values):
+def Dict(keys, values, **va):
     return ExpressionNode(DictNode(keys, values))
 
-def IfExp(lineno, col_offset, end_lineno, end_col_offset, test, body, orelse):
+def IfExp(test, body, orelse, **va):
     return ExpressionNode(IfelseNode(test, body, orelse))
 
-def GeneratorExp(lineno, col_offset, end_lineno, end_col_offset, elt, generators):
+def GeneratorExp(elt, generators, **va):
     return ExpressionNode(GenexpNode(elt, generators))
 
-def ListComp(lineno, col_offset, end_lineno, end_col_offset, elt, generators):
+def ListComp(elt, generators, **va):
     return ExpressionNode(ListcompNode(elt, generators))
 
-def SetComp(lineno, col_offset, end_lineno, end_col_offset, elt, generators):
+def SetComp(elt, generators, **va):
     return ExpressionNode(SetcompNode(elt, generators))
 
-def DictComp(lineno, col_offset, end_lineno, end_col_offset, key, value, generators):
+def DictComp(key, value, generators, **va):
     return ExpressionNode(DictcompNode(key, value, generators))
 
-def Add():
+def Add(**va):
     return "+"
 
-def Sub():
+def Sub(**va):
     return "-"
 
-def Div():
+def Div(**va):
     return "/"
 
-def FloorDiv():
+def FloorDiv(**va):
     return "//"
 
-def Mod():
+def Mod(**va):
     return "%"
 
-def Mult():
+def Mult(**va):
     return "*"
 
-def Pow():
+def Pow(**va):
     return "**"
 
-def BitOr():
+def BitOr(**va):
     return "|"
 
-def BitAnd():
+def BitAnd(**va):
     return "&"
 
-def USub():
+def USub(**va):
     return "-"
 
-def Not():
+def Not(**va):
     return "not"
 
-def Or():
+def Or(**va):
     return "or"
 
-def And():
+def And(**va):
     return "and"
 
-def In():
+def In(**va):
     return "in"
 
-def NotIn():
+def NotIn(**va):
     return "not in"
 
-def comprehension(target, iter, ifs, is_async=0):
+def comprehension(target, iter, ifs, is_async=0, **va):
     return (target, iter, ifs, is_async)
 
-def withitem(context_expr, optional_vars):
+def withitem(context_expr, optional_vars, **va):
     return (context_expr, optional_vars)
 
 def nodeEval(tree):

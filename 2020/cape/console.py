@@ -162,7 +162,7 @@ class Console(tk.Frame):
         """Keeps inserting line by line into self.text
         the output of the execution of self.command"""
         try:
-            self.popen = Popen(['python', '-u', self.command], stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0)
+            self.popen = Popen(['python3', '-u', self.command], stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0)
 
             Thread(target=self.reader, args=[self.popen.stdout, "stdout"]).start()
             Thread(target=self.reader, args=[self.popen.stderr, "stderr"]).start()
