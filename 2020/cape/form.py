@@ -370,12 +370,12 @@ class PassForm(Form):
         self.bind("<Key>", self.key)
         self.focus_set()
         row = 0
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="'pass' statement").grid(row=row, columnspan=4)
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="'pass' statement").grid(row=row, columnspan=5)
         row += 1
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement:").grid(row=row, columnspan=4)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'pass' statement does nothing.  You may select one of the statements below to replace the current 'pass' statement:").grid(row=row, columnspan=5)
         row += 1
-        statements = [("assert", self.stmtAssert), ("break", self.stmtBreak), ("class", self.stmtClass), ("continue", self.stmtContinue), ("def", self.stmtDef), ("del", self.stmtDel), ("for", self.stmtFor), ("global", self.stmtGlobal), ("if", self.stmtIf), ("import", self.stmtImport), ("print", self.stmtPrint), ("return", self.stmtReturn), ("try", self.stmtTry), ("while", self.stmtWhile), ("with", self.stmtWith)]
-        ncolumns = 3
+        statements = [("def", self.stmtDef), ("del", self.stmtDel), ("for", self.stmtFor), ("global", self.stmtGlobal), ("if", self.stmtIf), ("print", self.stmtPrint), ("return", self.stmtReturn), ("while", self.stmtWhile)]
+        ncolumns = 4
         n = len(statements)
         nrows = (((n + ncolumns) - 1) // ncolumns)
         r = 0
@@ -387,15 +387,31 @@ class PassForm(Form):
                     tk.Button(self, text=name, width=0, command=stmt).grid(row=row, column=c)
             r += 1
             row += 1
-        tk.Button(self, text="assignment", width=0, command=self.stmtAugassign).grid(row=row, column=1, pady=10)
+        tk.Button(self, text="assignment", width=0, command=self.stmtAugassign).grid(row=row, column=0, pady=10)
         self.assignop = tk.StringVar(self)
         self.assignop.set("=")
         assignops = tk.OptionMenu(self, self.assignop, "=", "+=", "-=", "*=", "/=", "//=", "%=", "**=")
-        assignops.grid(row=row, column=2, sticky=tk.W)
-        row += 1
+        assignops.grid(row=row, column=1, sticky=tk.W)
+        # row += 1
         # tk.Button(self, text="evaluate an expression", width=0, command=self.stmtEval).grid(row=row, columnspan=4, pady=10)
         # row += 1
-        tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, columnspan=4, pady=10)
+        tk.Button(self, text="call a function", width=0, command=self.stmtCall).grid(row=row, column=3, sticky=tk.W)
+        row += 1
+        tk.Message(self, width=350, font="Helvetica 14", text="Advanced functions:").grid(row=row, columnspan=5)
+        row += 1
+        statements = [("assert", self.stmtAssert), ("break", self.stmtBreak), ("class", self.stmtClass), ("continue", self.stmtContinue), ("import", self.stmtImport), ("try", self.stmtTry), ("with", self.stmtWith)]
+        ncolumns = 4
+        n = len(statements)
+        nrows = (((n + ncolumns) - 1) // ncolumns)
+        r = 0
+        while (r < nrows):
+            for c in range(ncolumns):
+                i = (r + (c * nrows))
+                if (i < n):
+                    (name, stmt) = statements[i]
+                    tk.Button(self, text=name, width=0, command=stmt).grid(row=row, column=c)
+            r += 1
+            row += 1
         row += 1
         tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: '?' inserts an expression, and 'def', 'if', 'while', 'for', 'print', and 'return' statements can be inserted by typing their first letter.  You can also add an assignment operation by typing '=', or augmented assignment operations by typing the operator name.").grid(columnspan=4, pady=10)
 
