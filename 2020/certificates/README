@@ -1,0 +1,30 @@
+To generate certificate, generate a CSV input file with student names
+and school names.  (From spreadsheet menu, use "save as CSV file".
+For example
+
+Agbovi Eugene,Aggrey Memorial SHS
+Theophilus Nyarko,Aggrey Memorial SHS
+Nenyo - Jenkins Jehoiada,Aggrey Memorial SHS
+Richard Mensah,Aggrey Memorial SHS
+
+Then run:
+	./gencerts name-of-file.csv
+
+This will create a file "cert.pdf" with all the certificates.  It
+also creates a few empty certificates for filling out by hand.
+
+===============
+
+If you want to know how it works:  gencerts converts the .csv file
+into the following format:
+
+\cert{Agbovi Eugene}{Aggrey Memorial SHS}
+\cert{Theophilus Nyarko}{Aggrey Memorial SHS}
+\cert{Nenyo - Jenkins Jehoiada}{Aggrey Memorial SHS}
+\cert{Richard Mensah}{Aggrey Memorial SHS}
+
+This is stored in "part.tex".  It then runs
+
+pdflatex cert
+
+which will create a file "cert.pdf" with all the certificates.
