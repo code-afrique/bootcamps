@@ -32,12 +32,18 @@ Solution:
 
     Hint: Use if-statements
     Example: checkRoots(1, 2, 1) should return "equal roots"
+	##checkRoots(1, 1, 1) = "complex roots"
+	##checkRoots(0, 1, 1) = "different roots"
+	##checkRoots(1, 4, 4) = "equal roots"
 
 2. Write function findMinimum(Lst).
     This function finds the minimum number in a list of numbers.  The function
     should return False if the list is empty.
     Hint: Keep track of the smallest entry you have seen.  Start with the first entry in the list.  Then loop through the remaining entries in the list to see if any are smaller.
     Example: findMinimum([2, 1, 3]) should return 1
+	##findMinimum([]) == False
+	##findMinimum([-1]) == -1
+	##findMinimum([2, 1, 2]) == 1
 
 3.  Write function robotReturnToOrigin(str).
      There is a robot starting at position (0, 0), the origin, on a 2D plane.
@@ -56,37 +62,61 @@ Solution:
      Output: False
      Explanation: The robot moves left twice. It ends up two "moves" to the left of the origin. We return False because it is not at the origin at the end of its moves.
 
+	 ##robotReturnToOrigin("") == True
+	 ##robotReturnToOrigin("LUDR") == True
+	 ##robotReturnToOrigin("LUR") == False
 
 4. Write a function findSecondHighestNumber(Lst).
     This function finds the second highest number in  a list of integers.  If the list has fewer
     than 2 numbers, the function should return False.
     Example: findSecondHighestNumber([3, 2, 5, 4, 1]) should return 4.
+	##findSecondHighestNumber([1]) == False
+	##findSecondHighestNumber([-1, -2]) == -2
+	##findSecondHighestNumber([1, 3, -2, 4]) == 3
 
 5. Write a function listOfEvenNumbers(start, end).
     This function returns a sorted list of even numbers starting from start (inclusive if even) and ending at end (exclusive).
     Example: listOfEvenNumbers(3, 9) should return [4, 6, 8].
+	##listOfEvenNumbers(4, 4) == []
+	##listOfEvenNumbers(-3, 4) == [-2, 0, 2]
+	##listOfEvenNumbers(-2, 4) == [-2, 0, 2]
 
 6. Write function isPalindrome(Lst).
     This function returns whether the given list is a palindrome.
     Example isPalindrome([1, 2, 3, 2, 1]) should return True.
+	##isPalindrome([1, 2, 3]) == False
+	##isPalindrome([]) == True
+	##isPalindrome([1, 0, 1]) == True
 
 7. Write function sign(i).
     This function returns -1 if i < 0, 0 if i == 0, and 1 if i > 0
     Example 1: sign(5) should return 1
     Example 2: sign(0) should return 0
     Example 3: sign(-2) should return -1
+	##sign(-1) == -1
+	##sign(0) == 0
+	##sign(3.14) == 1
 
 8. Write function isUpper(str).
      This function returns whether str is all upper case or not.
 	 (You may assume the string only has letters in it.)
      Example: isUpper("ABC") should return True
+	##isUpper("") == True
+	##isUpper("Aa") == False
+	##isUpper("AAAAAAAAAA") == True
 
 9. Write function isAnagram(str1, str2) to check if two input strings form an anagram.
     That is, one string is a re-arrangement of the letters in the other word.
 	Example: isAnagram("iceman", "cinema") == True
+	##isAnagram("", "") == True
+	##isAnagram("aabbcc", "bbccaa") == True
+	##isAnagram("aabcc", "bbccaa") == False
 
 10. Write function allUnique(str) that checks to see if all characters in the string
 	are unique (i.e., do not appear more than once)..
 	Example: allUnique("hello") == False
+	##allUnique("") == True
+	##allUnique("qwerty") == True
+	##allUnique("abcc") == False
 
 """
