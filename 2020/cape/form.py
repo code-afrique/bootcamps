@@ -1,4 +1,3 @@
-import keyword as kw
 import tkinter as tk
 import tkinter.scrolledtext
 
@@ -64,8 +63,8 @@ class HelpForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Help").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements (just click on one).  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to minimize or maximize their bodies.").grid(sticky=tk.W)
-        tk.Message(self, width=350, font="Helvetica 14", text="Under the 'Actions' menu you will find commands to show the Python code and to run it.  When you run a Python program, a console will appear that displays the output.  It also shows if the program is still running or has terminated.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a Python editor.  Each Python statement has a '-' button to the left of it that you can click on and allows you to remove the statement or add a new one.  You can also click on statements or expressions themselves to edit those.  'pass' statements can be replaced by other statements (just click on one).  A '?' expression is a placeholder---you can click on it to fill it in.  Finally, ':' buttons, at the end of 'def' statements and others, can be used to 'minimize' (hide) or 'maximize' (show) their bodies.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="Under the 'Actions' menu you will find commands to show the Python code and to run it.  When you run a Python program, a console window will appear that displays the output and can also be used to enter input.  The console window also shows if the program is still running or has terminated.").grid(sticky=tk.W)
 
 class FindForm(Form):
 
@@ -105,7 +104,7 @@ class ModuleForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Module").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="A module captures an entire Python source file").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="Every Python program consists of one or more modules.  Each module consists of a 'clause', which is a list of Python statements stored in a Python source file.  To find out more about the clause, hit the right arrow key.").grid(sticky=tk.W)
 
 class SeqForm(Form):
 
@@ -113,13 +112,14 @@ class SeqForm(Form):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = True
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="Sequence of statements").grid()
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="This is a 'clause'").grid()
+        tk.Message(self, width=350, font="Helvetica 16", text="A clause is a list of statements, each on a new line.  To find out more about the clause, hit the left arrow key.  To inspect or edit the first statement in the clause, hit the right arrow key.  You can then inspect or edit the other statements, if any, using the up and down arrow keys.").grid(sticky=tk.W)
         
         n = len(block.rows)
         if n == 1:
-            tk.Message(self, width=350, font="Helvetica 14", text="There is currently only one statement in this sequence.".format(len(block.rows))).grid(sticky=tk.W)
+            tk.Message(self, width=350, font="Helvetica 14", text="There is currently only one statement in this clause.".format(len(block.rows))).grid(sticky=tk.W)
         else:
-            tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of {} statements.".format(len(block.rows))).grid(sticky=tk.W)
+            tk.Message(self, width=350, font="Helvetica 14", text="This clause contains {} statements.".format(len(block.rows))).grid(sticky=tk.W)
 
 class ClauseForm(Form):
 
@@ -129,7 +129,7 @@ class ClauseForm(Form):
         self.isStatement = True
 
         # tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
-        # tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements with a header.").grid(sticky=tk.W)
+        # tk.Message(self, width=350, font="Helvetica 14", text="This is a list of statements with a header.").grid(sticky=tk.W)
         pass
 
     def insertComments(self, row=0, column=0, columnspan=1):
@@ -165,7 +165,7 @@ class BasicClauseForm(ClauseForm):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="A clause is a list of statements.  Hit the left arrow key to find out more about the clause.  Hit the right arrow key to edit the clause..").grid(sticky=tk.W)
         if block.type != "module":
             self.insertComments(row=3)
 
@@ -182,7 +182,7 @@ class CondClauseForm(ClauseForm):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements executed conditionally.").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="An if (or elif) clause is a list of statements executed when the condition of the statement is met.  To find out more about the if statement, hit the left arrow key.  To edit the clause, hit the right arrow key.  To see the next clause, if any, hit the down arrow key.").grid(sticky=tk.W)
         self.insertComments(row=3)
 
     def cb(self):
@@ -198,7 +198,7 @@ class ForClauseForm(ClauseForm):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.").grid(row=1)
+        tk.Message(self, width=350, font="Helvetica 14", text="The basic 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.  To see more about the for statement, hit the left arrow key.  If you want to inspect or edit the body of the for statement, hit the right arrow key.").grid(row=1)
         self.insertComments(row=3)
 
     def cb(self):
@@ -214,7 +214,7 @@ class ExceptClauseForm(ClauseForm):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text=block.title).grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a sequence of statements within an except clause of a try statement").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a list of statements within an except clause of a try statement").grid(sticky=tk.W)
         self.insertComments(row=3)
 
     def cb(self):
@@ -230,7 +230,7 @@ class EvalForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="Evaluation Statement").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="This is a statement that evaluates an expression").grid(sticky=tk.W)
+        tk.Message(self, width=350, font="Helvetica 14", text="This is a statement that evaluates an expression.  Hit the right arrow key to inspect or edit the expression.  Hit the left arrow key if you want to go back to the list of statements.").grid(sticky=tk.W)
 
 class WithClauseForm(ClauseForm):
 
@@ -301,33 +301,47 @@ class StatementForm(Form):
         super().__init__(parent, block)
         self.isExpression = False
         self.isStatement = False
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="Select one of the actions below").grid(row=0, columnspan=3)
-        tk.Button(self, text="Add a new statement below", command=self.addStmt).grid(row=1, columnspan=3)
-        tk.Button(self, text="Insert a new statement above", command=self.insrtStmt).grid(row=2, columnspan=3)
-        tk.Button(self, text="Move this statement up", command=self.upStmt).grid(row=3, columnspan=3)
-        tk.Button(self, text="Move this statement down", command=self.downStmt).grid(row=4, columnspan=3)
-        tk.Button(self, text="Delete this statement", command=self.delStmt).grid(row=5, columnspan=3)
-        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: <return> or <enter> adds a new statement below.").grid(row=6, columnspan=3)
+        row = 0
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="This is a Python 'statement'.").grid(row=row, columnspan=3)
+        row += 1
+        tk.Message(self, width=350, font="Helvetica 16", text="Select one of the actions below").grid(row=row, columnspan=3)
+        row += 1
+        tk.Button(self, text="Add a new statement below", command=self.addStmt).grid(row=row, columnspan=3)
+        row += 1
+        tk.Button(self, text="Insert a new statement above", command=self.insrtStmt).grid(row=row, columnspan=3)
+        row += 1
+        tk.Button(self, text="Move this statement up", command=self.upStmt).grid(row=row, columnspan=3)
+        row += 1
+        tk.Button(self, text="Move this statement down", command=self.downStmt).grid(row=row, columnspan=3)
+        row += 1
+        tk.Button(self, text="Delete this statement", command=self.delStmt).grid(row=row, columnspan=3)
+        row += 1
+        tk.Message(self, width=350, font="Helvetica 14", text="Keyboard shortcuts: <return> or <enter> adds a new statement below.  Use the right arrow key to inspect or edit this statement. Use the up and down arrow keys to go up or down, if possible.").grid(row=row, columnspan=3)
+        row += 1
+
         self.bind("<Key>", self.key)
         self.focus_set()
 
         if not block.isCompound():
-            tk.Label(self, text="Inline Comment: ").grid(row=7, column=0)
+            tk.Label(self, text="Inline Comment: ").grid(row=row, column=0)
             self.entry = tk.Entry(self, font="-slant italic")
             self.entry.bind("<Return>", self.keyEnter)
             c = block.uncommentize(block.commentR.get())
             self.entry.insert(tk.END, c)
-            self.entry.grid(row=7, column=1, columnspan=2)
+            self.entry.grid(row=row, column=1, columnspan=2)
+            row += 1
 
-            tk.Label(self, text="Multiline Comment (displayed above statement): ").grid(row=8, columnspan=3)
+            tk.Label(self, text="Multiline Comment (displayed above statement): ").grid(row=row, columnspan=3)
             self.commentU = tk.scrolledtext.ScrolledText(self, width=40, height=6, wrap=tk.WORD, bd=2, highlightbackground="red", highlightcolor="red", highlightthickness=2, font="-slant italic")
+            row += 1
             if block.commentU != None:
                 c = block.uncommentize(block.commentU.get())
                 self.commentU.insert(tk.END, c)
-            self.commentU.grid(row=9, columnspan=3)
+            self.commentU.grid(row=row, columnspan=3)
+            row += 1
 
             enter = tk.Button(self, text="Enter", command=self.cb)
-            enter.grid(row=10, column=2)
+            enter.grid(row=row, column=2)
 
         tk.Message(self, width=350, font="Helvetica 14", text="If you copied or deleted a statement, you can paste it here (see Edit menu).").grid(columnspan=3)
 
@@ -531,7 +545,7 @@ class ExpressionForm(Form):
         self.isStatement = False
         if (self.block.what != None):
             tk.Message(self, width=350, font="Helvetica 16 bold", text="Expression").grid(row=0, column=0)
-            tk.Message(self, width=350, font="Helvetica 14", text="This block wraps an expression.  You can copy or delete it here.").grid(row=1, column=0)
+            tk.Message(self, width=350, font="Helvetica 14", text="This is an expression 'wrapper'.  You can copy or delete the expression here.  To inspect or edit the expression, hit the right arrow key.").grid(row=1, column=0)
             tk.Button(self, text="Delete this expression", command=self.delExpr).grid(row=2, column=0)
             return
         self.bind("<Key>", self.key)
@@ -745,7 +759,7 @@ class IfForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'if' statement").grid(columnspan=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="An 'if' statement has an 'if' clause, zero or more 'elif' clauses, and optionally an 'else' clause'.").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font="Helvetica 14", text="An 'if' statement has an 'if' clause, zero or more 'elif' clauses, and optionally an 'else' clause'.  Hit the right arrow key if you want to inspect or edit the if clause.  The other clauses can then be visited by hitting the up and down arrow keys").grid(row=1, columnspan=2)
         if block.hasElse:
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
         else:
@@ -770,7 +784,7 @@ class ForForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'for' statement").grid()
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.  Optionally, it may also contain an 'else' clause that is executed should the list be empty.").grid(row=1)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'for' statement specifies a 'loop variable', a list, and a 'body'.  The body is executed for each entry in the list, with the loop variable set to the value of the entry.  Optionally, it may also contain an 'else' clause that is executed should the list be empty.  Hit the right arrow key to inspect or edit the statement.").grid(row=1)
         if (block.hasElse):
             eb = tk.Button(self, text="Remove 'else' clause", command=self.removeElse)
         else:
@@ -905,7 +919,7 @@ class ListForm(Form):
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'list' expression").grid(columnspan=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'list' is simply a sequence of expressions").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'list' is a sequence of expressions").grid(row=1, columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the list", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
 
@@ -921,7 +935,7 @@ class SetForm(Form):
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'set' expression").grid(columnspan=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'set' is simply a collection of expressions.  Note that the only way to create an empty set is to call 'set()'.").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'set' is a collection of expressions.  Note that the only way to create an empty set is to call 'set()'.").grid(row=1, columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the set", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
 
@@ -951,7 +965,7 @@ class TupleForm(Form):
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'tuple' expression").grid(columnspan=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="A 'tuple' is simply a sequence of expressions").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font="Helvetica 14", text="A 'tuple' is a sequence of expressions").grid(row=1, columnspan=2)
         ma = tk.Button(self, text="+ Add a new expression to the tuple", command=self.addEntry)
         ma.grid(row=2, column=0, columnspan=2)
 
@@ -1009,7 +1023,7 @@ class TryForm(Form):
         self.isExpression = False
         self.isStatement = True
         tk.Message(self, width=350, font="Helvetica 16 bold", text="'try' statement").grid(columnspan=2)
-        tk.Message(self, width=350, font="Helvetica 14", text="A try statement is used to catch exceptions that may occur during evaluation of a sequence of statements.").grid(row=1, columnspan=2)
+        tk.Message(self, width=350, font="Helvetica 14", text="A try statement is used to catch exceptions that may occur during evaluation of a list of statements.").grid(row=1, columnspan=2)
 
 class GenexpForm(Form):
     def __init__(self, parent, block):
@@ -1082,10 +1096,10 @@ class CallForm(Form):
         self.isExpression = True
         self.isStatement = False
         tk.Message(self, width=350, font="Helvetica 16 bold", text="function calll").grid(columnspan=3)
-        tk.Message(self, width=350, font="Helvetica 14", text="A function call is of the form f(list of arguments).  Here 'f' can be an expression in its own right.  With this form you can either add new arguments or new keyword or 'named' arguments.").grid(row=1, columnspan=3)
+        tk.Message(self, width=350, font="Helvetica 14", text="A function call is of the form f(list of arguments).  Here 'f' can be an expression in its own right, but usually it's just a function name.  The list of arguments may be empty.  There are two types of arguments: normal and keyword arguments.  With this form you can add either.").grid(row=1, columnspan=3)
         ma = tk.Button(self, text="+ Add a new argument", command=self.newArg)
         ma.grid(row=2, column=0, columnspan=3)
-        tk.Label(self, text="Add a named argument: ").grid(row=3)
+        tk.Label(self, text="Add a keyword argument: ").grid(row=3)
         self.entry = tk.Entry(self, width=8)
         self.entry.bind("<Return>", self.keyEnter)
         self.entry.grid(row=3, column=1)

@@ -124,8 +124,8 @@ class Block(tk.Frame):
     def goUp(self):
         return self
 
-        def goDown(self):
-            return self
+    def goDown(self):
+        return self
 
     def commentize(self, s):
         r = ''
@@ -391,7 +391,7 @@ class ClauseBlock(Block):
         self.setForm(ClauseForm(self.shared.confarea, self))
 
     def goRight(self):
-        return (self if (self.body == None) else self.body)
+        return self if self.body == None else self.body
 
     def goUp(self):
         if ((self.row != None) and (self.row > 0)):

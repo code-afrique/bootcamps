@@ -59,7 +59,6 @@ class Shared():
             elif (toktype == tokenize.NAME):
                 (row, col) = begin
                 if keyword.iskeyword(tokval):
-                    print("tokval: " + str(tokval))
                     keywords.put((tokval, row, col))
         return (keywords, comments)
 
@@ -73,16 +72,11 @@ class Shared():
         # tree = pparse.pparse(code, mode="eval")
         mod = ast.parse(code, mode=mode)
         tree = ast.dump(mod, include_attributes=True)
-        print("START")
-        pp.pprint(tree)
-        print("FINISH")
+        # pp.pprint(tree)
         n = pmod.nodeEval(tree)
 
         # extract keywords and comments
         keywords, comments = self.extract(code, mode=mode)
-        print("START KW")
-        print(keywords)
-        print("FINISH KW")
 
         # find the line numbers corresponding to keywords
         n.merge(keywords)
@@ -212,7 +206,7 @@ class Shared():
     # save for undo later
     def save(self):
         if self.program != None:
-            print("save for later")
+            # print("save for later")
             self.cvtError = True
             n = self.program.toNode()
             self.stack.append((n, self.curBlock, self.curForm))
