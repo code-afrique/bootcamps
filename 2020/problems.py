@@ -32,8 +32,9 @@ Handy examples of Python expressions:
 	Numbers:  2, -3.14
 	Strings:  "hello", "world"
 	Lists:	  [ 1, 3, 0 ], [ ]
-	Operators: +, -, *, /, //, %
-	Built-in functions:	len(s) returns the length of s
+	Operators: +, -, *, /, //, %, len("string")
+
+			Find more resources at www.codeafrique.com
 
 ========================================================================
 

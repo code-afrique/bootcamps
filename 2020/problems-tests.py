@@ -24,7 +24,7 @@ Solution:
         result = 0
         for x in Lst:
             if x % 2 == 0:
-                result += 1
+                result = result + 1
         return result
 
 Handy examples of Python expressions:
@@ -32,8 +32,9 @@ Handy examples of Python expressions:
 	Numbers:  2, -3.14
 	Strings:  "hello", "world"
 	Lists:	  [ 1, 3, 0 ], [ ]
-	Operators: +, -, *, /, //, %
-	Built-in functions:	len(s) returns the length of s
+	Operators: +, -, *, /, //, %, len("string")
+
+			Find more resources at www.codeafrique.com
 
 ========================================================================
 
@@ -117,10 +118,13 @@ Handy examples of Python expressions:
 	##isPalindrome([1, 0, 1]) == "palindrome"
 
 7. Write function sign(i).
-    This function returns -1 if i < 0, 0 if i == 0, and 1 if i > 0
-    Example 1: sign(5) should return 1
-    Example 2: sign(0) should return 0
-    Example 3: sign(-2) should return -1
+    This function returns
+		-1 if i < 0
+		 0 if i == 0
+		 1 if i > 0
+    Example 1: sign(5) should return the number 1
+    Example 2: sign(0) should return the number 0 
+    Example 3: sign(-2) should return the number -1
 	##sign(-1) == -1
 	##sign(0) == 0
 	##sign(3.14) == 1
