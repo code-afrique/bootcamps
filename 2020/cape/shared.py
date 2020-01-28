@@ -24,6 +24,11 @@ class Shared():
         self.stack = []
         self.trap = False
         self.search_string = None
+        self.plusbox = tk.PhotoImage(file='icons/plusbox.png')
+        self.minusbox = tk.PhotoImage(file='icons/minusbox.png')
+        self.leafbox = tk.PhotoImage(file='icons/leafbox.png')
+        self.radioon = tk.PhotoImage(file='icons/radioon.png')
+        self.radiooff = tk.PhotoImage(file='icons/radiooff.png')
 
     def startKeeping(self):
         assert not self.keeping
@@ -84,10 +89,11 @@ class Shared():
         # now we can merge comments back into the AST, sort of
         for (lineno, text) in comments.items():
             comment = self.getComment(text)
+            print("\nfind comment at", lineno)
             (type, b, i) = n.findLine(lineno)
             if type == "row":
                 # print("ROW", lineno, i)
-                row = b.rows[i]
+                row = b.body[i]
                 lin = row.lineno
             else:
                 # print("CLAUSE", lineno, i)

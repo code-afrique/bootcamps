@@ -1095,7 +1095,7 @@ class CallForm(Form):
         super().__init__(parent, block)
         self.isExpression = True
         self.isStatement = False
-        tk.Message(self, width=350, font="Helvetica 16 bold", text="function calll").grid(columnspan=3)
+        tk.Message(self, width=350, font="Helvetica 16 bold", text="function call").grid(columnspan=3)
         tk.Message(self, width=350, font="Helvetica 14", text="A function call is of the form f(list of arguments).  Here 'f' can be an expression in its own right, but usually it's just a function name.  The list of arguments may be empty.  There are two types of arguments: normal and keyword arguments.  With this form you can add either.").grid(row=1, columnspan=3)
         ma = tk.Button(self, text="+ Add a new argument", command=self.newArg)
         ma.grid(row=2, column=0, columnspan=3)

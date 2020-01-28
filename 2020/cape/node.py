@@ -75,8 +75,37 @@ class StatementNode(Node):
                 s = (((s[:i] + '    # ') + self.commentR) + s[i:])
             print(s, file=fd, end='')
 
-class ClauseNode(Node):
+class CompoundNode(Node):
+    def __init__(self, body):
+        super().__init__()
+        self.body = body
 
+    def merge(self, q):
+        for c in self.body:
+            c.merge(q)
+
+    def contains(self, s):
+        for c in self.body:
+            if c.contains(s):
+                return True
+        return False
+
+    def findLine(self, lineno):
+        print("CompoundNode findLine", lineno, self.body)
+        for i in range(len(self.body)):
+            if (self.body[i].lineno >= lineno):
+                return ('row', self, i)
+            r = self.body[i].findLine(lineno)
+            if (r != None):
+                return r
+        print("CompoundNode findLine not found", lineno)
+        return None
+
+    def print(self, fd, level):
+        for c in self.body:
+            c.print(fd, level)
+
+class ClauseNode(Node):
     def __init__(self, body, minimized):
         super().__init__()
         self.body = body
@@ -88,11 +117,17 @@ class ClauseNode(Node):
         self.decorator_list = []
 
     def findLine(self, lineno):
-        assert isinstance(self.body, SeqNode)
-        if ((not isinstance(self, BasicClauseNode)) or (self.type != 'module')):
-            if (self.lineno >= lineno):
-                return ('clause', self, self.lineno)
-        return self.body.findLine(lineno)
+        print("ClauseNode findLine", lineno, self.body)
+        for i in range(len(self.body)):
+            assert isinstance(self.body[i], StatementNode)
+            print("ClauseNode type", self.body[i].what, self.body[i].lineno)
+            if ((not isinstance(self.body[i].what, CompoundNode)) and (self.body[i].lineno >= lineno)):
+                return ('row', self, i)
+            r = self.body[i].findLine(lineno)
+            if (r != None):
+                return r
+        print("ClauseNode findLine not found", lineno)
+        return None
 
     def printComment(self, fd, level):
         f = io.StringIO(self.commentU)
@@ -101,19 +136,17 @@ class ClauseNode(Node):
             print('# {}'.format(line), end='', file=fd)
 
     def printBody(self, fd, level):
-        """
-        self.commentR = "{}".format(self.index)
-        """
         if ((self.commentR == None) or (self.commentR.strip() == '')):
             print(':', file=fd)
         else:
             print(':\t# {}'.format(self.commentR), file=fd)
-        self.body.print(fd, (level + 1))
+        for r in self.body:
+            r.print(fd, level + 1)
 
-class DefClauseNode(ClauseNode):
+class DefNode(CompoundNode):
 
     def __init__(self, name, args, defaults, vararg, kwarg, body, minimized, decorator_list):
-        super().__init__(body, minimized)
+        super().__init__(body)
         self.name = name
         self.args = args
         self.defaults = defaults
@@ -140,7 +173,7 @@ class DefClauseNode(ClauseNode):
         return self.body.contains(s)
 
     def toBlock(self, frame, block):
-        return block.newDefClauseBlock(frame, self)
+        return block.newDefBlock(frame, self)
 
     def print(self, fd, level):
         print(file=fd)
@@ -182,6 +215,20 @@ class DefClauseNode(ClauseNode):
             print('**{}'.format(self.kwarg), end='', file=fd)
         print(')', end='', file=fd)
         self.printBody(fd, level)
+
+    def printComment(self, fd, level):
+        print("DefNode printComment")
+
+    def printBody(self, fd, level):
+        """
+        if ((self.commentR == None) or (self.commentR.strip() == '')):
+            print(':', file=fd)
+        else:
+            print(':\t# {}'.format(self.commentR), file=fd)
+        """
+        print(':', file=fd)
+        for r in self.body:
+            r.print(fd, level + 1)
 
 class LambdaNode(Node):
 
@@ -241,7 +288,7 @@ class LambdaNode(Node):
         self.body.print(fd, 0)
         print(')', end='', file=fd)
 
-class ClassClauseNode(ClauseNode):
+class ClassNode(ClauseNode):
 
     def __init__(self, name, bases, body, minimized, decorator_list):
         super().__init__(body, minimized)
@@ -266,7 +313,7 @@ class ClassClauseNode(ClauseNode):
         return self.body.contains(s)
 
     def toBlock(self, frame, block):
-        return block.newClassClauseBlock(frame, self)
+        return block.newClassBlock(frame, self)
 
     def print(self, fd, level):
         print(file=fd)
@@ -313,7 +360,6 @@ class BasicClauseNode(ClauseNode):
             self.printBody(fd, level)
 
 class CondClauseNode(ClauseNode):
-
     def __init__(self, type, cond, body, minimized):
         super().__init__(body, minimized)
         self.type = type
@@ -340,53 +386,22 @@ class CondClauseNode(ClauseNode):
         self.cond.print(fd, 0)
         self.printBody(fd, level)
 
-class CompoundNode(Node):
-
-    def __init__(self, clauses):
-        super().__init__()
-        self.clauses = clauses
-
-    def merge(self, q):
-        for c in self.clauses:
-            c.merge(q)
-
-    def contains(self, s):
-        for c in self.clauses:
-            if c.contains(s):
-                return True
-        return False
-
-    def findLine(self, lineno):
-        for c in self.clauses:
-            loc = c.findLine(lineno)
-            if (loc != None):
-                return loc
-        return None
-
-    def print(self, fd, level):
-        for c in self.clauses:
-            c.print(fd, level)
-
 class ModuleNode(CompoundNode):
-
     def __init__(self, body):
-        super().__init__([body])
+        assert isinstance(body, list)
+        super().__init__(body)
 
     def toBlock(self, frame, block):
         return block.newModuleBlock(frame, self)
 
-class ContainerNode(CompoundNode):
-
-    def __init__(self, body):
-        super().__init__([body])
-
-    def toBlock(self, frame, block):
-        return block.newContainerBlock(frame, self)
+    def merge(self, q):
+        (kw, line, col) = q.get()
+        assert (kw == 'module')
 
 class IfNode(CompoundNode):
 
-    def __init__(self, clauses, hasElse):
-        super().__init__(clauses)
+    def __init__(self, body, hasElse):
+        super().__init__(body)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
@@ -394,8 +409,8 @@ class IfNode(CompoundNode):
 
 class TryNode(CompoundNode):
 
-    def __init__(self, clauses, hasElse):
-        super().__init__(clauses)
+    def __init__(self, body, hasElse):
+        super().__init__(body)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
@@ -436,14 +451,14 @@ class ExceptClauseNode(ClauseNode):
                 self.name.print(fd, 0)
         self.printBody(fd, level)
 
-class WithClauseNode(ClauseNode):
+class WithNode(ClauseNode):
 
     def __init__(self, items, body, minimized):
         super().__init__(body, minimized)
         self.items = items
 
     def toBlock(self, frame, block):
-        return block.newWithClauseBlock(frame, self)
+        return block.newWithBlock(frame, self)
 
     def contains(self, s):
         return False
@@ -477,17 +492,21 @@ class WithClauseNode(ClauseNode):
 
 class WhileNode(CompoundNode):
 
-    def __init__(self, clauses, hasElse):
-        super().__init__(clauses)
+    def __init__(self, body, hasElse):
+        super().__init__(body)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
         return block.newWhileBlock(frame, self)
 
+    def print(self, fd, level):
+        for c in self.body:
+            c.print(fd, level)
+
 class ForNode(CompoundNode):
 
-    def __init__(self, clauses, hasElse):
-        super().__init__(clauses)
+    def __init__(self, body, hasElse):
+        super().__init__(body)
         self.hasElse = hasElse
 
     def toBlock(self, frame, block):
@@ -496,6 +515,7 @@ class ForNode(CompoundNode):
 class ForClauseNode(ClauseNode):
 
     def __init__(self, target, expr, body, minimized):
+        assert len(body) > 0
         super().__init__(body, minimized)
         self.target = target
         self.expr = expr
@@ -1502,36 +1522,3 @@ class ExpressionNode(Node):
             print('__CAPE_UNINITIALIZED__', end='', file=fd)
         else:
             self.what.print(fd, 0)
-
-class SeqNode(Node):
-
-    def __init__(self, rows):
-        super().__init__()
-        self.rows = rows
-
-    def merge(self, q):
-        for r in self.rows:
-            r.merge(q)
-
-    def contains(self, s):
-        for r in self.rows:
-            if r.contains(s):
-                return True
-        return False
-
-    def toBlock(self, frame, block):
-        return block.newSeqBlock(frame, self)
-
-    def findLine(self, lineno):
-        for i in range(len(self.rows)):
-            assert isinstance(self.rows[i], StatementNode)
-            if ((not isinstance(self.rows[i].what, CompoundNode)) and (self.rows[i].lineno >= lineno)):
-                return ('row', self, i)
-            r = self.rows[i].findLine(lineno)
-            if (r != None):
-                return r
-        return None
-
-    def print(self, fd, level):
-        for r in self.rows:
-            r.print(fd, level)
